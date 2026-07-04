@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Sand + Terracotta — Premium light scheme (warm, paper-like) */
+  --bg-950: #FFFDF9;   /* page background */
+  --bg-905: #FFFAF5;   /* surface */
+  --bg-900: #FFFAF5;   /* surface / inputs / sidebar */
+  --bg-850: #F7EFE6;   /* slightly raised */
+  --bg-800: #EFE4DA;   /* raised / hover / disabled */
+  --border-700: #E7DACE;
+  --border-650: #D8C9BB;
+  --border-600: #C4B4A4;
+  --border-550: #AEA095;
+  --text-500: #756F69;  /* muted / placeholder (darkened for clarity) */
+  --text-455: #7A746E;
+  --text-450: #7A746E;  /* secondary text */
+  --text-400: #7A746E;
+  --text-350: #524C46;
+  --text-330: #524C46;
+  --text-300: #4A443E;  /* body text */
+  --text-200: #3A352F;
+  --text-100: #2D2A26;  /* primary text */
+  --text-50: #2D2A26;
+
+  --luxury-card: rgba(255, 255, 255, 0.88);
+  --luxury-border: #EFE4DA;
+  --scrollbar-track: #F7EFE6;
+  --scrollbar-thumb: #E0CFBF;
+  --scrollbar-hover: #C56A3D;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 overflow-x-hidden transition-colors duration-300;
+    font-family: 'Tajawal', 'Cairo', sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Refined serif display for headings (premium private-school feel) */
+  h1, h2, h3 {
+    font-family: 'Lora', 'Tajawal', serif;
+    letter-spacing: -0.01em;
+  }
+
+  /* Sleek modern scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-hover);
+  }
+}
+
+/* Thin, subtle scrollbar for the sidebar navigation */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+/* Glassmorphism primitives — soft paper cards with gentle depth */
+.glass-panel {
+  background: var(--luxury-card);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--luxury-border);
+  box-shadow: 0 1px 2px rgba(45, 42, 38, 0.04), 0 12px 30px -12px rgba(45, 42, 38, 0.10);
+}
+
+.glass-panel-heavy {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--luxury-border);
+  box-shadow: 0 2px 4px rgba(45, 42, 38, 0.05), 0 18px 40px -16px rgba(45, 42, 38, 0.14);
+}
+
+/* Premium Animated Backgrounds — warm sand & terracotta glow */
+.mesh-gradient {
+  background-color: transparent;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(197, 106, 61, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(244, 199, 161, 0.18) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(197, 106, 61, 0.05) 0px, transparent 50%);
+}
+
+.glow-orb {
+  position: absolute;
+  filter: blur(100px);
+  opacity: 0.5;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Utilities for dynamic RTL layouts */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Light-theme compatibility layer                                    */
+/*  The UI was authored for dark mode with literal `text-white` used   */
+/*  both for headings (on surfaces) and for labels on colored buttons. */
+/*  Inside `.theme-sand`, base `text-white` becomes dark ink, while    */
+/*  white is preserved on solid colored / gradient backgrounds.        */
+/* ------------------------------------------------------------------ */
+.theme-sand .text-white { color: var(--text-100); }
+
+.theme-sand [class*="bg-brand-"].text-white,
+.theme-sand [class*="bg-emerald-"].text-white,
+.theme-sand [class*="bg-green-"].text-white,
+.theme-sand [class*="bg-red-"].text-white,
+.theme-sand [class*="bg-rose-"].text-white,
+.theme-sand [class*="bg-orange-"].text-white,
+.theme-sand [class*="bg-indigo-"].text-white,
+.theme-sand [class*="bg-violet-"].text-white,
+.theme-sand [class*="bg-purple-"].text-white,
+.theme-sand [class*="bg-blue-"].text-white,
+.theme-sand [class*="bg-sky-"].text-white,
+.theme-sand [class*="bg-cyan-"].text-white,
+.theme-sand [class*="bg-teal-"].text-white,
+.theme-sand [class*="bg-fuchsia-"].text-white,
+.theme-sand [class*="bg-pink-"].text-white,
+.theme-sand [class*="bg-gradient-to"].text-white {
+  color: #ffffff;
+}
+
+/* Hover state: plain `hover:text-white` on surfaces becomes ink,
+   but stays white when the element also gains a colored hover bg. */
+.theme-sand .hover\:text-white:hover { color: var(--text-100); }
+
+.theme-sand [class*="bg-brand-"].hover\:text-white:hover,
+.theme-sand [class*="bg-emerald-"].hover\:text-white:hover,
+.theme-sand [class*="bg-green-"].hover\:text-white:hover,
+.theme-sand [class*="bg-red-"].hover\:text-white:hover,
+.theme-sand [class*="bg-rose-"].hover\:text-white:hover,
+.theme-sand [class*="bg-indigo-"].hover\:text-white:hover,
+.theme-sand [class*="bg-violet-"].hover\:text-white:hover,
+.theme-sand [class*="bg-sky-"].hover\:text-white:hover,
+.theme-sand [class*="bg-gradient-to"].hover\:text-white:hover {
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Accent text legibility on light surfaces                           */
+/*  The light 300/400 accent shades were authored for dark mode and    */
+/*  read poorly on the warm light surfaces. Inside `.theme-sand` they  */
+/*  are mapped to deeper, AA-contrast tones. White-on-colored buttons  */
+/*  are untouched (they use `text-white`, handled above).              */
+/* ------------------------------------------------------------------ */
+.theme-sand .text-brand-300,
+.theme-sand .text-brand-400 { color: #A9522C; }
+.theme-sand .text-emerald-300,
+.theme-sand .text-emerald-400 { color: #047857; }
+.theme-sand .text-green-300,
+.theme-sand .text-green-400 { color: #15803D; }
+.theme-sand .text-red-300,
+.theme-sand .text-red-400 { color: #B91C1C; }
+.theme-sand .text-rose-300,
+.theme-sand .text-rose-400 { color: #BE123C; }
+.theme-sand .text-amber-300,
+.theme-sand .text-amber-400 { color: #B45309; }
+.theme-sand .text-yellow-300,
+.theme-sand .text-yellow-400 { color: #A16207; }
+.theme-sand .text-orange-300,
+.theme-sand .text-orange-400 { color: #C2410C; }
+.theme-sand .text-sky-300,
+.theme-sand .text-sky-400 { color: #0369A1; }
+.theme-sand .text-blue-300,
+.theme-sand .text-blue-400 { color: #1D4ED8; }
+.theme-sand .text-indigo-300,
+.theme-sand .text-indigo-400 { color: #4338CA; }
+.theme-sand .text-violet-300,
+.theme-sand .text-violet-400 { color: #6D28D9; }
+.theme-sand .text-purple-300,
+.theme-sand .text-purple-400 { color: #7E22CE; }
+.theme-sand .text-cyan-300,
+.theme-sand .text-cyan-400 { color: #0E7490; }
+.theme-sand .text-teal-300,
+.theme-sand .text-teal-400 { color: #0F766E; }
+.theme-sand .text-pink-300,
+.theme-sand .text-pink-400 { color: #BE185D; }
+.theme-sand .text-fuchsia-300,
+.theme-sand .text-fuchsia-400 { color: #A21CAF; }
+

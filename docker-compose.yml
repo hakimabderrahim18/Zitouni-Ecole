@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  database:
+    image: mongo:6.0
+    container_name: zitouni_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - zitouni_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zitouni_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://database:27017/zitouni_school
+      - JWT_SECRET=zitouni_school_jwt_access_secret_2026_key
+      - JWT_REFRESH_SECRET=zitouni_school_jwt_refresh_secret_2026_key
+      - CLIENT_URL=http://localhost:8080
+    depends_on:
+      - database
+    networks:
+      - zitouni_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: zitouni_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - zitouni_network
+
+volumes:
+  mongo_data:
+
+networks:
+  zitouni_network:
+    driver: bridge
