@@ -4,10 +4,21 @@ const Message = require('../models/message.model');
 let io;
 const activeUsers = new Map(); // userId -> socketId
 
+// Allowed browser origins (comma-separated CLIENT_URL), trailing slashes stripped.
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 const initSocket = (server) => {
   io = socketIO(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:5173',
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin.replace(/\/+$/, ''))) {
+          return callback(null, true);
+        }
+        return callback(new Error(`Not allowed by CORS: ${origin}`));
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },

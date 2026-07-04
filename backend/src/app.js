@@ -35,9 +35,25 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Security & Optimization Middlewares
 app.use(helmet());
+
+// Allow one or more comma-separated origins. Trailing slashes are stripped so a
+// value like "https://app.vercel.app/" still matches the browser origin
+// "https://app.vercel.app".
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, same-origin) and any
+      // whitelisted origin (compared without a trailing slash).
+      if (!origin || allowedOrigins.includes(origin.replace(/\/+$/, ''))) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
+    },
     credentials: true,
   })
 );
