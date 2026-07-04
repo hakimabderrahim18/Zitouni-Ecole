@@ -15,10 +15,11 @@ export const useChatStore = create((set, get) => ({
     if (get().socket) return;
 
     set({ isConnecting: true });
-    // Establish connection with the backend (VITE_API_URL in production,
-    // proxied origin '/' in development).
+    // Connect to the same origin; Vercel proxies /socket.io to the Render
+    // backend (vercel.json). Allow polling first since Vercel does not proxy
+    // raw WebSocket upgrades — Socket.io upgrades automatically when possible.
     const socket = io(import.meta.env.VITE_API_URL || '/', {
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
     });
 
     socket.on('connect', () => {
