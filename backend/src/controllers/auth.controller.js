@@ -4,18 +4,31 @@ const Teacher = require('../models/teacher.model');
 const Student = require('../models/student.model');
 const Parent = require('../models/parent.model');
 
+// Sanitize a JWT expiry value from the environment. jwt.sign only accepts a
+// number of seconds or a timespan string like "15m"/"7d". A malformed env var
+// (extra spaces, quotes, wrong format) would otherwise crash token signing, so
+// we validate and fall back to a safe default.
+const parseExpiry = (value, fallback) => {
+  if (value === undefined || value === null) return fallback;
+  const v = String(value).trim().replace(/^["']|["']$/g, '');
+  if (v === '') return fallback;
+  if (/^\d+$/.test(v)) return Number(v); // seconds
+  if (/^\d+(\.\d+)?\s*(ms|s|m|h|d|w|y)$/i.test(v)) return v.replace(/\s+/g, '');
+  return fallback;
+};
+
 // Helper to generate access and refresh tokens
 const generateTokens = (userId) => {
   const accessToken = jwt.sign(
     { id: userId },
     process.env.JWT_SECRET || 'zitouni_school_jwt_access_secret_2026_key',
-    { expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m' }
+    { expiresIn: parseExpiry(process.env.JWT_ACCESS_EXPIRY, '15m') }
   );
 
   const refreshToken = jwt.sign(
     { id: userId },
     process.env.JWT_REFRESH_SECRET || 'zitouni_school_jwt_refresh_secret_2026_key',
-    { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
+    { expiresIn: parseExpiry(process.env.JWT_REFRESH_EXPIRY, '7d') }
   );
 
   return { accessToken, refreshToken };
