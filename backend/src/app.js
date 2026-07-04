@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const path = require('path');
@@ -62,9 +63,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// Health Check API
+// Health Check API (also reports which database the server is connected to)
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', timestamp: new Date() });
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date(),
+    db: {
+      state: mongoose.connection.readyState, // 1 = connected
+      host: mongoose.connection.host || null,
+      name: mongoose.connection.name || null,
+    },
+  });
 });
 
 // REST API Endpoints Mount
