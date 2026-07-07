@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import ThemeToggle from '../components/ThemeToggle';
 
 const getNotificationIcon = (type) => {
   switch (type) {
@@ -181,7 +182,7 @@ export default function DashboardLayout({ children }) {
           <div className="flex justify-between items-center gap-2 shrink-0">
             <Link to="/" className="text-xl font-bold bg-gradient-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent flex items-center gap-2 overflow-hidden shrink-0">
               <span className="w-8 h-8 rounded-lg bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-md shadow-brand-400/20 shrink-0">ز</span>
-              {!sidebarCollapsed && <span className="truncate">مدرسة الزيتوني</span>}
+              {!sidebarCollapsed && <span className="truncate">مدرسة الزيتوني <span className="text-[10px] font-mono text-brand-400">2025/2026</span></span>}
             </Link>
             
             <div className="flex gap-1.5 items-center">
@@ -315,7 +316,7 @@ export default function DashboardLayout({ children }) {
         
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between p-4 glass-panel border-b border-luxury-border/50 z-30">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
@@ -326,9 +327,11 @@ export default function DashboardLayout({ children }) {
             <span className="text-lg font-bold bg-gradient-to-r from-brand-400 to-indigo-400 bg-clip-text text-transparent">
               مدرسة الزيتوني
             </span>
+            <span className="px-1.5 py-0.5 rounded bg-brand-500/10 border border-brand-500/20 text-brand-500 font-bold text-[10px]">2025/2026</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             {/* Notifications toggle on mobile */}
             <div className="relative">
               <button
@@ -429,17 +432,21 @@ export default function DashboardLayout({ children }) {
 
         {/* Desktop Header */}
         <header className="hidden md:flex items-center justify-between px-8 py-4 border-b border-luxury-border/50 glass-panel relative z-30">
-          <span className="text-sm text-slate-350 font-medium">
-            مرحباً بك،{' '}
-            <button
-              onClick={() => setProfileOpen(true)}
-              className="font-semibold text-brand-500 hover:text-brand-650 transition-colors hover:underline focus:outline-none cursor-pointer"
-            >
-              {user?.firstName} {user?.lastName}
-            </button>{' '}
-            ! أهلاً بك في فضاءك الخاص.
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-350 font-medium">
+              مرحباً بك،{' '}
+              <button
+                onClick={() => setProfileOpen(true)}
+                className="font-semibold text-brand-500 hover:text-brand-650 transition-colors hover:underline focus:outline-none cursor-pointer"
+              >
+                {user?.firstName} {user?.lastName}
+              </button>{' '}
+              ! أهلاً بك في فضاءك الخاص.
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-500 font-extrabold text-xs">السنة الدراسية 2025/2026</span>
+          </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <div className="relative">
               <button
                 onClick={() => {

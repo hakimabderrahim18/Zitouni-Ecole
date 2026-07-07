@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Lock, Mail, AlertTriangle, Sparkles, GraduationCap, Globe, Phone, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ThreeDScene from '../components/ThreeDScene';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function Login() {
   const { login, isLoading, error } = useAuthStore();
@@ -49,29 +50,33 @@ export default function Login() {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#050505] flex flex-col font-cairo">
+    <div dir="rtl" className="min-h-screen bg-slate-950 flex flex-col font-cairo">
       {/* ===== HEADER ===== */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="sticky top-0 z-50 flex items-center justify-between px-6 md:px-10 lg:px-14 py-4 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-2xl"
+        className="sticky top-0 z-50 flex items-center justify-between px-6 md:px-10 lg:px-14 py-4 border-b border-luxury-border/30 bg-slate-900/80 backdrop-blur-2xl"
       >
         <Link to="/" className="flex items-center gap-3 group">
           <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-[0_8px_25px_rgba(244,180,0,0.3)] transition-transform duration-300 group-hover:scale-105">
-            <GraduationCap className="w-6 h-6 text-[#050505]" />
+            <GraduationCap className="w-6 h-6 text-slate-950" />
             <div className="absolute inset-0 rounded-2xl ring-1 ring-white/20" />
           </div>
           <div className="leading-tight">
-            <p className="text-white font-black text-base tracking-tight group-hover:text-brand-400 transition-colors">مدرسة الزيتوني</p>
+            <div className="flex items-center gap-2">
+              <p className="text-white font-black text-base tracking-tight group-hover:text-brand-400 transition-colors">مدرسة الزيتوني</p>
+              <span className="px-2 py-0.5 rounded-md bg-brand-500/10 border border-brand-500/20 text-brand-500 font-extrabold text-[10px]">2025/2026</span>
+            </div>
             <p className="text-brand-500 text-[11px] font-bold tracking-wide">المنصة التعليمية الذكية</p>
           </div>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
+          <ThemeToggle />
           <Link
             to="/"
-            className="px-5 py-2 rounded-full border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 transition-all text-xs md:text-sm font-bold flex items-center gap-2"
+            className="px-5 py-2 rounded-full border border-luxury-border/30 text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-xs md:text-sm font-bold flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>العودة للرئيسية</span>
@@ -82,7 +87,7 @@ export default function Login() {
       {/* ===== MAIN ===== */}
       <div className="flex-1 flex flex-col-reverse md:flex-row overflow-hidden relative">
         {/* Left Side - Login Form (Ultra-Premium Glassmorphism layout) */}
-        <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col justify-center px-6 md:px-12 lg:px-16 py-12 relative z-10 border-l border-white/5 bg-[#0a0a0a]/80 backdrop-blur-3xl shadow-[20px_0_50px_rgba(0,0,0,0.5)]">
+        <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col justify-center px-6 md:px-12 lg:px-16 py-12 relative z-10 border-l border-luxury-border/30 bg-slate-900/80 backdrop-blur-3xl shadow-[20px_0_50px_rgba(0,0,0,0.5)]">
           
           {/* Subtle decorative glow behind form */}
           <div className="absolute top-1/4 -right-20 w-64 h-64 bg-brand-500/10 rounded-full blur-[80px] pointer-events-none" />
@@ -222,9 +227,9 @@ export default function Login() {
         </div>
 
         {/* Right Side - Interactive 3D Canvas Scene (FULL in section!) */}
-        <div className="hidden md:block md:w-[55%] lg:w-[60%] h-full min-h-[600px] relative overflow-hidden bg-[#050505]">
+        <div className="hidden md:block md:w-[55%] lg:w-[60%] h-full min-h-[600px] relative overflow-hidden bg-slate-950">
           {/* Cinematic Lighting overlays */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#050505] via-transparent to-transparent z-10 pointer-events-none opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-transparent to-transparent z-10 pointer-events-none opacity-80" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-brand-500/10 via-transparent to-transparent z-10 pointer-events-none opacity-60 mix-blend-screen" />
           
           {/* R3F canvas wrapper */}
@@ -239,7 +244,7 @@ export default function Login() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.5 }}
-        className="relative z-30 flex flex-col sm:flex-row items-center justify-between gap-3 px-6 md:px-10 lg:px-14 py-4 border-t border-white/5 bg-[#0a0a0a]/70 backdrop-blur-2xl text-center"
+        className="relative z-30 flex flex-col sm:flex-row items-center justify-between gap-3 px-6 md:px-10 lg:px-14 py-4 border-t border-luxury-border/30 bg-slate-900/70 backdrop-blur-2xl text-center"
       >
         <p className="text-slate-500 text-xs font-medium">
           © {new Date().getFullYear()} مدرسة الزيتوني الخاصة. جميع الحقوق محفوظة.

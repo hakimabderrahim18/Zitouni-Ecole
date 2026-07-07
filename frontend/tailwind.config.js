@@ -8,17 +8,17 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#FBF3EC',
-          100: '#F7E7D9',
-          200: '#F4C7A1', // Accent (sand peach)
-          300: '#E9A878',
-          400: '#D98553',
-          500: '#C56A3D', // Primary Terracotta
-          600: '#A9522C', // Primary Hover
-          700: '#8A4222',
-          800: '#6B331A',
-          900: '#4D2412',
-          950: '#2E150A',
+          50: 'var(--brand-50)',
+          100: 'var(--brand-100)',
+          200: 'var(--brand-200)',
+          300: 'var(--brand-300)',
+          400: 'var(--brand-400)',
+          500: 'var(--brand-500)',
+          600: 'var(--brand-600)',
+          700: 'var(--brand-700)',
+          800: 'var(--brand-800)',
+          900: 'var(--brand-900)',
+          950: 'var(--brand-950)',
         },
         slate: {
           50: 'var(--text-50)',

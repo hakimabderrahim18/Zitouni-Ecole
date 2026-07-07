@@ -2,8 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root, .theme-default {
+  /* Default Terracotta + Gold — Luxury Dark scheme */
+  --brand-50: #FBF3EC;
+  --brand-100: #F7E7D9;
+  --brand-200: #F4C7A1;
+  --brand-300: #E9A878;
+  --brand-400: #D98553;
+  --brand-500: #C56A3D;
+  --brand-600: #A9522C;
+  --brand-700: #8A4222;
+  --brand-800: #6B331A;
+  --brand-900: #4D2412;
+  --brand-950: #2E150A;
+
+  --bg-950: #050505;
+  --bg-905: #0a0a0a;
+  --bg-900: #0f172a;
+  --bg-850: #1e293b;
+  --bg-800: #334155;
+  --border-700: #334155;
+  --border-650: #475569;
+  --border-600: #64748b;
+  --border-550: #94a3b8;
+  --text-500: #64748b;
+  --text-455: #94a3b8;
+  --text-450: #94a3b8;
+  --text-400: #94a3b8;
+  --text-350: #cbd5e1;
+  --text-330: #cbd5e1;
+  --text-300: #e2e8f0;
+  --text-200: #f1f5f9;
+  --text-100: #f8fafc;
+  --text-50: #ffffff;
+
+  --luxury-card: rgba(15, 23, 42, 0.75);
+  --luxury-border: rgba(255, 255, 255, 0.1);
+  --scrollbar-track: #050505;
+  --scrollbar-thumb: #334155;
+  --scrollbar-hover: #C56A3D;
+}
+
+.theme-sand {
   /* Sand + Terracotta — Premium light scheme (warm, paper-like) */
+  --brand-50: #FBF3EC;
+  --brand-100: #F7E7D9;
+  --brand-200: #F4C7A1;
+  --brand-300: #E9A878;
+  --brand-400: #D98553;
+  --brand-500: #C56A3D;
+  --brand-600: #A9522C;
+  --brand-700: #8A4222;
+  --brand-800: #6B331A;
+  --brand-900: #4D2412;
+  --brand-950: #2E150A;
+
   --bg-950: #FFFDF9;   /* page background */
   --bg-905: #FFFAF5;   /* surface */
   --bg-900: #FFFAF5;   /* surface / inputs / sidebar */
@@ -29,6 +82,51 @@
   --scrollbar-track: #F7EFE6;
   --scrollbar-thumb: #E0CFBF;
   --scrollbar-hover: #C56A3D;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Bleu Roi & Blanc Dark Theme (Royal Blue & White Dark Mode)        */
+/* ------------------------------------------------------------------ */
+.theme-blue-roi {
+  /* Royal Blue & White Brand Palette */
+  --brand-50: #EFF6FF;
+  --brand-100: #DBEAFE;
+  --brand-200: #BFDBFE;
+  --brand-300: #93C5FD;
+  --brand-400: #60A5FA;
+  --brand-500: #2563EB;   /* Bleu Roi (Royal Blue) */
+  --brand-600: #1D4ED8;   /* Bleu Roi Hover */
+  --brand-700: #1E40AF;
+  --brand-800: #1E3A8A;
+  --brand-900: #172554;
+  --brand-950: #0B132B;
+
+  /* Deep Royal Navy Dark Backgrounds */
+  --bg-950: #070d1e;
+  --bg-905: #0a1329;
+  --bg-900: #0f1c3f;
+  --bg-850: #162650;
+  --bg-800: #1e3368;
+  --border-700: #1e3368;
+  --border-650: #2a4380;
+  --border-600: #3b5998;
+  --border-550: #6082b6;
+  --text-500: #94A3B8;
+  --text-455: #CBD5E1;
+  --text-450: #CBD5E1;
+  --text-400: #CBD5E1;
+  --text-350: #E2E8F0;
+  --text-330: #E2E8F0;
+  --text-300: #F1F5F9;
+  --text-200: #F8FAFC;
+  --text-100: #FFFFFF;
+  --text-50: #FFFFFF;
+
+  --luxury-card: rgba(15, 28, 63, 0.85);
+  --luxury-border: rgba(96, 165, 250, 0.25);
+  --scrollbar-track: #070d1e;
+  --scrollbar-thumb: #1E3A8A;
+  --scrollbar-hover: #2563EB;
 }
 
 @layer base {

@@ -22,6 +22,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import ThreeDScene from '../components/ThreeDScene';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -170,7 +171,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="theme-sand min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden mesh-gradient font-cairo">
+    <div className="min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden mesh-gradient font-cairo">
       {/* Dynamic Background Glow Orbs */}
       <motion.div 
         animate={{ 
@@ -195,9 +196,10 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-luxury-border">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link to="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-2xl font-extrabold bg-gradient-to-r from-brand-300 to-brand-500 bg-clip-text text-transparent flex items-center gap-2">
+          <Link to="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-2xl font-extrabold bg-gradient-to-r from-brand-300 to-brand-500 bg-clip-text text-transparent flex items-center gap-2.5">
             <span className="w-8 h-8 rounded-lg bg-brand-500 text-white flex items-center justify-center text-lg font-bold shadow-md shadow-brand-400/20">ز</span>
-            مدرسة الزيتوني
+            <span>مدرسة الزيتوني</span>
+            <span className="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-500 font-extrabold text-xs tracking-wider">السنة الدراسية 2025/2026</span>
           </Link>
           
           <div className="hidden lg:flex items-center gap-8 text-sm font-semibold">
@@ -209,7 +211,8 @@ export default function LandingPage() {
             <a href="#contact" className="text-slate-400 hover:text-brand-500 transition-colors">اتصل بنا</a>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
+            <ThemeToggle />
             <Link
               to="/login"
               className="px-6 py-2.5 rounded-full bg-brand-500 hover:bg-brand-400 font-bold text-white transition-all hover:shadow-[0_4px_15px_rgba(197,106,61,0.3)] text-xs md:text-sm"
