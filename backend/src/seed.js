@@ -16,6 +16,7 @@ const Module = require('./models/module.model');
 const Supervisor = require('./models/supervisor.model');
 const Receptionist = require('./models/receptionist.model');
 const { FinanceTransaction, FinancialProduct, SalaryDeduction, Payroll } = require('./models/finance.model');
+const StaffAttendance = require('./models/staffAttendance.model');
 require('dotenv').config();
 
 const seedDatabase = async () => {
@@ -44,6 +45,7 @@ const seedDatabase = async () => {
     await FinancialProduct.deleteMany({});
     await SalaryDeduction.deleteMany({});
     await Payroll.deleteMany({});
+    await StaffAttendance.deleteMany({});
     console.log('Database cleared.');
 
     // 0. Seed fixed school modules (subjects)
@@ -272,38 +274,131 @@ const seedDatabase = async () => {
     });
     await Receptionist.create({ user: recepUser._id });
 
-    // 6.6. Seed Financial Products and sample transactions
+    // 6.6. Seed Financial Products, Staff Attendance Absences, Salary Deductions, Payrolls & Transactions
     const productsList = [
-      { name: 'فصل دراسي أول (الابتدائي)', price: 45000, category: 'Tuition' },
-      { name: 'فصل دراسي أول (المتوسط)', price: 55000, category: 'Tuition' },
-      { name: 'فصل دراسي أول (الثانوي)', price: 65000, category: 'Tuition' },
-      { name: 'اشتراك المطعم المدرسي (شهري)', price: 8000, category: 'Canteen' },
-      { name: 'حقيبة الكتب والقرطاسية المدرسية', price: 6500, category: 'Books' },
-      { name: 'الزي المدرسي الرياضي والرسمي', price: 4500, category: 'Uniform' },
+      { name: 'فصل دراسي أول (الابتدائي)', price: 45000, category: 'Tuition', description: 'رسوم التسجيل والفصل الدراسي الأول للمرحلة الابتدائية' },
+      { name: 'فصل دراسي أول (المتوسط)', price: 55000, category: 'Tuition', description: 'رسوم التسجيل والفصل الدراسي الأول للمرحلة المتوسطة' },
+      { name: 'فصل دراسي أول (الثانوي)', price: 65000, category: 'Tuition', description: 'رسوم التسجيل والفصل الدراسي الأول للمرحلة الثانوية' },
+      { name: 'اشتراك المطعم المدرسي (شهري)', price: 8000, category: 'Canteen', description: 'وجبة غداء صحية ومتكاملة يومياً طوال الشهر' },
+      { name: 'حقيبة الكتب والقرطاسية المدرسية', price: 6500, category: 'Books', description: 'الكتب المقررة والأدوات المدرسية المعتمدة' },
+      { name: 'الزي المدرسي الرياضي والرسمي', price: 4500, category: 'Uniform', description: 'طقم الزي المدرسي الشتوي والصيفي' },
+      { name: 'نقل مدرسي حافلات (شهري)', price: 5000, category: 'Transport', description: 'خدمة النقل عبر خطوط المدرسة' },
+      { name: 'اشتراك نادي الروبوتيك والذكاء الاصطناعي', price: 4000, category: 'Club', description: 'أنشطة علمية ومسابقات روبوتيك أسبوعية' }
     ];
     await FinancialProduct.insertMany(productsList);
 
+    // 6.7. Seed Staff Attendance & Automatic Salary Deductions across 2 months (June & July 2026)
+    const staffMembers = [
+      { u: tUser1, role: 'teacher', deductionRate: 2500 },
+      { u: tUser2, role: 'teacher', deductionRate: 2500 },
+      { u: tUser3, role: 'teacher', deductionRate: 2500 },
+      { u: genSupUser, role: 'general_supervisor', deductionRate: 3000 },
+      { u: pedSupUser, role: 'pedagogical_supervisor', deductionRate: 2800 },
+      { u: recepUser, role: 'receptionist', deductionRate: 2000 }
+    ];
+
+    const currentMonthStr = new Date().toISOString().slice(0, 7); // e.g. '2026-07'
+    const now = new Date();
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthStr = prevMonthDate.toISOString().slice(0, 7); // e.g. '2026-06'
+
+    const attendanceRecords = [];
+    const deductionRecords = [];
+
+    // Create realistic absences and attendance
+    // Teacher 1 (Math): 1 absence in June, 0 in July
+    // Teacher 2 (Science): 2 absences in June, 1 in July
+    // Teacher 3 (French): 0 absence in June, 2 in July
+    // Gen Sup: 0 absences
+    // Ped Sup: 1 absence in June
+    // Receptionist: 1 absence in July
+
+    const absenceMap = {
+      [tUser1._id.toString()]: { [prevMonthStr]: [12], [currentMonthStr]: [] },
+      [tUser2._id.toString()]: { [prevMonthStr]: [4, 18], [currentMonthStr]: [8] },
+      [tUser3._id.toString()]: { [prevMonthStr]: [], [currentMonthStr]: [3, 9] },
+      [genSupUser._id.toString()]: { [prevMonthStr]: [], [currentMonthStr]: [] },
+      [pedSupUser._id.toString()]: { [prevMonthStr]: [15], [currentMonthStr]: [] },
+      [recepUser._id.toString()]: { [prevMonthStr]: [], [currentMonthStr]: [5] }
+    };
+
+    for (const staff of staffMembers) {
+      const sId = staff.u._id.toString();
+      for (const mStr of [prevMonthStr, currentMonthStr]) {
+        const [yr, mn] = mStr.split('-').map(Number);
+        const absenceDays = absenceMap[sId]?.[mStr] || [];
+
+        // Seed 10 days of attendance for each month
+        for (let d = 1; d <= 15; d += 2) {
+          const isAbsent = absenceDays.includes(d);
+          const attDate = new Date(yr, mn - 1, d, 9, 0, 0);
+          
+          const attDoc = await StaffAttendance.create({
+            staffUser: staff.u._id,
+            role: staff.role,
+            date: attDate,
+            status: isAbsent ? 'Absent' : 'Present',
+            remarks: isAbsent ? 'غياب غير مبرر مسجل من طرف المراقب العام' : 'حضور في الوقت',
+            recordedBy: genSupUser._id,
+            deductionApplied: isAbsent,
+            deductionAmount: isAbsent ? staff.deductionRate : 0
+          });
+
+          if (isAbsent) {
+            await SalaryDeduction.create({
+              user: staff.u._id,
+              date: attDate,
+              amount: staff.deductionRate,
+              reason: `غياب غير مبرر عن العمل يوم ${attDate.toISOString().slice(0, 10)} (${attDoc.remarks})`,
+              attendanceRef: attDoc._id,
+              deductedAutomatically: true,
+              month: mStr
+            });
+          }
+        }
+      }
+    }
+
+    // 6.8. Seed Monthly Payrolls (with deductions deducted automatically)
+    for (const staff of staffMembers) {
+      const sId = staff.u._id.toString();
+      
+      for (const mStr of [prevMonthStr, currentMonthStr]) {
+        const absenceDaysCount = (absenceMap[sId]?.[mStr] || []).length;
+        const totalDeds = absenceDaysCount * staff.deductionRate;
+        const bonus = staff.role === 'teacher' ? 4000 : 6000;
+        const net = staff.u.baseSalary + bonus - totalDeds;
+
+        await Payroll.create({
+          user: staff.u._id,
+          month: mStr,
+          baseSalary: staff.u.baseSalary,
+          totalAbsenceDays: absenceDaysCount,
+          totalDeductions: totalDeds,
+          bonuses: bonus,
+          netSalary: net,
+          status: mStr === prevMonthStr ? 'Paid' : (absenceDaysCount > 0 ? 'Pending' : 'Paid'),
+          paidAt: mStr === prevMonthStr ? new Date(new Date().setDate(0)) : (absenceDaysCount === 0 ? new Date() : undefined)
+        });
+      }
+    }
+
+    // 6.9. Seed Rich Treasury Transactions (Income & Expenses)
     await FinanceTransaction.insertMany([
-      { title: 'تحصيل أقساط دراسية - أيلول', amount: 450000, type: 'INCOME', category: 'Tuition / Inscriptions', recordedBy: admin._id },
-      { title: 'اشتراكات المطعم المدرسي', amount: 80000, type: 'INCOME', category: 'Cantine', recordedBy: school._id },
-      { title: 'فاتورة الكهرباء والغاز', amount: 32000, type: 'EXPENSE', category: 'Factures (Électricité, Internet, Eau)', recordedBy: admin._id },
-      { title: 'صيانة حواسيب قاعة الإعلام الآلي', amount: 45000, type: 'EXPENSE', category: 'Maintenance', recordedBy: school._id },
+      { title: 'تحصيل أقساط دراسية للمرحلة الابتدائية والمتوسطة', amount: 850000, type: 'INCOME', category: 'Tuition / Inscriptions', recordedBy: admin._id, date: new Date(Date.now() - 25 * 86400000), description: 'تحصيل القسط الأول من 18 تلميذ' },
+      { title: 'اشتراكات المطعم المدرسي لشهر جوان وجويلية', amount: 160000, type: 'INCOME', category: 'Cantine', recordedBy: school._id, date: new Date(Date.now() - 20 * 86400000), description: 'دفع اشتراكات المطعم لـ 20 تلميذ' },
+      { title: 'تسديد رسوم الكتب والقرطاسية المدرسية', amount: 95000, type: 'INCOME', category: 'Livres & Matériel', recordedBy: admin._id, date: new Date(Date.now() - 15 * 86400000), description: 'بيع حقائب وأدوات مدرسية' },
+      { title: 'اشتراكات نادي الروبوتيك والأنشطة الرياضية', amount: 72000, type: 'INCOME', category: 'Activités / Clubs', recordedBy: school._id, date: new Date(Date.now() - 10 * 86400000), description: 'رسوم الأندية المسائية والأسبوعية' },
+      { title: 'صرف رواتب الأساتذة والموظفين لشهر جوان', amount: 410000, type: 'EXPENSE', category: 'Salaires', recordedBy: admin._id, date: new Date(new Date().setDate(0)), description: 'تحويل الرواتب الصافية بعد خصم غيابات شهر جوان' },
+      { title: 'فاتورة الكهرباء والغاز والمياه (الثلاثي الثاني)', amount: 48000, type: 'EXPENSE', category: 'Factures (Électricité, Internet, Eau)', recordedBy: admin._id, date: new Date(Date.now() - 12 * 86400000), description: 'تسديد فواتير سونلغاز وسيال' },
+      { title: 'صيانة مكيفات الهواء وأجهزة الإعلام الآلي', amount: 35000, type: 'EXPENSE', category: 'Maintenance', recordedBy: school._id, date: new Date(Date.now() - 14 * 86400000), description: 'صيانة دورية للمكيفات بقاعات التدريس وتجهيز المخابر' },
+      { title: 'شراء سبورات ذكية وتجهيزات إلكترونية للمؤسسة', amount: 120000, type: 'EXPENSE', category: 'Équipements', recordedBy: admin._id, date: new Date(Date.now() - 7 * 86400000), description: 'تجهيز قاعات المرحلة الثانوية بشاشات تفاعلية' },
+      { title: 'اشتراك شبكة الألياف البصرية (Fibre Optique)', amount: 15000, type: 'EXPENSE', category: 'Factures (Électricité, Internet, Eau)', recordedBy: school._id, date: new Date(Date.now() - 3 * 86400000), description: 'فاتورة إنترنت اتصالات الجزائر السريعة' },
+      { title: 'تحصيل أقساط دراسية للمرحلة الثانوية', amount: 390000, type: 'INCOME', category: 'Tuition / Inscriptions', recordedBy: admin._id, date: new Date(Date.now() - 2 * 86400000), description: 'تسديد الأقساط الفصلية لطلاب البكالوريا' },
+      { title: 'تجهيزات مواد التنظيف والتعقيم للمدرسة', amount: 22000, type: 'EXPENSE', category: 'Autre', recordedBy: school._id, date: new Date(Date.now() - 1 * 86400000), description: 'مستلزمات النظافة والصيانة اليومية' }
     ]);
 
-    const currentMonthStr = new Date().toISOString().slice(0, 7);
-    await Payroll.create({
-      user: tUser1._id,
-      month: currentMonthStr,
-      baseSalary: 65000,
-      totalAbsenceDays: 0,
-      totalDeductions: 0,
-      bonuses: 5000,
-      netSalary: 70000,
-      status: 'Paid',
-      paidAt: new Date(),
-    });
-
-    console.log('New Roles (Supervisors, Receptionist) and Finance data seeded successfully.');
+    console.log('Comprehensive Financial system (Attendance absences, Deductions, Payrolls & Treasury transactions) seeded successfully.');
 
     // 7. Seed Payments Invoice logs (varied types, statuses & methods)
     const paymentPlans = [
