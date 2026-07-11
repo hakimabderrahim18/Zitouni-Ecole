@@ -7,6 +7,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import ParentDashboard from './pages/ParentDashboard';
+import GeneralSupervisorDashboard from './pages/GeneralSupervisorDashboard';
+import PedagogicalSupervisorDashboard from './pages/PedagogicalSupervisorDashboard';
+import ReceptionistDashboard from './pages/ReceptionistDashboard';
 import FeedPage from './pages/FeedPage';
 import { useAuthStore } from './store/useAuthStore';
 
@@ -77,6 +80,30 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['parent']}>
             <ParentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/general-supervisor/*"
+        element={
+          <ProtectedRoute allowedRoles={['general_supervisor']}>
+            <GeneralSupervisorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/pedagogical-supervisor/*"
+        element={
+          <ProtectedRoute allowedRoles={['pedagogical_supervisor']}>
+            <PedagogicalSupervisorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/receptionist/*"
+        element={
+          <ProtectedRoute allowedRoles={['receptionist']}>
+            <ReceptionistDashboard />
           </ProtectedRoute>
         }
       />

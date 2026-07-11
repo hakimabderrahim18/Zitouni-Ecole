@@ -91,11 +91,13 @@ export default function DashboardLayout({ children }) {
         return [
           { to: '/dashboard/admin', label: 'نظرة عامة', icon: BookOpen },
           { to: '/dashboard/admin/users', label: 'حسابات المستخدمين', icon: Users },
+          { to: '/dashboard/admin/finance', label: 'التسيير المالي والرواتب والخصم التلقائي', icon: CreditCard },
           { to: '/dashboard/admin/audit', label: 'رقابة الرسائل', icon: MessageSquare },
         ];
       case 'school':
         return [
           { to: '/dashboard/admin', label: 'الأموال والفوترة', icon: CreditCard },
+          { to: '/dashboard/admin/finance', label: 'التسيير المالي والرواتب والخصم التلقائي', icon: CreditCard },
           { to: '/dashboard/admin/accounts', label: 'تنشيط وتعديل حسابات النظام', icon: Users },
           { to: '/dashboard/admin/students', label: 'قائمة التلاميذ', icon: Users },
           { to: '/dashboard/admin/teachers', label: 'قائمة الأساتذة', icon: Users },
@@ -105,6 +107,28 @@ export default function DashboardLayout({ children }) {
           { to: '/dashboard/admin/documents', label: 'المستندات الإدارية', icon: FileText },
           { to: '/dashboard/admin/schedules', label: 'إنشاء أو تعديل جدول حصص / مخطط', icon: Calendar },
           { to: '/dashboard/admin/schedules-guide', label: 'دليل الجداول والمخططات الحالية', icon: Calendar },
+        ];
+      case 'general_supervisor':
+        return [
+          { to: '/dashboard/general-supervisor', label: 'لوحة المراقب العام', icon: BookOpen },
+          { to: '/dashboard/general-supervisor/attendance', label: 'مراقبة حضور الموظفين والأساتذة', icon: Users },
+          { to: '/dashboard/general-supervisor/classes-assignment', label: 'توزيع المراقبين على الأقسام', icon: Users },
+          { to: '/dashboard/general-supervisor/damages', label: 'تقارير الإتلاف والصيانة', icon: Calendar },
+          { to: '/dashboard/general-supervisor/canteen', label: 'حجوزات المطعم (الكانتين)', icon: CreditCard },
+        ];
+      case 'pedagogical_supervisor':
+        return [
+          { to: '/dashboard/pedagogical-supervisor', label: 'لوحة المراقب التربوي', icon: BookOpen },
+          { to: '/dashboard/pedagogical-supervisor/attendance', label: 'تفقد حضور الموظفين والأساتذة', icon: Calendar },
+          { to: '/dashboard/pedagogical-supervisor/exit-pass', label: 'إصدار بطاقة ترخيص خروج تلميذ', icon: Users },
+          { to: '/dashboard/pedagogical-supervisor/damages', label: 'التبليغ عن إتلاف في التجهيزات', icon: MessageSquare },
+          { to: '/dashboard/pedagogical-supervisor/canteen', label: 'حجز المطعم المدرسي اليومي', icon: CreditCard },
+        ];
+      case 'receptionist':
+        return [
+          { to: '/dashboard/receptionist', label: 'لوحة موظف الاستقبال', icon: BookOpen },
+          { to: '/dashboard/receptionist/visitors', label: 'سجل الزوار اليومي (دخول وخروج)', icon: Users },
+          { to: '/dashboard/receptionist/exit-passes', label: 'المصادقة على بطاقات خروج التلاميذ', icon: Calendar },
         ];
       case 'teacher':
         return [
@@ -287,7 +311,7 @@ export default function DashboardLayout({ children }) {
               <div className="min-w-0">
                 <span className="block text-xs font-semibold text-white truncate">{user?.firstName} {user?.lastName}</span>
                 <span className="block text-[9px] uppercase tracking-wider text-slate-500 truncate">
-                  {user?.role === 'school' ? 'إدارة المدرسة' : user?.role === 'admin' ? 'مدير المنصة' : user?.role === 'teacher' ? 'أستاذ' : user?.role === 'student' ? 'تلميذ' : user?.role === 'parent' ? 'ولي أمر' : user?.role}
+                  {user?.role === 'school' ? 'إدارة المدرسة' : user?.role === 'admin' ? 'مدير المنصة' : user?.role === 'teacher' ? 'أستاذ' : user?.role === 'general_supervisor' ? 'مراقب عام' : user?.role === 'pedagogical_supervisor' ? 'مراقب تربوي' : user?.role === 'receptionist' ? 'موظف الاستقبال' : user?.role === 'student' ? 'تلميذ' : user?.role === 'parent' ? 'ولي أمر' : user?.role}
                 </span>
               </div>
             )}
@@ -567,7 +591,7 @@ export default function DashboardLayout({ children }) {
                   <div className="min-w-0">
                     <h3 className="text-base font-bold text-white truncate">{user?.firstName} {user?.lastName}</h3>
                     <span className="inline-block px-2.5 py-0.5 text-[9px] uppercase font-bold tracking-wider rounded-full bg-brand-100 text-brand-700 border border-brand-300/40 mt-1">
-                      {user?.role === 'school' ? 'إدارة المدرسة' : user?.role === 'admin' ? 'مدير المنصة' : user?.role === 'teacher' ? 'أستاذ' : user?.role === 'student' ? 'تلميذ' : user?.role === 'parent' ? 'ولي أمر' : user?.role}
+                      {user?.role === 'school' ? 'إدارة المدرسة' : user?.role === 'admin' ? 'مدير المنصة' : user?.role === 'teacher' ? 'أستاذ' : user?.role === 'general_supervisor' ? 'مراقب عام' : user?.role === 'pedagogical_supervisor' ? 'مراقب تربوي' : user?.role === 'receptionist' ? 'موظف الاستقبال' : user?.role === 'student' ? 'تلميذ' : user?.role === 'parent' ? 'ولي أمر' : user?.role}
                     </span>
                   </div>
                 </div>

@@ -21,6 +21,9 @@ const parentRoutes = require('./routes/parent.routes');
 const messageRoutes = require('./routes/message.routes');
 const postRoutes = require('./routes/post.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const supervisorRoutes = require('./routes/supervisor.routes');
+const receptionistRoutes = require('./routes/receptionist.routes');
+const financeRoutes = require('./routes/finance.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -85,6 +88,9 @@ app.use('/api/parents', parentRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/supervisors', supervisorRoutes);
+app.use('/api/receptionist', receptionistRoutes);
+app.use('/api/finance', financeRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

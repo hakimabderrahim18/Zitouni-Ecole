@@ -3,6 +3,8 @@ const User = require('../models/user.model');
 const Teacher = require('../models/teacher.model');
 const Student = require('../models/student.model');
 const Parent = require('../models/parent.model');
+const Supervisor = require('../models/supervisor.model');
+const Receptionist = require('../models/receptionist.model');
 
 // Sanitize a JWT expiry value from the environment. jwt.sign only accepts a
 // number of seconds or a timespan string like "15m"/"7d". A malformed env var
@@ -36,14 +38,18 @@ const generateTokens = (userId) => {
 
 // Login user
 const login = async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, username, identifier, password } = req.body;
 
   try {
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide email and password' });
+    const loginId = (identifier || username || email || '').trim().toLowerCase();
+    if (!loginId || !password) {
+      return res.status(400).json({ message: 'Please provide username/email and password' });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({
+      $or: [{ email: loginId }, { username: loginId }],
+    }).select('+password');
+
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -69,17 +75,24 @@ const login = async (req, res, next) => {
         path: 'children',
         populate: { path: 'user class group' },
       });
+    } else if (user.role === 'general_supervisor' || user.role === 'pedagogical_supervisor') {
+      profile = await Supervisor.findOne({ user: user._id }).populate('assignedClasses assignedTeachers');
+    } else if (user.role === 'receptionist') {
+      profile = await Receptionist.findOne({ user: user._id });
     }
 
     res.status(200).json({
       user: {
         id: user._id,
+        username: user.username || user.email.split('@')[0],
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
         phoneNumber: user.phoneNumber,
         profilePic: user.profilePic,
+        baseSalary: user.baseSalary,
+        salaryDeductionPerAbsence: user.salaryDeductionPerAbsence,
       },
       profile,
       accessToken,

@@ -3,6 +3,13 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
   {
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+    },
     email: {
       type: String,
       required: true,
@@ -27,12 +34,29 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['admin', 'school', 'teacher', 'student', 'parent'],
+      enum: [
+        'admin',
+        'school',
+        'teacher',
+        'student',
+        'parent',
+        'general_supervisor',
+        'pedagogical_supervisor',
+        'receptionist',
+      ],
       required: true,
     },
     phoneNumber: {
       type: String,
       trim: true,
+    },
+    baseSalary: {
+      type: Number,
+      default: 0,
+    },
+    salaryDeductionPerAbsence: {
+      type: Number,
+      default: 2000,
     },
     isActive: {
       type: Boolean,

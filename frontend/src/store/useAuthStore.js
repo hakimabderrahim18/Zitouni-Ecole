@@ -27,10 +27,15 @@ export const useAuthStore = create((set, get) => ({
     set({ user: null, profile: null, accessToken: null, refreshToken: null, error: null });
   },
 
-  login: async (email, password) => {
+  login: async (identifier, password) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await axios.post('/api/auth/login', {
+        identifier,
+        username: identifier,
+        email: identifier,
+        password,
+      });
       const { user, profile, accessToken, refreshToken } = response.data;
 
       get().setSession(user, profile, accessToken, refreshToken);

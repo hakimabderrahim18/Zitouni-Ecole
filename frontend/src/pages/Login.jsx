@@ -12,29 +12,31 @@ export default function Login() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
 
   const prefilledAccounts = {
-    admin: { email: 'admin@ecole-zitouni.dz', password: 'Admin123!' },
-    school: { email: 'school@ecole-zitouni.dz', password: 'School123!' },
-    teacher: { email: 'teacher.math@ecole-zitouni.dz', password: 'Teacher123!' },
-    student: { email: 'student.yanis@ecole-zitouni.dz', password: '2014-03-20' },
-    parent: { email: 'parent.meziane@ecole-zitouni.dz', password: '0550110011' },
+    admin: { identifier: 'admin', password: 'Admin123!' },
+    school: { identifier: 'school', password: 'School123!' },
+    teacher: { identifier: 'teacher.math', password: '0550111111' },
+    general_supervisor: { identifier: 'superviseur.gen', password: '0550112233' },
+    pedagogical_supervisor: { identifier: 'superviseur.ped', password: '0550445566' },
+    receptionist: { identifier: 'receptionniste', password: '0550778899' },
+    student: { identifier: 'student.yanis', password: '2014-03-20' },
+    parent: { identifier: 'parent.meziane', password: '0550110011' },
   };
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
-    setEmail(prefilledAccounts[role].email);
+    setIdentifier(prefilledAccounts[role].identifier);
     setPassword(prefilledAccounts[role].password);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(email, password);
-      // Every role lands on the news feed first after logging in
+      await login(identifier, password);
       navigate('/feed');
     } catch (err) {
       console.error(err);
@@ -43,8 +45,11 @@ export default function Login() {
 
   const roleLabels = {
     admin: 'مدير المنصة',
-    school: 'الإدارة',
+    school: 'الإدارة المدرسيّة',
     teacher: 'أستاذ',
+    general_supervisor: 'مراقب عام',
+    pedagogical_supervisor: 'مراقب تربوي',
+    receptionist: 'موظف الاستقبال',
     student: 'تلميذ',
     parent: 'ولي أمر',
   };
@@ -124,7 +129,7 @@ export default function Login() {
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                 تحديد الحساب للتجربة السريعة
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {Object.keys(prefilledAccounts).map((role) => (
                   <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -132,7 +137,7 @@ export default function Login() {
                     key={role}
                     type="button"
                     onClick={() => handleRoleSelect(role)}
-                    className={`py-2 px-4 rounded-xl text-xs font-bold transition-all duration-300 flex-grow text-center ${
+                    className={`py-2 px-2.5 rounded-xl text-[11px] font-bold transition-all duration-300 flex-grow text-center truncate ${
                       selectedRole === role
                         ? 'bg-brand-500/15 border border-brand-500/50 text-brand-400 shadow-[0_0_15px_rgba(244,180,0,0.15)]'
                         : 'bg-white/[0.03] border border-white/5 text-slate-400 hover:bg-white/[0.06] hover:text-white'
@@ -164,18 +169,18 @@ export default function Login() {
             >
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 block ps-1">
-                  البريد الإلكتروني
+                  اسم المستخدم أو البريد الإلكتروني
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 start-0 flex items-center ps-4 pointer-events-none">
                     <Mail className="w-5 h-5 text-slate-500 group-focus-within:text-brand-500 transition-colors duration-300" />
                   </div>
                   <input
-                    type="email"
+                    type="text"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@ecole-zitouni.dz"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="username / email@ecole-zitouni.dz"
                     className="w-full ps-12 pe-4 py-3.5 bg-white/[0.03] border border-white/10 hover:border-white/20 focus:border-brand-500/50 focus:bg-white/[0.05] rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all duration-300 text-white placeholder-slate-600 text-start text-sm font-medium shadow-inner"
                   />
                 </div>

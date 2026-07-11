@@ -13,6 +13,9 @@ const Course = require('./models/course.model');
 const Attendance = require('./models/attendance.model');
 const Notification = require('./models/notification.model');
 const Module = require('./models/module.model');
+const Supervisor = require('./models/supervisor.model');
+const Receptionist = require('./models/receptionist.model');
+const { FinanceTransaction, FinancialProduct, SalaryDeduction, Payroll } = require('./models/finance.model');
 require('dotenv').config();
 
 const seedDatabase = async () => {
@@ -35,6 +38,12 @@ const seedDatabase = async () => {
     await Attendance.deleteMany({});
     await Notification.deleteMany({});
     await Module.deleteMany({});
+    await Supervisor.deleteMany({});
+    await Receptionist.deleteMany({});
+    await FinanceTransaction.deleteMany({});
+    await FinancialProduct.deleteMany({});
+    await SalaryDeduction.deleteMany({});
+    await Payroll.deleteMany({});
     console.log('Database cleared.');
 
     // 0. Seed fixed school modules (subjects)
@@ -111,14 +120,44 @@ const seedDatabase = async () => {
     const [g3] = groupsOf(c2._id);
     const [g4, g5] = groupsOf(c3._id);
 
-    // 3. Create 3 Teachers
-    const tUser1 = await User.create({ email: 'teacher.math@ecole-zitouni.dz', password: 'Teacher123!', firstName: 'كمال', lastName: 'دحماني', role: 'teacher' });
+    // 3. Create 3 Teachers (password = phone number automatically)
+    const tUser1 = await User.create({
+      username: 'teacher.math',
+      email: 'teacher.math@ecole-zitouni.dz',
+      password: '0550111111',
+      firstName: 'كمال',
+      lastName: 'دحماني',
+      role: 'teacher',
+      phoneNumber: '0550111111',
+      baseSalary: 65000,
+      salaryDeductionPerAbsence: 2500,
+    });
     const tProf1 = await Teacher.create({ user: tUser1._id, subjects: ['رياضيات'], classes: [c1._id, c3._id], groups: [g1._id, g4._id] });
 
-    const tUser2 = await User.create({ email: 'teacher.science@ecole-zitouni.dz', password: 'Teacher123!', firstName: 'نادية', lastName: 'صالحي', role: 'teacher' });
+    const tUser2 = await User.create({
+      username: 'teacher.science',
+      email: 'teacher.science@ecole-zitouni.dz',
+      password: '0550222222',
+      firstName: 'نادية',
+      lastName: 'صالحي',
+      role: 'teacher',
+      phoneNumber: '0550222222',
+      baseSalary: 65000,
+      salaryDeductionPerAbsence: 2500,
+    });
     const tProf2 = await Teacher.create({ user: tUser2._id, subjects: ['علوم طبيعية'], classes: [c1._id, c2._id], groups: [g2._id, g3._id] });
 
-    const tUser3 = await User.create({ email: 'teacher.arabe@ecole-zitouni.dz', password: 'Teacher123!', firstName: 'عبد الحميد', lastName: 'حداد', role: 'teacher' });
+    const tUser3 = await User.create({
+      username: 'teacher.arabe',
+      email: 'teacher.arabe@ecole-zitouni.dz',
+      password: '0550333333',
+      firstName: 'عبد الحميد',
+      lastName: 'حداد',
+      role: 'teacher',
+      phoneNumber: '0550333333',
+      baseSalary: 65000,
+      salaryDeductionPerAbsence: 2500,
+    });
     const tProf3 = await Teacher.create({ user: tUser3._id, subjects: ['لغة عربية', 'تاريخ وجغرافيا'], classes: [c1._id, c2._id, c3._id], groups: [g1._id, g3._id, g5._id] });
 
     // Link teachers to groups
@@ -130,36 +169,36 @@ const seedDatabase = async () => {
 
     // 4. Create 5 Parents (password = phone number)
     const parentAccounts = [
-      { email: 'parent.meziane@ecole-zitouni.dz', firstName: 'سفيان', lastName: 'مزيان', profession: 'مهندس', address: 'أولاد فايت', phone: '0550110011' },
-      { email: 'parent.belaid@ecole-zitouni.dz', firstName: 'سارة', lastName: 'بلعيد', profession: 'طبيبة', address: 'أولاد فايت', phone: '0550220022' },
-      { email: 'parent.toumi@ecole-zitouni.dz', firstName: 'رشيد', lastName: 'تومي', profession: 'محامي', address: 'أولاد فايت', phone: '0550330033' },
-      { email: 'parent.amrani@ecole-zitouni.dz', firstName: 'فتيحة', lastName: 'عمراني', profession: 'أستاذة', address: 'أولاد فايت', phone: '0550440044' },
-      { email: 'parent.slimani@ecole-zitouni.dz', firstName: 'مراد', lastName: 'سليماني', profession: 'تاجر', address: 'أولاد فايت', phone: '0550550055' }
+      { username: 'parent.meziane', email: 'parent.meziane@ecole-zitouni.dz', firstName: 'سفيان', lastName: 'مزيان', profession: 'مهندس', address: 'أولاد فايت', phone: '0550110011' },
+      { username: 'parent.belaid', email: 'parent.belaid@ecole-zitouni.dz', firstName: 'سارة', lastName: 'بلعيد', profession: 'طبيبة', address: 'أولاد فايت', phone: '0550220022' },
+      { username: 'parent.toumi', email: 'parent.toumi@ecole-zitouni.dz', firstName: 'رشيد', lastName: 'تومي', profession: 'محامي', address: 'أولاد فايت', phone: '0550330033' },
+      { username: 'parent.amrani', email: 'parent.amrani@ecole-zitouni.dz', firstName: 'فتيحة', lastName: 'عمراني', profession: 'أستاذة', address: 'أولاد فايت', phone: '0550440044' },
+      { username: 'parent.slimani', email: 'parent.slimani@ecole-zitouni.dz', firstName: 'مراد', lastName: 'سليماني', profession: 'تاجر', address: 'أولاد فايت', phone: '0550550055' }
     ];
 
     const parents = [];
     for (const p of parentAccounts) {
-      const u = await User.create({ email: p.email, password: p.phone, firstName: p.firstName, lastName: p.lastName, role: 'parent', phoneNumber: p.phone });
+      const u = await User.create({ username: p.username, email: p.email, password: p.phone, firstName: p.firstName, lastName: p.lastName, role: 'parent', phoneNumber: p.phone });
       const prof = await Parent.create({ user: u._id, profession: p.profession, address: p.address });
       parents.push(prof);
     }
 
     // 5. Create 10 Students (Linked to parents and classrooms)
     const studentData = [
-      { email: 'student.yanis@ecole-zitouni.dz', firstName: 'يانيس', lastName: 'مزيان', reg: 'REG-26-001', parent: parents[0], class: c1, group: g1 },
-      { email: 'student.leila@ecole-zitouni.dz', firstName: 'ليلى', lastName: 'مزيان', reg: 'REG-26-002', parent: parents[0], class: c2, group: g3 },
+      { username: 'student.yanis', email: 'student.yanis@ecole-zitouni.dz', firstName: 'يانيس', lastName: 'مزيان', reg: 'REG-26-001', parent: parents[0], class: c1, group: g1 },
+      { username: 'student.leila', email: 'student.leila@ecole-zitouni.dz', firstName: 'ليلى', lastName: 'مزيان', reg: 'REG-26-002', parent: parents[0], class: c2, group: g3 },
       
-      { email: 'student.meriem@ecole-zitouni.dz', firstName: 'مريم', lastName: 'بلعيد', reg: 'REG-26-003', parent: parents[1], class: c1, group: g1 },
-      { email: 'student.amin@ecole-zitouni.dz', firstName: 'أمين', lastName: 'بلعيد', reg: 'REG-26-004', parent: parents[1], class: c3, group: g4 },
+      { username: 'student.meriem', email: 'student.meriem@ecole-zitouni.dz', firstName: 'مريم', lastName: 'بلعيد', reg: 'REG-26-003', parent: parents[1], class: c1, group: g1 },
+      { username: 'student.amin', email: 'student.amin@ecole-zitouni.dz', firstName: 'أمين', lastName: 'بلعيد', reg: 'REG-26-004', parent: parents[1], class: c3, group: g4 },
 
-      { email: 'student.samir@ecole-zitouni.dz', firstName: 'سمير', lastName: 'تومي', reg: 'REG-26-005', parent: parents[2], class: c1, group: g2 },
-      { email: 'student.lynda@ecole-zitouni.dz', firstName: 'ليندة', lastName: 'تومي', reg: 'REG-26-006', parent: parents[2], class: c3, group: g5 },
+      { username: 'student.samir', email: 'student.samir@ecole-zitouni.dz', firstName: 'سمير', lastName: 'تومي', reg: 'REG-26-005', parent: parents[2], class: c1, group: g2 },
+      { username: 'student.lynda', email: 'student.lynda@ecole-zitouni.dz', firstName: 'ليندة', lastName: 'تومي', reg: 'REG-26-006', parent: parents[2], class: c3, group: g5 },
 
-      { email: 'student.riad@ecole-zitouni.dz', firstName: 'رياض', lastName: 'عمراني', reg: 'REG-26-007', parent: parents[3], class: c2, group: g3 },
-      { email: 'student.feriel@ecole-zitouni.dz', firstName: 'فريال', lastName: 'عمراني', reg: 'REG-26-008', parent: parents[3], class: c3, group: g4 },
+      { username: 'student.riad', email: 'student.riad@ecole-zitouni.dz', firstName: 'رياض', lastName: 'عمراني', reg: 'REG-26-007', parent: parents[3], class: c2, group: g3 },
+      { username: 'student.feriel', email: 'student.feriel@ecole-zitouni.dz', firstName: 'فريال', lastName: 'عمراني', reg: 'REG-26-008', parent: parents[3], class: c3, group: g4 },
 
-      { email: 'student.anis@ecole-zitouni.dz', firstName: 'أنيس', lastName: 'سليماني', reg: 'REG-26-009', parent: parents[4], class: c1, group: g2 },
-      { email: 'student.kenza@ecole-zitouni.dz', firstName: 'كنزة', lastName: 'سليماني', reg: 'REG-26-010', parent: parents[4], class: c2, group: g3 }
+      { username: 'student.anis', email: 'student.anis@ecole-zitouni.dz', firstName: 'أنيس', lastName: 'سليماني', reg: 'REG-26-009', parent: parents[4], class: c1, group: g2 },
+      { username: 'student.kenza', email: 'student.kenza@ecole-zitouni.dz', firstName: 'كنزة', lastName: 'سليماني', reg: 'REG-26-010', parent: parents[4], class: c2, group: g3 }
     ];
 
     const students = [];
@@ -167,7 +206,7 @@ const seedDatabase = async () => {
       const dob = s.dob ? new Date(s.dob) : new Date('2014-03-20');
       // Student password must be their date of birth (YYYY-MM-DD)
       const dobPassword = dob.toISOString().split('T')[0];
-      const u = await User.create({ email: s.email, password: dobPassword, firstName: s.firstName, lastName: s.lastName, role: 'student' });
+      const u = await User.create({ username: s.username, email: s.email, password: dobPassword, firstName: s.firstName, lastName: s.lastName, role: 'student' });
       const prof = await Student.create({
         user: u._id,
         registrationNumber: s.reg,
@@ -185,10 +224,86 @@ const seedDatabase = async () => {
     console.log('10 Students and parent associations established.');
 
     // 6. Create standard Platform Admins
-    const admin = await User.create({ email: 'admin@ecole-zitouni.dz', password: 'Admin123!', firstName: 'مالك', lastName: 'زيتوني', role: 'admin' });
-    const school = await User.create({ email: 'school@ecole-zitouni.dz', password: 'School123!', firstName: 'أمال', lastName: 'بن علي', role: 'school' });
+    const admin = await User.create({ username: 'admin', email: 'admin@ecole-zitouni.dz', password: 'Admin123!', firstName: 'مالك', lastName: 'زيتوني', role: 'admin' });
+    const school = await User.create({ username: 'school', email: 'school@ecole-zitouni.dz', password: 'School123!', firstName: 'أمال', lastName: 'بن علي', role: 'school' });
 
-    // No separate generic test user creation, to prevent orphaned name-based accounts.
+    // 6.5. Create New Roles (Superviseur Général, Superviseur Pédagogique, Réceptionniste)
+    const genSupUser = await User.create({
+      username: 'superviseur.gen',
+      email: 'superviseur.gen@ecole-zitouni.dz',
+      password: '0550112233',
+      firstName: 'عمر',
+      lastName: 'القايد',
+      role: 'general_supervisor',
+      phoneNumber: '0550112233',
+      baseSalary: 85000,
+      salaryDeductionPerAbsence: 3000,
+    });
+    await Supervisor.create({ user: genSupUser._id, supervisorType: 'general_supervisor' });
+
+    const pedSupUser = await User.create({
+      username: 'superviseur.ped',
+      email: 'superviseur.ped@ecole-zitouni.dz',
+      password: '0550445566',
+      firstName: 'زكية',
+      lastName: 'بن عيسى',
+      role: 'pedagogical_supervisor',
+      phoneNumber: '0550445566',
+      baseSalary: 75000,
+      salaryDeductionPerAbsence: 2800,
+    });
+    await Supervisor.create({
+      user: pedSupUser._id,
+      supervisorType: 'pedagogical_supervisor',
+      assignedClasses: [c1._id, c2._id, c3._id],
+      assignedTeachers: [tProf1._id, tProf2._id, tProf3._id],
+    });
+
+    const recepUser = await User.create({
+      username: 'receptionniste',
+      email: 'receptionniste@ecole-zitouni.dz',
+      password: '0550778899',
+      firstName: 'كريم',
+      lastName: 'منصور',
+      role: 'receptionist',
+      phoneNumber: '0550778899',
+      baseSalary: 55000,
+      salaryDeductionPerAbsence: 2000,
+    });
+    await Receptionist.create({ user: recepUser._id });
+
+    // 6.6. Seed Financial Products and sample transactions
+    const productsList = [
+      { name: 'فصل دراسي أول (الابتدائي)', price: 45000, category: 'Tuition' },
+      { name: 'فصل دراسي أول (المتوسط)', price: 55000, category: 'Tuition' },
+      { name: 'فصل دراسي أول (الثانوي)', price: 65000, category: 'Tuition' },
+      { name: 'اشتراك المطعم المدرسي (شهري)', price: 8000, category: 'Canteen' },
+      { name: 'حقيبة الكتب والقرطاسية المدرسية', price: 6500, category: 'Books' },
+      { name: 'الزي المدرسي الرياضي والرسمي', price: 4500, category: 'Uniform' },
+    ];
+    await FinancialProduct.insertMany(productsList);
+
+    await FinanceTransaction.insertMany([
+      { title: 'تحصيل أقساط دراسية - أيلول', amount: 450000, type: 'INCOME', category: 'Tuition / Inscriptions', recordedBy: admin._id },
+      { title: 'اشتراكات المطعم المدرسي', amount: 80000, type: 'INCOME', category: 'Cantine', recordedBy: school._id },
+      { title: 'فاتورة الكهرباء والغاز', amount: 32000, type: 'EXPENSE', category: 'Factures (Électricité, Internet, Eau)', recordedBy: admin._id },
+      { title: 'صيانة حواسيب قاعة الإعلام الآلي', amount: 45000, type: 'EXPENSE', category: 'Maintenance', recordedBy: school._id },
+    ]);
+
+    const currentMonthStr = new Date().toISOString().slice(0, 7);
+    await Payroll.create({
+      user: tUser1._id,
+      month: currentMonthStr,
+      baseSalary: 65000,
+      totalAbsenceDays: 0,
+      totalDeductions: 0,
+      bonuses: 5000,
+      netSalary: 70000,
+      status: 'Paid',
+      paidAt: new Date(),
+    });
+
+    console.log('New Roles (Supervisors, Receptionist) and Finance data seeded successfully.');
 
     // 7. Seed Payments Invoice logs (varied types, statuses & methods)
     const paymentPlans = [

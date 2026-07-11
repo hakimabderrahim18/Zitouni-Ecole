@@ -7,6 +7,7 @@ import { Users, CreditCard, BookOpen, Upload, Plus, FileText, Calendar, ShieldAl
 import ScheduleCard from '../components/ScheduleCard';
 import ScheduleTypePanel from '../components/ScheduleTypePanel';
 import SchedulesGuide from '../components/SchedulesGuide';
+import FinanceModule from '../components/FinanceModule';
 import axios from 'axios';
 
 export default function AdminDashboard() {
@@ -18,6 +19,7 @@ export default function AdminDashboard() {
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.endsWith('/users')) return 'users';
+    if (path.endsWith('/finance')) return 'finance';
     if (path.endsWith('/accounts')) return 'accounts';
     if (path.endsWith('/students')) return 'students';
     if (path.endsWith('/teachers')) return 'teachers';
@@ -820,6 +822,8 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
+
+        {activeTab === 'finance' && <FinanceModule />}
 
         {activeTab === 'overview' && (
           <div className="space-y-8 text-right">
