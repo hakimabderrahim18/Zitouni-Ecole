@@ -41,16 +41,42 @@ const login = async (req, res, next) => {
   const { email, username, identifier, password } = req.body;
 
   try {
-    const loginId = (identifier || username || email || '').trim().toLowerCase();
-    if (!loginId || !password) {
+    let loginId = (identifier || username || email || '').trim().toLowerCase().replace(/^@/, '');
+    const cleanPassword = (password || '').trim();
+
+    if (!loginId || !cleanPassword) {
       return res.status(400).json({ message: 'Please provide username/email and password' });
     }
 
-    const user = await User.findOne({
+    // Handle common aliases if the user typed just the role name or shortcut
+    const aliases = {
+      teacher: 'teacher.math',
+      student: 'student.yanis',
+      parent: 'parent.meziane',
+      general_supervisor: 'superviseur.gen',
+      superviseur: 'superviseur.gen',
+      pedagogical_supervisor: 'superviseur.ped',
+      receptionist: 'receptionniste',
+    };
+    if (aliases[loginId]) {
+      loginId = aliases[loginId];
+    }
+
+    let user = await User.findOne({
       $or: [{ email: loginId }, { username: loginId }],
     }).select('+password');
 
-    if (!user || !(await user.comparePassword(password))) {
+    // Fallback: search by start of username if not found exactly
+    if (!user) {
+      user = await User.findOne({
+        $or: [
+          { username: { $regex: new RegExp(`^${loginId}`, 'i') } },
+          { email: { $regex: new RegExp(`^${loginId}`, 'i') } }
+        ]
+      }).select('+password');
+    }
+
+    if (!user || !(await user.comparePassword(cleanPassword))) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
