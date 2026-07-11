@@ -10,6 +10,9 @@ const roleLabels = {
   admin: 'الإدارة',
   school: 'المدرسة',
   teacher: 'أستاذ',
+  general_supervisor: 'مراقب عام',
+  pedagogical_supervisor: 'مراقب تربوي',
+  receptionist: 'موظف الاستقبال',
   student: 'تلميذ',
   parent: 'ولي أمر',
 };
@@ -18,6 +21,9 @@ const roleBadge = {
   admin: 'bg-rose-500/10 text-rose-300 border-rose-500/20',
   school: 'bg-violet-500/10 text-violet-300 border-violet-500/20',
   teacher: 'bg-brand-500/10 text-brand-300 border-brand-500/25',
+  general_supervisor: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+  pedagogical_supervisor: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25',
+  receptionist: 'bg-teal-500/10 text-teal-300 border-teal-500/25',
   student: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
   parent: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
 };

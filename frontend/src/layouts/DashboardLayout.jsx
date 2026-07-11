@@ -75,12 +75,18 @@ export default function DashboardLayout({ children }) {
       else if (user?.role === 'teacher') navigate('/dashboard/teacher/courses');
       else if (user?.role === 'parent') navigate('/dashboard/parent');
       else if (user?.role === 'school') navigate('/dashboard/admin/classes');
+      else if (user?.role === 'general_supervisor') navigate('/dashboard/general-supervisor');
+      else if (user?.role === 'pedagogical_supervisor') navigate('/dashboard/pedagogical-supervisor');
+      else if (user?.role === 'receptionist') navigate('/dashboard/receptionist');
       else navigate('/dashboard/admin');
     } else if (notif.type === 'schedule') {
       if (user?.role === 'student') navigate('/dashboard/student/schedules');
       else if (user?.role === 'parent') navigate('/dashboard/parent');
       else if (user?.role === 'teacher') navigate('/dashboard/teacher');
       else if (user?.role === 'school') navigate('/dashboard/admin/schedules');
+      else if (user?.role === 'general_supervisor') navigate('/dashboard/general-supervisor');
+      else if (user?.role === 'pedagogical_supervisor') navigate('/dashboard/pedagogical-supervisor');
+      else if (user?.role === 'receptionist') navigate('/dashboard/receptionist');
       else navigate('/dashboard/admin');
     }
   };

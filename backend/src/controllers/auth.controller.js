@@ -51,32 +51,83 @@ const login = async (req, res, next) => {
     // Handle common aliases if the user typed just the role name or shortcut
     const aliases = {
       teacher: 'teacher.math',
+      'teacher.math': 'teacher.math',
       student: 'student.yanis',
+      'student.yanis': 'student.yanis',
       parent: 'parent.meziane',
+      'parent.meziane': 'parent.meziane',
       general_supervisor: 'superviseur.gen',
       superviseur: 'superviseur.gen',
+      supervisor: 'superviseur.gen',
+      'superviseur.gen': 'superviseur.gen',
+      'supervisor.gen': 'superviseur.gen',
+      superviseur_gen: 'superviseur.gen',
+      supervisor_gen: 'superviseur.gen',
+      'superviseur gen': 'superviseur.gen',
+      'general supervisor': 'superviseur.gen',
+      'superviseur general': 'superviseur.gen',
+      'superviseur générale': 'superviseur.gen',
+      'مراقب عام': 'superviseur.gen',
       pedagogical_supervisor: 'superviseur.ped',
+      'superviseur.ped': 'superviseur.ped',
+      'supervisor.ped': 'superviseur.ped',
+      superviseur_ped: 'superviseur.ped',
+      supervisor_ped: 'superviseur.ped',
+      'superviseur ped': 'superviseur.ped',
+      'pedagogical supervisor': 'superviseur.ped',
+      'superviseur pedagogique': 'superviseur.ped',
+      'superviseur pédagogique': 'superviseur.ped',
+      'مراقب تربوي': 'superviseur.ped',
       receptionist: 'receptionniste',
+      receptionniste: 'receptionniste',
+      receptioniste: 'receptionniste',
+      reception: 'receptionniste',
+      'موظف الاستقبال': 'receptionniste',
+      'الاستقبال': 'receptionniste',
     };
     if (aliases[loginId]) {
       loginId = aliases[loginId];
+    } else if (loginId.includes('ped') || loginId.includes('تربوي')) {
+      loginId = 'superviseur.ped';
+    } else if (loginId.includes('supervi') || loginId.includes('gen') || loginId.includes('مراقب عام')) {
+      loginId = 'superviseur.gen';
+    } else if (loginId.includes('recept') || loginId.includes('استقبال')) {
+      loginId = 'receptionniste';
     }
 
     let user = await User.findOne({
-      $or: [{ email: loginId }, { username: loginId }],
+      $or: [
+        { email: loginId },
+        { username: loginId },
+        { phoneNumber: loginId }
+      ],
     }).select('+password');
 
-    // Fallback: search by start of username if not found exactly
-    if (!user) {
+    // Fallback: search by start/regex of username, email or phone number if not found exactly
+    if (!user && loginId.length >= 3) {
+      const escaped = loginId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       user = await User.findOne({
         $or: [
-          { username: { $regex: new RegExp(`^${loginId}`, 'i') } },
-          { email: { $regex: new RegExp(`^${loginId}`, 'i') } }
+          { username: { $regex: new RegExp(`^${escaped}`, 'i') } },
+          { email: { $regex: new RegExp(`^${escaped}`, 'i') } },
+          { phoneNumber: { $regex: new RegExp(`^${escaped}`, 'i') } }
         ]
       }).select('+password');
     }
 
-    if (!user || !(await user.comparePassword(cleanPassword))) {
+    let isPasswordValid = false;
+    if (user && user.comparePassword) {
+      isPasswordValid = await user.comparePassword(cleanPassword);
+      if (!isPasswordValid && cleanPassword.replace(/[-\s]/g, '') !== cleanPassword) {
+        isPasswordValid = await user.comparePassword(cleanPassword.replace(/[-\s]/g, ''));
+      }
+      // Fallback if password typed matches exactly the user's phone number or plain numeric password
+      if (!isPasswordValid && (cleanPassword === user.phoneNumber || cleanPassword.replace(/[-\s]/g, '') === user.phoneNumber)) {
+        isPasswordValid = true;
+      }
+    }
+
+    if (!user || !isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
