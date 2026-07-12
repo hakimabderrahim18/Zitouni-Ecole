@@ -2,6 +2,8 @@ const User = require('../models/user.model');
 const Teacher = require('../models/teacher.model');
 const Student = require('../models/student.model');
 const Parent = require('../models/parent.model');
+const Supervisor = require('../models/supervisor.model');
+const Receptionist = require('../models/receptionist.model');
 const Class = require('../models/class.model');
 const Group = require('../models/group.model');
 const Schedule = require('../models/schedule.model');
@@ -13,41 +15,47 @@ const AdminDocument = require('../models/document.model');
 const fs = require('fs');
 const path = require('path');
 
-// Manual Creation of Accounts
+// Manual Creation of Accounts (Supports ALL roles: admin, school, teacher, student, parent, general_supervisor, pedagogical_supervisor, receptionist)
 const createUser = async (req, res, next) => {
   const { email, password, firstName, lastName, role, phoneNumber, details } = req.body;
+  const username = req.body.username || (email ? email.split('@')[0] : `${role}_${Date.now()}`);
 
   try {
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({
+      $or: [{ email: email || `${username}@ecole-zitouni.dz` }, { username }]
+    });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User already exists with this email or username' });
     }
 
     // Enforce business rules for account passwords:
-    //  - Parent password must be their phone number.
-    //  - Student password must be their date of birth (YYYY-MM-DD).
+    //  - Parent / Teacher / Supervisor / Receptionist password defaults to phone number if not explicitly set
+    //  - Student password defaults to date of birth (YYYY-MM-DD)
     let finalPassword = password;
-    if (role === 'parent') {
-      if (!phoneNumber) {
-        return res.status(400).json({ message: 'Phone number is required for parent accounts (used as password)' });
+    if (role === 'parent' || role === 'teacher' || role === 'general_supervisor' || role === 'pedagogical_supervisor' || role === 'receptionist') {
+      if (!password && !phoneNumber) {
+        return res.status(400).json({ message: `Le numéro de téléphone (ou mot de passe) est requis pour le rôle ${role}` });
       }
-      finalPassword = String(phoneNumber);
+      finalPassword = password || String(phoneNumber);
     } else if (role === 'student') {
       const dob = details && details.dateOfBirth;
-      if (!dob) {
-        return res.status(400).json({ message: 'Date of birth is required for student accounts (used as password)' });
+      if (!password && !dob) {
+        return res.status(400).json({ message: 'Date of birth is required for student accounts (used as default password)' });
       }
-      // Normalise to YYYY-MM-DD
-      finalPassword = new Date(dob).toISOString().split('T')[0];
+      finalPassword = password || (dob ? new Date(dob).toISOString().split('T')[0] : 'Zitouni2026!');
+    } else if (role === 'admin' || role === 'school') {
+      finalPassword = password || String(phoneNumber || 'Admin123!');
     }
 
     const user = await User.create({
-      email,
+      username,
+      email: email || `${username}@ecole-zitouni.dz`,
       password: finalPassword,
-      firstName,
-      lastName,
+      firstName: firstName || role,
+      lastName: lastName || 'Utilisateur',
       role,
       phoneNumber,
+      isActive: true,
     });
 
     let profile = null;
@@ -55,13 +63,12 @@ const createUser = async (req, res, next) => {
     if (role === 'teacher') {
       profile = await Teacher.create({
         user: user._id,
-        subjects: details.subjects || [],
-        classes: details.classes || [],
-        groups: details.groups || [],
-        assignments: Array.isArray(details.assignments) ? details.assignments : [],
+        subjects: (details && details.subjects) || [],
+        classes: (details && details.classes) || [],
+        groups: (details && details.groups) || [],
+        assignments: (details && Array.isArray(details.assignments)) ? details.assignments : [],
       });
-      // Bidirectional sync for Group.teachers on creation
-      if (details.groups && details.groups.length > 0) {
+      if (details && details.groups && details.groups.length > 0) {
         await Group.updateMany(
           { _id: { $in: details.groups } },
           { $addToSet: { teachers: profile._id } }
@@ -70,11 +77,10 @@ const createUser = async (req, res, next) => {
     } else if (role === 'parent') {
       profile = await Parent.create({
         user: user._id,
-        profession: details.profession,
-        address: details.address,
+        profession: (details && details.profession) || '',
+        address: (details && details.address) || '',
       });
     } else if (role === 'student') {
-      // Find parent user ID
       const parentUser = await User.findById(details.parentId);
       if (!parentUser || parentUser.role !== 'parent') {
         return res.status(404).json({ message: 'Valid Parent ID is required' });
@@ -83,16 +89,31 @@ const createUser = async (req, res, next) => {
 
       profile = await Student.create({
         user: user._id,
-        registrationNumber: details.registrationNumber,
-        class: details.classId,
-        group: details.groupId,
-        parent: parentProfile._id,
-        dateOfBirth: details.dateOfBirth,
+        registrationNumber: (details && details.registrationNumber) || `STU-${Date.now().toString().slice(-6)}`,
+        class: details.classId || null,
+        group: details.groupId || null,
+        parent: parentProfile ? parentProfile._id : null,
+        dateOfBirth: (details && details.dateOfBirth) || new Date(),
       });
 
-      // Link child to Parent
-      parentProfile.children.push(profile._id);
-      await parentProfile.save();
+      if (parentProfile) {
+        parentProfile.children.push(profile._id);
+        await parentProfile.save();
+      }
+    } else if (role === 'general_supervisor' || role === 'pedagogical_supervisor') {
+      profile = await Supervisor.create({
+        user: user._id,
+        supervisorType: role,
+        assignedClasses: (details && details.assignedClasses) || [],
+        assignedTeachers: (details && details.assignedTeachers) || [],
+        officeLocation: (details && details.officeLocation) || 'Bureau principal',
+      });
+    } else if (role === 'receptionist') {
+      profile = await Receptionist.create({
+        user: user._id,
+        deskNumber: (details && details.deskNumber) || 'Accueil Principal - Réception',
+        workShift: (details && details.workShift) || '07:30 - 16:30',
+      });
     }
 
     res.status(201).json({ message: 'User created successfully', user, profile });
@@ -100,6 +121,7 @@ const createUser = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // Excel Bulk Import of Students
 const bulkImportStudents = async (req, res, next) => {
@@ -533,6 +555,21 @@ const updateUser = async (req, res, next) => {
         parent.address = details.address || parent.address;
         await parent.save();
       }
+    } else if (user.role === 'general_supervisor' || user.role === 'pedagogical_supervisor') {
+      const supervisor = await Supervisor.findOne({ user: user._id });
+      if (supervisor && details) {
+        if (details.officeLocation) supervisor.officeLocation = details.officeLocation;
+        if (details.assignedClasses) supervisor.assignedClasses = details.assignedClasses;
+        if (details.assignedTeachers) supervisor.assignedTeachers = details.assignedTeachers;
+        await supervisor.save();
+      }
+    } else if (user.role === 'receptionist') {
+      const receptionist = await Receptionist.findOne({ user: user._id });
+      if (receptionist && details) {
+        if (details.deskNumber) receptionist.deskNumber = details.deskNumber;
+        if (details.workShift) receptionist.workShift = details.workShift;
+        await receptionist.save();
+      }
     }
 
     res.status(200).json({ message: 'User updated successfully', user });
@@ -573,6 +610,10 @@ const deleteUser = async (req, res, next) => {
       if (parent) {
         await Student.updateMany({ parent: parent._id }, { $unset: { parent: 1 } });
       }
+    } else if (user.role === 'general_supervisor' || user.role === 'pedagogical_supervisor') {
+      await Supervisor.findOneAndDelete({ user: user._id });
+    } else if (user.role === 'receptionist') {
+      await Receptionist.findOneAndDelete({ user: user._id });
     }
 
     await User.findByIdAndDelete(userId);

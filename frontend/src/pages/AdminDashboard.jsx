@@ -635,6 +635,10 @@ export default function AdminDashboard() {
         profession: parentProfile?.profession || '',
         address: parentProfile?.address || '',
       };
+    } else if (u.role === 'general_supervisor' || u.role === 'pedagogical_supervisor') {
+      details = { officeLocation: u.details?.officeLocation || 'Bureau principal' };
+    } else if (u.role === 'receptionist') {
+      details = { deskNumber: u.details?.deskNumber || 'Accueil Principal', workShift: u.details?.workShift || '07:30 - 16:30' };
     }
 
     setEditingDetails({
@@ -681,6 +685,10 @@ export default function AdminDashboard() {
           profession: editingDetails.profession,
           address: editingDetails.address,
         };
+      } else if (editingUser.role === 'general_supervisor' || editingUser.role === 'pedagogical_supervisor') {
+        payload.details = { officeLocation: editingDetails.officeLocation };
+      } else if (editingUser.role === 'receptionist') {
+        payload.details = { deskNumber: editingDetails.deskNumber, workShift: editingDetails.workShift };
       }
 
       await axios.put(`/api/admin/users/${editingUser._id}`, payload);
@@ -1002,18 +1010,17 @@ export default function AdminDashboard() {
                 
                 <div className="space-y-1">
                   <label className="text-xs text-slate-455 font-bold block">كلمة المرور</label>
-                  {newUser.role === 'teacher' ? (
+                  {newUser.role === 'teacher' || newUser.role === 'admin' || newUser.role === 'school' ? (
                     <input
                       type="password"
-                      required
-                      placeholder="كلمة المرور"
+                      placeholder="كلمة المرور (أو تُحدد تلقائياً)"
                       value={newUser.password}
                       onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none text-right"
                     />
-                  ) : newUser.role === 'parent' ? (
+                  ) : newUser.role === 'parent' || newUser.role === 'general_supervisor' || newUser.role === 'pedagogical_supervisor' || newUser.role === 'receptionist' ? (
                     <div className="w-full bg-slate-950/60 border border-brand-500/20 rounded-xl px-4 py-2.5 text-xs text-brand-300 text-right">
-                      كلمة المرور تُحدَّد تلقائياً = رقم هاتف ولي الأمر
+                      كلمة المرور تُحدَّد تلقائياً = رقم الهاتف (أو أدخلها في خانة الهاتف)
                       <span className="block text-slate-500 font-mono mt-1">{newUser.phoneNumber || '— أدخل رقم الهاتف —'}</span>
                     </div>
                   ) : (
@@ -1035,6 +1042,11 @@ export default function AdminDashboard() {
                       <option value="student">تلميذ</option>
                       <option value="teacher">أستاذ</option>
                       <option value="parent">ولي أمر</option>
+                      <option value="general_supervisor">مشرف عام</option>
+                      <option value="pedagogical_supervisor">مشرف تربوي</option>
+                      <option value="receptionist">موظف الاستقبال</option>
+                      <option value="school">إدارة المدرسة (School)</option>
+                      <option value="admin">مدير النظام (Admin)</option>
                     </select>
                   </div>
                   <div className="space-y-1">
@@ -1289,6 +1301,54 @@ export default function AdminDashboard() {
                           placeholder="مثال: الجزائر العاصمة"
                           value={newUser.address}
                           onChange={(e) => setNewUser({ ...newUser, address: e.target.value })}
+                          className="bg-slate-900 border border-luxury-border rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional fields based on Supervisor registration */}
+                {(newUser.role === 'general_supervisor' || newUser.role === 'pedagogical_supervisor') && (
+                  <div className="space-y-3 p-4 bg-slate-950/40 border border-luxury-border rounded-xl">
+                    <span className="text-xs font-semibold text-slate-450 block">تفاصيل المشرف والمكتب</span>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase text-slate-455 font-semibold">مكتب العمل / الموقع</label>
+                        <input
+                          type="text"
+                          placeholder="مثال: Bureau principal - الطابق الأول"
+                          value={newUser.officeLocation || ''}
+                          onChange={(e) => setNewUser({ ...newUser, officeLocation: e.target.value })}
+                          className="bg-slate-900 border border-luxury-border rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional fields based on Receptionist registration */}
+                {newUser.role === 'receptionist' && (
+                  <div className="space-y-3 p-4 bg-slate-950/40 border border-luxury-border rounded-xl">
+                    <span className="text-xs font-semibold text-slate-450 block">تفاصيل الاستقبال وساعات العمل</span>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase text-slate-455 font-semibold">رقم مكتب الاستقبال</label>
+                        <input
+                          type="text"
+                          placeholder="مثال: Accueil Principal"
+                          value={newUser.deskNumber || ''}
+                          onChange={(e) => setNewUser({ ...newUser, deskNumber: e.target.value })}
+                          className="bg-slate-900 border border-luxury-border rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase text-slate-455 font-semibold">ساعات الدوام (الوردية)</label>
+                        <input
+                          type="text"
+                          placeholder="مثال: 07:30 - 16:30"
+                          value={newUser.workShift || ''}
+                          onChange={(e) => setNewUser({ ...newUser, workShift: e.target.value })}
                           className="bg-slate-900 border border-luxury-border rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:outline-none"
                         />
                       </div>
@@ -3393,6 +3453,43 @@ export default function AdminDashboard() {
                       type="text"
                       value={editingDetails.address}
                       onChange={(e) => setEditingDetails({ ...editingDetails, address: e.target.value })}
+                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {(editingUser.role === 'general_supervisor' || editingUser.role === 'pedagogical_supervisor') && (
+                <div className="space-y-4 pt-3 border-t border-luxury-border/20">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase text-slate-400 font-semibold">مكتب العمل / الموقع</label>
+                    <input
+                      type="text"
+                      value={editingDetails.officeLocation || ''}
+                      onChange={(e) => setEditingDetails({ ...editingDetails, officeLocation: e.target.value })}
+                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {editingUser.role === 'receptionist' && (
+                <div className="space-y-4 pt-3 border-t border-luxury-border/20">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase text-slate-400 font-semibold">رقم مكتب الاستقبال</label>
+                    <input
+                      type="text"
+                      value={editingDetails.deskNumber || ''}
+                      onChange={(e) => setEditingDetails({ ...editingDetails, deskNumber: e.target.value })}
+                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase text-slate-400 font-semibold">ساعات الدوام</label>
+                    <input
+                      type="text"
+                      value={editingDetails.workShift || ''}
+                      onChange={(e) => setEditingDetails({ ...editingDetails, workShift: e.target.value })}
                       className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
                     />
                   </div>
