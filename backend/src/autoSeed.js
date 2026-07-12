@@ -11,19 +11,7 @@ const { FinancialProduct } = require('./models/finance.model');
 
 const ensureCoreAccounts = async () => {
   try {
-    // Check if general supervisor exists
-    const genSupCheck = await User.findOne({ $or: [{ username: 'superviseur.gen' }, { role: 'general_supervisor' }] });
-    const recepCheck = await User.findOne({ $or: [{ username: 'receptionniste' }, { role: 'receptionist' }] });
-    const pedSupCheck = await User.findOne({ $or: [{ username: 'superviseur.ped' }, { role: 'pedagogical_supervisor' }] });
-    const adminCheck = await User.findOne({ username: 'admin' });
-
-    // If all core accounts exist, no need for full auto-seed
-    if (genSupCheck && recepCheck && pedSupCheck && adminCheck) {
-      console.log('Core prefilled accounts already exist in DB.');
-      return;
-    }
-
-    console.log('Auto-seeding missing core prefilled accounts (Supervisors, Receptionist, Admin, etc.) into DB...');
+    console.log('Ensuring core prefilled accounts (Admin, School, Teachers, Supervisors, Receptionist, Student, Parent) in DB with exact credentials...');
 
     // 1. Ensure basic Class & Group for assignments
     let c1 = await Class.findOne({ name: '1AP' });
@@ -35,10 +23,9 @@ const ensureCoreAccounts = async () => {
       g1 = await Group.create({ name: 'الفوج أ', class: c1._id, capacity: 30 });
     }
 
-    // 2. Admin
-    let admin = await User.findOne({ username: 'admin' });
-    if (!admin) {
-      admin = await User.create({
+    // List of core accounts with their required credentials and properties
+    const coreUsers = [
+      {
         username: 'admin',
         email: 'admin@ecole-zitouni.dz',
         password: 'Admin123!',
@@ -47,14 +34,8 @@ const ensureCoreAccounts = async () => {
         role: 'admin',
         phoneNumber: '0550000000',
         baseSalary: 120000,
-        salaryDeductionPerAbsence: 0,
-      });
-    }
-
-    // 3. School
-    let school = await User.findOne({ username: 'school' });
-    if (!school) {
-      school = await User.create({
+      },
+      {
         username: 'school',
         email: 'direction@ecole-zitouni.dz',
         password: 'School123!',
@@ -63,14 +44,8 @@ const ensureCoreAccounts = async () => {
         role: 'school',
         phoneNumber: '0550000001',
         baseSalary: 100000,
-        salaryDeductionPerAbsence: 0,
-      });
-    }
-
-    // 4. Teacher
-    let tUser = await User.findOne({ username: 'teacher.math' });
-    if (!tUser) {
-      tUser = await User.create({
+      },
+      {
         username: 'teacher.math',
         email: 'teacher.math@ecole-zitouni.dz',
         password: '0550111111',
@@ -79,15 +54,8 @@ const ensureCoreAccounts = async () => {
         role: 'teacher',
         phoneNumber: '0550111111',
         baseSalary: 65000,
-        salaryDeductionPerAbsence: 2500,
-      });
-      await Teacher.create({ user: tUser._id, subjects: ['رياضيات'], classes: [c1._id], groups: [g1._id] });
-    }
-
-    // 5. General Supervisor
-    let genSupUser = await User.findOne({ username: 'superviseur.gen' });
-    if (!genSupUser) {
-      genSupUser = await User.create({
+      },
+      {
         username: 'superviseur.gen',
         email: 'general.sup@ecole-zitouni.dz',
         password: '0550112233',
@@ -96,25 +64,8 @@ const ensureCoreAccounts = async () => {
         role: 'general_supervisor',
         phoneNumber: '0550112233',
         baseSalary: 85000,
-        salaryDeductionPerAbsence: 3000,
-      });
-      await Supervisor.create({
-        user: genSupUser._id,
-        supervisorType: 'General',
-        assignedClasses: [c1._id],
-        assignedTeachers: [tUser._id],
-      });
-    } else {
-      // Make sure password/phone matches exactly if it was created earlier or modified
-      genSupUser.phoneNumber = '0550112233';
-      if (!genSupUser.username) genSupUser.username = 'superviseur.gen';
-      await genSupUser.save();
-    }
-
-    // 6. Pedagogical Supervisor
-    let pedSupUser = await User.findOne({ username: 'superviseur.ped' });
-    if (!pedSupUser) {
-      pedSupUser = await User.create({
+      },
+      {
         username: 'superviseur.ped',
         email: 'pedagogical.sup@ecole-zitouni.dz',
         password: '0550445566',
@@ -123,24 +74,8 @@ const ensureCoreAccounts = async () => {
         role: 'pedagogical_supervisor',
         phoneNumber: '0550445566',
         baseSalary: 75000,
-        salaryDeductionPerAbsence: 2800,
-      });
-      await Supervisor.create({
-        user: pedSupUser._id,
-        supervisorType: 'Pedagogical',
-        assignedClasses: [c1._id],
-        assignedTeachers: [tUser._id],
-      });
-    } else {
-      pedSupUser.phoneNumber = '0550445566';
-      if (!pedSupUser.username) pedSupUser.username = 'superviseur.ped';
-      await pedSupUser.save();
-    }
-
-    // 7. Receptionist
-    let recepUser = await User.findOne({ username: 'receptionniste' });
-    if (!recepUser) {
-      recepUser = await User.create({
+      },
+      {
         username: 'receptionniste',
         email: 'reception@ecole-zitouni.dz',
         password: '0550778899',
@@ -149,19 +84,8 @@ const ensureCoreAccounts = async () => {
         role: 'receptionist',
         phoneNumber: '0550778899',
         baseSalary: 55000,
-        salaryDeductionPerAbsence: 2000,
-      });
-      await Receptionist.create({ user: recepUser._id });
-    } else {
-      recepUser.phoneNumber = '0550778899';
-      if (!recepUser.username) recepUser.username = 'receptionniste';
-      await recepUser.save();
-    }
-
-    // 8. Student
-    let sUser = await User.findOne({ username: 'student.yanis' });
-    if (!sUser) {
-      sUser = await User.create({
+      },
+      {
         username: 'student.yanis',
         email: 'yanis.m@ecole-zitouni.dz',
         password: '2014-03-20',
@@ -169,21 +93,8 @@ const ensureCoreAccounts = async () => {
         lastName: 'مزيان',
         role: 'student',
         phoneNumber: '0550110022',
-      });
-      await Student.create({
-        user: sUser._id,
-        registrationNumber: 'ZIT-2026-001',
-        dateOfBirth: new Date('2014-03-20'),
-        cycle: 'الابتدائي',
-        class: c1._id,
-        group: g1._id,
-      });
-    }
-
-    // 9. Parent
-    let pUser = await User.findOne({ username: 'parent.meziane' });
-    if (!pUser) {
-      pUser = await User.create({
+      },
+      {
         username: 'parent.meziane',
         email: 'parent.meziane@ecole-zitouni.dz',
         password: '0550110011',
@@ -191,13 +102,82 @@ const ensureCoreAccounts = async () => {
         lastName: 'مزيان',
         role: 'parent',
         phoneNumber: '0550110011',
-      });
-      const stDoc = await Student.findOne({ user: sUser._id });
-      await Parent.create({
-        user: pUser._id,
-        children: stDoc ? [stDoc._id] : [],
-        address: 'الجزائر العاصمة',
-      });
+      }
+    ];
+
+    for (const u of coreUsers) {
+      let userDoc = await User.findOne({
+        $or: [{ username: u.username }, { email: u.email }]
+      }).select('+password');
+
+      if (!userDoc) {
+        userDoc = await User.create({
+          username: u.username,
+          email: u.email,
+          password: u.password,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          role: u.role,
+          phoneNumber: u.phoneNumber,
+          baseSalary: u.baseSalary || 0,
+          isActive: true,
+        });
+      } else {
+        // Ensure properties and reset password to guarantee exact login matches
+        userDoc.username = u.username;
+        userDoc.email = u.email;
+        userDoc.role = u.role;
+        userDoc.phoneNumber = u.phoneNumber;
+        userDoc.isActive = true;
+        userDoc.password = u.password; // Trigger bcrypt hash in pre('save')
+        await userDoc.save();
+      }
+
+      // Ensure related role profiles
+      if (u.role === 'teacher') {
+        const tDoc = await Teacher.findOne({ user: userDoc._id });
+        if (!tDoc) {
+          await Teacher.create({ user: userDoc._id, subjects: ['رياضيات'], classes: [c1._id], groups: [g1._id] });
+        }
+      } else if (u.role === 'general_supervisor') {
+        const gDoc = await Supervisor.findOne({ user: userDoc._id });
+        if (!gDoc) {
+          await Supervisor.create({ user: userDoc._id, supervisorType: 'General', assignedClasses: [c1._id] });
+        }
+      } else if (u.role === 'pedagogical_supervisor') {
+        const pDoc = await Supervisor.findOne({ user: userDoc._id });
+        if (!pDoc) {
+          await Supervisor.create({ user: userDoc._id, supervisorType: 'Pedagogical', assignedClasses: [c1._id] });
+        }
+      } else if (u.role === 'receptionist') {
+        const rDoc = await Receptionist.findOne({ user: userDoc._id });
+        if (!rDoc) {
+          await Receptionist.create({ user: userDoc._id });
+        }
+      } else if (u.role === 'student') {
+        const sDoc = await Student.findOne({ user: userDoc._id });
+        if (!sDoc) {
+          await Student.create({
+            user: userDoc._id,
+            registrationNumber: 'ZIT-2026-001',
+            dateOfBirth: new Date('2014-03-20'),
+            cycle: 'الابتدائي',
+            class: c1._id,
+            group: g1._id,
+          });
+        }
+      } else if (u.role === 'parent') {
+        const sUser = await User.findOne({ username: 'student.yanis' });
+        const stDoc = sUser ? await Student.findOne({ user: sUser._id }) : null;
+        const pDoc = await Parent.findOne({ user: userDoc._id });
+        if (!pDoc) {
+          await Parent.create({
+            user: userDoc._id,
+            children: stDoc ? [stDoc._id] : [],
+            address: 'الجزائر العاصمة',
+          });
+        }
+      }
     }
 
     // 10. Financial Products check
@@ -209,7 +189,7 @@ const ensureCoreAccounts = async () => {
       ]);
     }
 
-    console.log('Core prefilled accounts check/seeding completed.');
+    console.log('All 8 core accounts successfully verified/seeded with exact credentials.');
   } catch (err) {
     console.error('Error ensuring core accounts:', err.message);
   }
