@@ -17,4 +17,8 @@ router.post('/seed', async (req, res) => {
   res.status(200).json({ message: 'Core accounts verified/seeded successfully.' });
 });
 
+router.get('/version', (req, res) => {
+  res.status(200).json({ version: '2.0.0-seed-fix', time: new Date().toISOString() });
+});
+
 module.exports = router;
