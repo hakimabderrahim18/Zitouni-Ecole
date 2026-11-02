@@ -820,12 +820,14 @@ export default function DashboardLayout({ children }) {
               )}
 
               {/* Mode Selector Tabs */}
-              <div className="flex bg-slate-900/60 p-1 rounded-xl border border-luxury-border/30 gap-1">
+              <div className="flex bg-[#F3E9DC]/60 p-1 rounded-xl border border-[#C9A24D]/35 gap-1">
                 <button
                   type="button"
                   onClick={() => setIsEditingProfile(false)}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    !isEditingProfile ? 'bg-brand-650 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                    !isEditingProfile
+                      ? 'bg-white text-[#7B1E3A] border border-[#C9A24D]/40 shadow-sm'
+                      : 'text-[#2B2022]/70 hover:text-[#7B1E3A]'
                   }`}
                 >
                   نظرة عامة
@@ -833,11 +835,13 @@ export default function DashboardLayout({ children }) {
                 <button
                   type="button"
                   onClick={() => setIsEditingProfile(true)}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                    isEditingProfile ? 'bg-brand-650 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    isEditingProfile
+                      ? 'bg-white text-[#7B1E3A] border border-[#C9A24D]/40 shadow-sm'
+                      : 'text-[#2B2022]/70 hover:text-[#7B1E3A]'
                   }`}
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
+                  <Edit3 className={`w-3.5 h-3.5 ${isEditingProfile ? 'text-[#7B1E3A]' : 'text-[#C9A24D]'}`} />
                   <span>تعديل البيانات</span>
                 </button>
               </div>
