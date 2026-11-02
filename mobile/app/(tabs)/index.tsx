@@ -52,6 +52,7 @@ import {
   Layers,
   ArrowRight,
   ExternalLink,
+  MoreVertical,
 } from 'lucide-react-native';
 import { apiClient } from '../../src/api/client';
 import { useAuthStore } from '../../src/store/useAuthStore';
@@ -328,6 +329,29 @@ export default function AdminScreen() {
           }
         },
       },
+    ]);
+  };
+
+  const handleOpenPostOptions = (postItem: any) => {
+    Alert.alert('خيارات المنشور', postItem.title || 'إجراءات المنشور', [
+      {
+        text: 'تعديل المنشور',
+        onPress: () => {
+          setEditingPost(postItem);
+          setEditTitle(postItem.title);
+          setEditContent(postItem.content);
+        },
+      },
+      {
+        text: postItem.isPinned ? 'إلغاء التثبيت' : 'تثبيت في الواجهة',
+        onPress: () => handleTogglePin(postItem._id),
+      },
+      {
+        text: 'حذف المنشور',
+        style: 'destructive',
+        onPress: () => handleDeletePost(postItem._id),
+      },
+      { text: 'إلغاء', style: 'cancel' },
     ]);
   };
 
@@ -843,6 +867,15 @@ export default function AdminScreen() {
                         <Clock size={11} color={theme.colors.text.subtle} />
                         <Text style={styles.timeTagText}>{timeAgo(item.createdAt)}</Text>
                       </View>
+                      {isAdmin && (
+                        <TouchableOpacity
+                          style={styles.postMoreBtn}
+                          onPress={() => handleOpenPostOptions(item)}
+                          accessibilityLabel="خيارات المنشور"
+                        >
+                          <MoreVertical size={16} color={theme.colors.brand[600]} />
+                        </TouchableOpacity>
+                      )}
                     </View>
 
                     <Text style={styles.postTitle}>{item.title}</Text>
@@ -3194,6 +3227,17 @@ const styles = StyleSheet.create({
   timeTagText: {
     fontSize: 10,
     color: theme.colors.text.subtle,
+  },
+  postMoreBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#F3E9DC',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
   },
   postTitle: {
     fontSize: 15,

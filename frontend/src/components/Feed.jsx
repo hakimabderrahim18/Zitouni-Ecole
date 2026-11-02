@@ -472,12 +472,12 @@ export default function Feed() {
               >
                 {/* Pinned Post Badge */}
                 {post.isPinned && (
-                  <div className="bg-[#C9A24D]/15 border-b border-[#C9A24D]/30 px-6 py-2.5 flex items-center justify-between text-xs text-[#7B1E3A] font-bold">
+                  <div className="bg-[#C9A24D]/15 border-b border-[#C9A24D]/30 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 text-xs text-[#7B1E3A] font-bold">
                     <span className="flex items-center gap-1.5 font-sans">
-                      <Pin className="w-3.5 h-3.5 text-[#C9A24D] rotate-45" />
+                      <Pin className="w-3.5 h-3.5 text-[#C9A24D] rotate-45 shrink-0" />
                       <span>منشور مثبت في أعلى الصفحة</span>
                     </span>
-                    <span className="text-[10px] text-[#7B1E3A] font-bold bg-[#7B1E3A]/10 border border-[#7B1E3A]/20 px-2.5 py-0.5 rounded-full font-sans">
+                    <span className="text-[10px] text-[#7B1E3A] font-bold bg-[#7B1E3A]/10 border border-[#7B1E3A]/20 px-2.5 py-0.5 rounded-full font-sans shrink-0">
                       إعلان رئيسي
                     </span>
                   </div>
@@ -485,18 +485,18 @@ export default function Feed() {
 
                 {/* Post Hidden Badge for Admins & Author */}
                 {post.isHidden && (
-                  <div className="bg-amber-500/15 border-b border-amber-500/30 px-6 py-2 flex items-center justify-between text-xs text-amber-900 font-bold">
+                  <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 sm:px-6 py-2 flex items-center justify-between gap-2 text-xs text-amber-900 font-bold">
                     <span className="flex items-center gap-2 font-sans">
-                      <EyeOff className="w-4 h-4 text-amber-700" />
+                      <EyeOff className="w-4 h-4 text-amber-700 shrink-0" />
                       <span>هذا المنشور مخفي حالياً عن المستخدمين (مرئي فقط للإدارة وصاحب المنشور).</span>
                     </span>
-                    <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full">مخفي</span>
+                    <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full shrink-0">مخفي</span>
                   </div>
                 )}
 
                 {/* Important Announcement Notification Bar (Art. 16) */}
                 {post.isImportant && (
-                  <div className="bg-[#7B1E3A]/10 border-b border-[#7B1E3A]/25 px-6 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+                  <div className="bg-[#7B1E3A]/10 border-b border-[#7B1E3A]/25 px-4 sm:px-6 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
                     <span className="flex items-center gap-2 text-[#7B1E3A] font-bold font-sans">
                       <AlertTriangle className="w-4 h-4 text-[#7B1E3A] shrink-0" />
                       <span>إعلان رسمي هام يتطلب تأكيد الاطلاع بموجب المادة 16</span>
@@ -521,20 +521,22 @@ export default function Feed() {
                 )}
 
                 {/* Post Header */}
-                <div className="p-6 pb-4 flex items-start justify-between">
-                  <div className="flex items-center gap-3.5">
-                    <Avatar
-                      firstName={post.publisher?.firstName}
-                      lastName={post.publisher?.lastName}
-                      src={post.publisher?.profilePic}
-                    />
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-bold text-[#7B1E3A] text-sm font-serif">
+                <div className="p-4 sm:p-6 pb-3 sm:pb-4 flex items-start justify-between gap-2.5 sm:gap-4 relative">
+                  <div className="flex items-start gap-2.5 sm:gap-3.5 flex-1 min-w-0">
+                    <div className="shrink-0 mt-0.5">
+                      <Avatar
+                        firstName={post.publisher?.firstName}
+                        lastName={post.publisher?.lastName}
+                        src={post.publisher?.profilePic}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <h4 className="font-bold text-[#7B1E3A] text-sm font-serif truncate max-w-[190px] sm:max-w-none">
                           {post.publisher?.firstName} {post.publisher?.lastName}
                         </h4>
                         <span
-                          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full border font-sans ${
+                          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full border font-sans shrink-0 ${
                             roleBadgeStyles[post.publisherRole] || roleBadgeStyles.student
                           }`}
                         >
@@ -542,80 +544,116 @@ export default function Feed() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 mt-1 text-xs text-[#2B2022]/70 font-sans flex-wrap">
-                        <span className="inline-flex items-center gap-1 font-medium bg-white/70 px-2 py-0.5 rounded-md border border-[#C9A24D]/25">
-                          <Clock className="w-3.5 h-3.5 text-[#C9A24D]" />
-                          <span>{formatPostTime(post.createdAt)}</span>
+                      <div className="flex items-center gap-1.5 sm:gap-2 mt-1 text-[11px] sm:text-xs text-[#2B2022]/70 font-sans flex-wrap">
+                        <span className="inline-flex items-center gap-1 font-medium bg-white/80 px-2 py-0.5 rounded-md border border-[#C9A24D]/25 max-w-full">
+                          <Clock className="w-3.5 h-3.5 text-[#C9A24D] shrink-0" />
+                          <span className="truncate">{formatPostTime(post.createdAt)}</span>
                         </span>
-                        <span>•</span>
+                        <span className="text-[#C9A24D]/60 hidden xs:inline">•</span>
                         {/* Target Audience Chip */}
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#F3E9DC] rounded-md text-[10px] text-[#7B1E3A] font-bold border border-[#C9A24D]/30">
-                          <Users className="w-2.5 h-2.5 text-[#C9A24D]" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#F3E9DC] rounded-md text-[10px] text-[#7B1E3A] font-bold border border-[#C9A24D]/30 shrink-0">
+                          <Users className="w-2.5 h-2.5 text-[#C9A24D] shrink-0" />
                           <span>{audienceLabels[post.targetAudience] || 'مستهدف'}</span>
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Actions Dropdown Menu */}
+                  {/* Actions Dropdown Menu - Optimized for Phone & Desktop */}
                   {canModerate && (
-                    <div className="relative">
+                    <div className="relative shrink-0 z-20">
                       <button
-                        onClick={() => setOpenMenuId(openMenuId === post._id ? null : post._id)}
-                        className="p-2 text-[#2B2022]/60 hover:text-[#7B1E3A] hover:bg-[#F3E9DC] rounded-xl transition-colors cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(openMenuId === post._id ? null : post._id);
+                        }}
+                        aria-label="خيارات وتعديل المنشور"
+                        title="خيارات وتعديل المنشور"
+                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all cursor-pointer border ${
+                          openMenuId === post._id
+                            ? 'bg-[#7B1E3A] text-[#F3E9DC] border-[#7B1E3A] shadow-md shadow-[#7B1E3A]/20'
+                            : 'bg-[#F3E9DC]/70 hover:bg-[#F3E9DC] text-[#7B1E3A] hover:text-[#60162c] border-[#C9A24D]/35 hover:border-[#C9A24D]/60 shadow-xs'
+                        } active:scale-95`}
                       >
-                        <MoreVertical className="w-4 h-4" />
+                        <MoreVertical className="w-4 h-4 stroke-[2.2]" />
                       </button>
 
                       {openMenuId === post._id && (
-                        <div className="absolute left-0 mt-1 w-52 bg-[#FDFBF7] border border-[#C9A24D]/35 rounded-2xl shadow-xl p-1.5 z-20 space-y-1">
-                          <button
-                            onClick={() => {
-                              setSelectedPostForEdit(post);
-                              setEditModalOpen(true);
+                        <>
+                          {/* Dismiss Backdrop for Touch/Click */}
+                          <div
+                            className="fixed inset-0 z-30 bg-black/5 sm:bg-transparent"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setOpenMenuId(null);
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-right text-xs text-[#2B2022] hover:text-[#7B1E3A] hover:bg-[#F3E9DC] rounded-xl transition-colors cursor-pointer font-sans"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-[#C9A24D]" />
-                            <span>تعديل المنشور</span>
-                          </button>
-                          <button
-                            onClick={() => handleToggleHidePost(post._id)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-right text-xs text-[#2B2022] hover:text-[#7B1E3A] hover:bg-[#F3E9DC] rounded-xl transition-colors cursor-pointer font-sans"
-                          >
-                            <EyeOff className="w-3.5 h-3.5 text-amber-600" />
-                            <span>{post.isHidden ? 'إلغاء الإخفاء (إظهار للجميع)' : 'إخفاء المنشور عن المستخدمين'}</span>
-                          </button>
-                          <button
-                            onClick={() => handleTogglePin(post._id)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-right text-xs text-[#2B2022] hover:text-[#7B1E3A] hover:bg-[#F3E9DC] rounded-xl transition-colors cursor-pointer font-sans"
-                          >
-                            <Pin className="w-3.5 h-3.5 text-[#C9A24D]" />
-                            <span>{post.isPinned ? 'إلغاء التثبيت' : 'تثبيت في المقدمة'}</span>
-                          </button>
-                          <button
-                            onClick={() => handleToggleLock(post._id)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-right text-xs text-[#2B2022] hover:text-[#7B1E3A] hover:bg-[#F3E9DC] rounded-xl transition-colors cursor-pointer font-sans"
-                          >
-                            {post.commentsLocked ? <Unlock className="w-3.5 h-3.5 text-emerald-600" /> : <Lock className="w-3.5 h-3.5 text-rose-600" />}
-                            <span>{post.commentsLocked ? 'فتح التعليقات' : 'إغلاق وحظر التعليقات'}</span>
-                          </button>
-                          <button
-                            onClick={() => handleDeletePost(post._id)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-right text-xs text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer font-sans"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>حذف المنشور نهائياً</span>
-                          </button>
-                        </div>
+                          />
+
+                          {/* Dropdown Box */}
+                          <div className="absolute left-0 rtl:left-0 rtl:right-auto mt-1.5 w-56 max-w-[calc(100vw-2.5rem)] bg-[#FDFBF7] border border-[#C9A24D]/40 rounded-2xl shadow-2xl p-1.5 z-40 space-y-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100">
+                            <button
+                              onClick={() => {
+                                setSelectedPostForEdit(post);
+                                setEditModalOpen(true);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-right text-xs font-bold text-[#7B1E3A] hover:bg-[#F3E9DC] rounded-xl transition-colors cursor-pointer font-sans"
+                            >
+                              <Edit3 className="w-4 h-4 text-[#C9A24D] shrink-0" />
+                              <span>تعديل المنشور</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleToggleHidePost(post._id);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-right text-xs font-medium text-[#2B2022] hover:text-[#7B1E3A] hover:bg-[#F3E9DC] rounded-xl transition-colors cursor-pointer font-sans"
+                            >
+                              <EyeOff className="w-4 h-4 text-amber-600 shrink-0" />
+                              <span>{post.isHidden ? 'إلغاء الإخفاء (إظهار للجميع)' : 'إخفاء المنشور عن المستخدمين'}</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleTogglePin(post._id);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-right text-xs font-medium text-[#2B2022] hover:text-[#7B1E3A] hover:bg-[#F3E9DC] rounded-xl transition-colors cursor-pointer font-sans"
+                            >
+                              <Pin className="w-4 h-4 text-[#C9A24D] shrink-0" />
+                              <span>{post.isPinned ? 'إلغاء التثبيت' : 'تثبيت في المقدمة'}</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleToggleLock(post._id);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-right text-xs font-medium text-[#2B2022] hover:text-[#7B1E3A] hover:bg-[#F3E9DC] rounded-xl transition-colors cursor-pointer font-sans"
+                            >
+                              {post.commentsLocked ? <Unlock className="w-4 h-4 text-emerald-600 shrink-0" /> : <Lock className="w-4 h-4 text-rose-600 shrink-0" />}
+                              <span>{post.commentsLocked ? 'فتح التعليقات' : 'إغلاق وحظر التعليقات'}</span>
+                            </button>
+
+                            <div className="h-px bg-[#C9A24D]/20 my-1" />
+
+                            <button
+                              onClick={() => {
+                                handleDeletePost(post._id);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-right text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer font-sans"
+                            >
+                              <Trash2 className="w-4 h-4 shrink-0" />
+                              <span>حذف المنشور نهائياً</span>
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   )}
                 </div>
 
                 {/* Post Content */}
-                <div className="px-6 pb-4 space-y-3">
+                <div className="px-4 sm:px-6 pb-4 space-y-3">
                   <h3 className="font-bold text-lg text-[#7B1E3A] font-serif leading-snug">{post.title}</h3>
                   <p className="text-sm text-[#2B2022] font-sans leading-relaxed whitespace-pre-wrap">
                     {post.content}
@@ -711,7 +749,7 @@ export default function Feed() {
                 </div>
 
                 {/* Stats & Analytics Row */}
-                <div className="px-6 py-2.5 border-t border-[#C9A24D]/20 flex items-center justify-between text-xs text-[#2B2022]/70 font-sans">
+                <div className="px-4 sm:px-6 py-2.5 border-t border-[#C9A24D]/20 flex items-center justify-between text-xs text-[#2B2022]/70 font-sans gap-2 flex-wrap">
                   <div className="flex items-center gap-3">
                     {(likeCount > 0 || loveCount > 0 || dislikeCount > 0) && (
                       <div className="flex items-center gap-2.5 bg-[#F3E9DC]/60 px-3 py-1 rounded-xl border border-[#C9A24D]/20">
@@ -816,7 +854,7 @@ export default function Feed() {
 
                 {/* Threaded Comments Section (Art. 14) */}
                 {commentsOpen && (
-                  <div className="p-6 border-t border-[#C9A24D]/25 bg-[#F3E9DC]/30 space-y-4">
+                  <div className="p-4 sm:p-6 border-t border-[#C9A24D]/25 bg-[#F3E9DC]/30 space-y-4">
                     {/* Comments Locked Notice */}
                     {post.commentsLocked && (
                       <div className="flex items-center gap-2 p-3 bg-[#FDFBF7] border border-[#C9A24D]/35 rounded-xl text-xs text-[#2B2022]/80 font-bold font-sans">
