@@ -36,12 +36,16 @@ const AuditLog = require('./models/auditLog.model');
 const BackupLog = require('./models/backupLog.model');
 const TimetableEntry = require('./models/timetableEntry.model');
 
-const seedDatabase = async () => {
+const seedDatabase = async (standalone = false) => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/zitouni_school';
-    console.log(`[Seed] Connecting to MongoDB: ${mongoUri}`);
-    await mongoose.connect(mongoUri);
-    console.log('[Seed] MongoDB Connected successfully.');
+    let shouldDisconnect = false;
+    if (mongoose.connection.readyState === 0) {
+      const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/zitouni_school';
+      console.log(`[Seed] Connecting to MongoDB: ${mongoUri}`);
+      await mongoose.connect(mongoUri);
+      console.log('[Seed] MongoDB Connected successfully.');
+      shouldDisconnect = standalone;
+    }
 
     // 1. Clear previous collections
     console.log('[Seed] Clearing existing collections for clean seed...');
@@ -3352,7 +3356,16 @@ const seedDatabase = async () => {
           console.log(`[Seed] ${entriesToInsert.length} Timetable Entries inserted from RAN09.DBF.xlsx.`);
         }
       } else {
-        console.log('[Seed] RAN09.DBF.xlsx not found at path, skipping timetable import.');
+        const localJsonPath = path.join(__dirname, 'data', 'timetableEntries.json');
+        if (fs.existsSync(localJsonPath)) {
+          const jsonEntries = JSON.parse(fs.readFileSync(localJsonPath, 'utf8'));
+          if (jsonEntries.length > 0) {
+            await TimetableEntry.insertMany(jsonEntries);
+            console.log(`[Seed] ${jsonEntries.length} Timetable Entries inserted from timetableEntries.json.`);
+          }
+        } else {
+          console.log('[Seed] RAN09.DBF.xlsx not found at path, skipping timetable import.');
+        }
       }
     } else {
       console.log(`[Seed] TimetableEntry already contains ${existingTimetableCount} entries. Preserved.`);
@@ -3365,18 +3378,30 @@ const seedDatabase = async () => {
     // Print summary counts for verification
     const collections = await mongoose.connection.db.listCollections().toArray();
     console.log('\n--- COLLECTION DOCUMENT COUNTS ---');
+    const counts = {};
     for (const c of collections.sort((a, b) => a.name.localeCompare(b.name))) {
       const count = await mongoose.connection.db.collection(c.name).countDocuments();
+      counts[c.name] = count;
       console.log(`${c.name.padEnd(28)} : ${count}`);
     }
 
-    await mongoose.disconnect();
-    console.log('[Seed] Disconnected from MongoDB. Exiting cleanly.');
-    process.exit(0);
+    if (shouldDisconnect) {
+      await mongoose.disconnect();
+      console.log('[Seed] Disconnected from MongoDB. Exiting cleanly.');
+      process.exit(0);
+    }
+    return { success: true, counts };
   } catch (error) {
     console.error('[Seed] FATAL ERROR during seeding:', error);
-    process.exit(1);
+    if (standalone) {
+      process.exit(1);
+    }
+    throw error;
   }
 };
 
-seedDatabase();
+if (require.main === module) {
+  seedDatabase(true);
+}
+
+module.exports = { seedDatabase };

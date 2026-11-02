@@ -35,3 +35,7 @@ Thumbs.db
 # Misc
 *.local
 coverage/
+
+# Backups
+backend/backups/*.enc
+backend/backups/*.json
