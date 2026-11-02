@@ -18,10 +18,24 @@ const staffAttendanceSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Present', 'Absent', 'Late', 'Excused'],
+      enum: ['Present', 'Absent', 'Late', 'Excused', 'ExitDuringWork', 'Leave', 'Holiday'],
       required: true,
     },
     remarks: {
+      type: String,
+      default: '',
+    },
+    // Article 27: Substitute teacher when teacher is absent (البدائل عند غياب الأستاذ)
+    substituteTeacher: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    substituteRemarks: {
+      type: String,
+      default: '',
+    },
+    exitTime: {
       type: String,
       default: '',
     },

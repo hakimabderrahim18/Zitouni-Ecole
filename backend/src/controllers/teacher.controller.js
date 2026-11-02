@@ -11,8 +11,8 @@ const uploadCourse = async (req, res, next) => {
   const { title, description, subject, classId, groupId } = req.body;
 
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'Please upload a file' });
+    if (!title || !subject || !classId) {
+      return res.status(400).json({ message: 'عنوان الدرس، المادة والقسم مطلوبة.' });
     }
 
     const teacher = await Teacher.findOne({ user: req.user.id });
@@ -20,24 +20,104 @@ const uploadCourse = async (req, res, next) => {
       return res.status(404).json({ message: 'Teacher profile not found' });
     }
 
-    // Cloudinary upload
-    const uploadResult = await cloudinaryService.uploadBuffer(req.file.buffer, 'zitouni_courses');
+    let fileUrl = '';
+    let fileName = '';
+
+    // File upload is optional
+    if (req.file) {
+      try {
+        const uploadResult = await cloudinaryService.uploadBuffer(req.file.buffer, 'zitouni_courses');
+        fileUrl = uploadResult.secure_url;
+      } catch (uploadErr) {
+        console.warn('Cloudinary upload failed, using local file storage:', uploadErr.message);
+        const fs = require('fs');
+        const path = require('path');
+        const uploadDir = path.join(__dirname, '../../uploads/courses');
+        if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+        const uniqueName = `course_${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        fs.writeFileSync(path.join(uploadDir, uniqueName), req.file.buffer);
+        fileUrl = `/uploads/courses/${uniqueName}`;
+      }
+      fileName = req.file.originalname;
+    }
 
     const course = await Course.create({
-      title,
-      description,
-      subject,
-      fileUrl: uploadResult.secure_url,
-      fileName: req.file.originalname,
+      title: title.trim(),
+      description: description ? description.trim() : '',
+      subject: subject.trim(),
+      fileUrl,
+      fileName,
       class: classId,
       group: groupId || null,
       teacher: teacher._id,
     });
 
     // Trigger notification
-    notifyForCourse(course);
+    try {
+      notifyForCourse(course);
+    } catch (notifErr) {
+      console.error('Course notification failed:', notifErr);
+    }
 
     res.status(201).json({ message: 'Course uploaded successfully', course });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Update published course material
+const updateCourse = async (req, res, next) => {
+  const { courseId } = req.params;
+  const { title, description, subject, classId, groupId } = req.body;
+
+  try {
+    const teacher = await Teacher.findOne({ user: req.user.id });
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher profile not found' });
+    }
+
+    const course = await Course.findOne({ _id: courseId, teacher: teacher._id });
+    if (!course) {
+      return res.status(404).json({ message: 'الدرس غير موجود أو لا تملك صلاحية تعديله.' });
+    }
+
+    if (title) course.title = title.trim();
+    if (description !== undefined) course.description = description.trim();
+    if (subject) course.subject = subject.trim();
+    if (classId) course.class = classId;
+    course.group = groupId || null;
+
+    // If new file provided, update fileUrl and fileName
+    if (req.file) {
+      let fileUrl = '';
+      let fileName = req.file.originalname;
+      try {
+        const uploadResult = await cloudinaryService.uploadBuffer(req.file.buffer, 'zitouni_courses');
+        fileUrl = uploadResult.secure_url;
+      } catch (uploadErr) {
+        const fs = require('fs');
+        const path = require('path');
+        const uploadDir = path.join(__dirname, '../../uploads/courses');
+        if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+        const uniqueName = `course_${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        fs.writeFileSync(path.join(uploadDir, uniqueName), req.file.buffer);
+        fileUrl = `/uploads/courses/${uniqueName}`;
+      }
+      course.fileUrl = fileUrl;
+      course.fileName = fileName;
+    } else if (req.body.removeFile === 'true' || req.body.removeFile === true) {
+      course.fileUrl = '';
+      course.fileName = '';
+    }
+
+    await course.save();
+
+    const populatedCourse = await Course.findById(course._id).populate('class group');
+
+    res.status(200).json({
+      message: 'تم تعديل الدرس وتحديثه بنجاح',
+      course: populatedCourse,
+    });
   } catch (error) {
     next(error);
   }
@@ -343,6 +423,7 @@ const downloadContract = async (req, res, next) => {
 
 module.exports = {
   uploadCourse,
+  updateCourse,
   deleteCourse,
   markAttendance,
   postAnnouncement,

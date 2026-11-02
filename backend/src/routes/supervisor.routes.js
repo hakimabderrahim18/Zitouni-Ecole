@@ -8,6 +8,9 @@ const {
   createCanteenReservation,
   assignClassesToSupervisor,
   createExitPass,
+  approveExitPass,
+  rejectExitPass,
+  getExitPasses,
 } = require('../controllers/supervisor.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/role.middleware');
@@ -30,7 +33,10 @@ router.post('/canteen', createCanteenReservation);
 // Class assignment to Pedagogical Supervisor
 router.post('/assign-classes', authorize('general_supervisor', 'admin', 'school'), assignClassesToSupervisor);
 
-// Student Exit Pass issuance
+// Student Exit Pass issuance and management (Autorisations de sortie)
+router.get('/exit-passes', authorize('general_supervisor', 'pedagogical_supervisor', 'admin', 'school'), getExitPasses);
 router.post('/exit-pass', authorize('pedagogical_supervisor', 'general_supervisor', 'admin', 'school'), createExitPass);
+router.put('/exit-pass/:id/approve', authorize('general_supervisor', 'pedagogical_supervisor', 'admin', 'school'), approveExitPass);
+router.put('/exit-pass/:id/reject', authorize('general_supervisor', 'pedagogical_supervisor', 'admin', 'school'), rejectExitPass);
 
 module.exports = router;

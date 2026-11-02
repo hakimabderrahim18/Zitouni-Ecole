@@ -17,6 +17,10 @@ const classSchema = new mongoose.Schema(
       enum: ['primary', 'middle', 'secondary'],
       required: true,
     },
+    capacity: {
+      type: Number,
+      default: 30,
+    },
     // Fixed modules (subjects) taught in this class
     modules: [
       {

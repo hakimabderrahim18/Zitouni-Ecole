@@ -22,7 +22,9 @@ const getSupervisorDashboardStats = async (req, res, next) => {
 
     const staffAttendanceToday = await StaffAttendance.find({
       date: { $gte: todayStart, $lte: todayEnd },
-    }).populate('staffUser', 'firstName lastName role phoneNumber profilePic username');
+    })
+      .populate('staffUser', 'firstName lastName role phoneNumber profilePic username')
+      .populate('substituteTeacher', 'firstName lastName role');
 
     const damagesToday = await MaterialDamage.find({
       date: { $gte: todayStart, $lte: todayEnd },
@@ -34,7 +36,20 @@ const getSupervisorDashboardStats = async (req, res, next) => {
 
     const exitPassesToday = await ExitPass.find({
       date: { $gte: todayStart, $lte: todayEnd },
-    }).populate('student class');
+    })
+      .populate({
+        path: 'student',
+        populate: [
+          { path: 'user', select: 'firstName lastName phoneNumber username profilePic' },
+          { path: 'parent', populate: { path: 'user', select: 'firstName lastName phoneNumber' } },
+        ],
+      })
+      .populate('class', 'name level')
+      .populate('requestedByParent', 'firstName lastName phoneNumber')
+      .populate('approvedBy', 'firstName lastName role')
+      .populate('issuedBy', 'firstName lastName role')
+      .populate('verifiedByReceptionist', 'firstName lastName')
+      .sort({ createdAt: -1 });
 
     // Fetch teachers, supervisors, classes, and students for assignment, exit passes, and attendance
     const allTeachers = await Teacher.find().populate('user', 'firstName lastName phoneNumber username profilePic baseSalary salaryDeductionPerAbsence');
@@ -64,7 +79,7 @@ const getSupervisorDashboardStats = async (req, res, next) => {
 
 // Record staff attendance (teachers and supervisors) + Trigger automated deduction if absent
 const recordStaffAttendance = async (req, res, next) => {
-  const { staffUserId, status, remarks, date } = req.body;
+  const { staffUserId, status, remarks, date, substituteTeacherId, substituteRemarks, exitTime } = req.body;
 
   try {
     if (!staffUserId || !status) {
@@ -152,6 +167,9 @@ const recordStaffAttendance = async (req, res, next) => {
     if (attendance) {
       attendance.status = status;
       attendance.remarks = remarks || attendance.remarks;
+      if (substituteTeacherId !== undefined) attendance.substituteTeacher = substituteTeacherId || null;
+      if (substituteRemarks !== undefined) attendance.substituteRemarks = substituteRemarks;
+      if (exitTime !== undefined) attendance.exitTime = exitTime;
       attendance.recordedBy = req.user.id;
       attendance.deductionApplied = deductionApplied;
       attendance.deductionAmount = deductionAmount;
@@ -163,6 +181,9 @@ const recordStaffAttendance = async (req, res, next) => {
         date: attendanceDate,
         status,
         remarks: remarks || '',
+        substituteTeacher: substituteTeacherId || null,
+        substituteRemarks: substituteRemarks || '',
+        exitTime: exitTime || '',
         recordedBy: req.user.id,
         deductionApplied,
         deductionAmount,
@@ -184,15 +205,16 @@ const recordStaffAttendance = async (req, res, next) => {
 
 // Record Material Damage
 const recordMaterialDamage = async (req, res, next) => {
-  const { itemDescription, location, estimatedCost } = req.body;
+  const { itemDescription, description, location, estimatedCost } = req.body;
+  const desc = itemDescription || description;
 
   try {
-    if (!itemDescription || !location) {
-      return res.status(400).json({ message: 'Description et lieu requis' });
+    if (!desc || !location) {
+      return res.status(400).json({ message: 'الوصف ومكان الإتلاف مطلوبان (Description et lieu requis)' });
     }
 
     const damage = await MaterialDamage.create({
-      itemDescription,
+      itemDescription: desc,
       location,
       estimatedCost: Number(estimatedCost) || 0,
       reportedBy: req.user.id,
@@ -200,7 +222,7 @@ const recordMaterialDamage = async (req, res, next) => {
 
     await damage.populate('reportedBy', 'firstName lastName role');
 
-    res.status(201).json({ message: 'Rapport de détérioration envoyé au Superviseur Général', damage });
+    res.status(201).json({ message: 'تم إرسال تقرير الإتلاف بنجاح', damage });
   } catch (error) {
     next(error);
   }
@@ -232,38 +254,24 @@ const updateMaterialDamage = async (req, res, next) => {
 
 // Canteen Reservations
 const createCanteenReservation = async (req, res, next) => {
-  const { mealType, date, remarks } = req.body;
+  const { mealType, date, remarks, notes, isPaid } = req.body;
 
   try {
     const reservationDate = date ? new Date(date) : new Date();
-    reservationDate.setHours(12, 0, 0, 0);
+    const cleanNotes = notes || remarks || '';
 
-    const startOfDay = new Date(reservationDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(reservationDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    let reservation = await CanteenReservation.findOne({
+    const reservation = await CanteenReservation.create({
       user: req.user.id,
-      date: { $gte: startOfDay, $lte: endOfDay },
+      mealType: mealType || 'Lunch',
+      date: reservationDate,
+      isPaid: isPaid !== false,
+      remarks: cleanNotes,
+      notes: cleanNotes,
     });
-
-    if (reservation) {
-      reservation.mealType = mealType || reservation.mealType;
-      reservation.remarks = remarks || reservation.remarks;
-      await reservation.save();
-    } else {
-      reservation = await CanteenReservation.create({
-        user: req.user.id,
-        mealType: mealType || 'Déjeuner (Glaçé/Normal)',
-        date: reservationDate,
-        remarks: remarks || '',
-      });
-    }
 
     await reservation.populate('user', 'firstName lastName role profilePic');
 
-    res.status(200).json({ message: 'Réservation cantine enregistrée', reservation });
+    res.status(200).json({ message: 'تم تسجيل حجز المطعم بنجاح', reservation });
   } catch (error) {
     next(error);
   }
@@ -327,6 +335,96 @@ const createExitPass = async (req, res, next) => {
   }
 };
 
+// Approve an Exit Pass (by Admin or Supervisor)
+const approveExitPass = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const pass = await ExitPass.findById(id);
+    if (!pass) {
+      return res.status(404).json({ message: 'طلب ترخيص الخروج غير موجود.' });
+    }
+
+    pass.status = 'Approved';
+    pass.approvedBy = req.user.id;
+    pass.approvedAt = new Date();
+    pass.issuedBy = req.user.id;
+    await pass.save();
+
+    await pass.populate({
+      path: 'student',
+      populate: { path: 'user', select: 'firstName lastName profilePic phoneNumber' },
+    });
+    await pass.populate('class', 'name level');
+    await pass.populate('approvedBy', 'firstName lastName role');
+
+    res.status(200).json({
+      message: 'تمت المصادقة على طلب ترخيص الخروج بنجاح. أصبحت البطاقة مفعلة لدى موظف الاستقبال.',
+      pass,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reject an Exit Pass (by Admin or Supervisor)
+const rejectExitPass = async (req, res, next) => {
+  const { id } = req.params;
+  const { rejectionReason } = req.body;
+  try {
+    const pass = await ExitPass.findById(id);
+    if (!pass) {
+      return res.status(404).json({ message: 'طلب ترخيص الخروج غير موجود.' });
+    }
+
+    pass.status = 'Rejected';
+    pass.rejectionReason = rejectionReason || 'تم رفض الترخيص من قبل إدارة المؤسسة.';
+    await pass.save();
+
+    res.status(200).json({ message: 'تم رفض طلب ترخيص الخروج.', pass });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get Exit Passes with filters
+const getExitPasses = async (req, res, next) => {
+  const { status, todayOnly } = req.query;
+  const filter = {};
+
+  if (status) {
+    filter.status = status;
+  }
+
+  if (todayOnly === 'true') {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    filter.date = { $gte: todayStart, $lte: todayEnd };
+  }
+
+  try {
+    const passes = await ExitPass.find(filter)
+      .populate({
+        path: 'student',
+        populate: [
+          { path: 'user', select: 'firstName lastName profilePic phoneNumber username' },
+          { path: 'parent', populate: { path: 'user', select: 'firstName lastName phoneNumber' } },
+        ],
+      })
+      .populate('class', 'name level')
+      .populate('requestedByParent', 'firstName lastName phoneNumber')
+      .populate('approvedBy', 'firstName lastName role')
+      .populate('issuedBy', 'firstName lastName role')
+      .populate('verifiedByReceptionist', 'firstName lastName')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(passes);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getSupervisorDashboardStats,
   recordStaffAttendance,
@@ -335,4 +433,7 @@ module.exports = {
   createCanteenReservation,
   assignClassesToSupervisor,
   createExitPass,
+  approveExitPass,
+  rejectExitPass,
+  getExitPasses,
 };

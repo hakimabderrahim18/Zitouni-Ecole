@@ -7,6 +7,11 @@ const {
   payBill,
   downloadReceipt,
   downloadRegulations,
+  submitChildReEnrollment,
+  getParentReEnrollmentInfo,
+  getParentChildrenClasses,
+  requestExitPass,
+  getParentExitPasses,
 } = require('../controllers/parent.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/role.middleware');
@@ -17,10 +22,17 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/children', authorize('parent'), getChildren);
+router.get('/classes', authorize('parent'), getParentChildrenClasses);
+router.get('/re-enrollment-info', authorize('parent'), getParentReEnrollmentInfo);
+router.post('/re-enrollment', authorize('parent'), submitChildReEnrollment);
 router.get('/children/:studentId/attendance', authorize('parent'), getChildAttendance);
 router.get('/children/:studentId/schedules', authorize('parent'), getChildSchedules);
 router.get('/payments', authorize('parent'), getPayments);
 router.post('/payments/pay', authorize('parent'), payBill);
+
+// Student Exit Pass requests (Autorisations de sortie)
+router.post('/exit-pass-request', authorize('parent'), requestExitPass);
+router.get('/exit-passes', authorize('parent'), getParentExitPasses);
 
 // Internal regulations document download (القانون الداخلي)
 router.get('/document/regulations', authorize('parent'), downloadRegulations);

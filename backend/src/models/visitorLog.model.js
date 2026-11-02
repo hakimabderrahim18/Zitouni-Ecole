@@ -19,8 +19,8 @@ const visitorLogSchema = new mongoose.Schema(
     },
     visitType: {
       type: String,
-      enum: ['Parent', 'Inspection Pédagogique', 'Livraison / Matériel', 'Inscription', 'Autre'],
       default: 'Parent',
+      trim: true,
     },
     purpose: {
       type: String,

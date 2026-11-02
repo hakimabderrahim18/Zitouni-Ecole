@@ -41,6 +41,12 @@ const initSocket = (server) => {
       console.log(`Socket ${socket.id} joined conversation room: ${room}`);
     });
 
+    // Real-time Chat: joining a school group channel room (Art. 18-19)
+    socket.on('join_group_channel', (channelId) => {
+      socket.join(channelId);
+      console.log(`Socket ${socket.id} joined group channel room: ${channelId}`);
+    });
+
     // Handle incoming direct message
     socket.on('send_direct_message', async ({ senderId, receiverId, content, attachmentUrl, attachmentName }) => {
       try {

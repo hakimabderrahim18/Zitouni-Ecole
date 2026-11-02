@@ -1,0 +1,41 @@
+{
+  "landing": {
+    "hero": {
+      "tagline": "ÉDUCATION D'ÉLITE À OULED FAYET",
+      "headline": "L'Excellence Académique réinventée",
+      "subtitle": "Une plateforme de gestion scolaire de premier ordre unissant administrations, enseignants, étudiants et parents au cœur d'Alger.",
+      "ctaStart": "Espace Client",
+      "ctaLearn": "En savoir plus"
+    },
+    "features": {
+      "title": "Fonctionnalités Haut de Gamme",
+      "realtimeChat": "Messagerie en Temps Réel",
+      "realtimeChatDesc": "Liaison directe avec Socket.IO pour les parents, enseignants et directeurs.",
+      "tracking": "Suivi des Élèves",
+      "trackingDesc": "Contrôle en direct des présences, des notes, et des devoirs.",
+      "payments": "Paiements Sécurisés",
+      "paymentsDesc": "Règlement des frais de scolarité, cantine et bus en ligne."
+    },
+    "stats": {
+      "students": "Élèves Inscrits",
+      "teachers": "Enseignants Qualifiés",
+      "successRate": "Taux de Réussite"
+    },
+    "faq": {
+      "title": "Questions Fréquentes"
+    }
+  },
+  "auth": {
+    "login": "Connexion",
+    "email": "Adresse Email",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "deactivated": "Votre compte est désactivé. Veuillez contacter l'administration."
+  },
+  "roles": {
+    "admin": "Administrateur",
+    "teacher": "Enseignant",
+    "student": "Élève",
+    "parent": "Parent"
+  }
+}

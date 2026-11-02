@@ -3,47 +3,36 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, Crown, Check, Palette, ChevronDown } from 'lucide-react';
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState('blue-roi');
+  const [theme, setTheme] = useState('prestige');
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const themes = [
     {
-      id: 'blue-roi',
-      name: 'أزرق ملكي وأبيض (Bleu Roi)',
-      shortName: 'أزرق ملكي',
+      id: 'prestige',
+      name: 'برستيج أكاديمي (عنابي وكريمي)',
+      shortName: 'برستيج أكاديمي',
       icon: Crown,
-      color: 'text-blue-400',
-      bg: 'bg-blue-500/15',
-      border: 'border-blue-500/30'
+      color: 'text-[#7B1E3A]',
+      bg: 'bg-[#7B1E3A]/15',
+      border: 'border-[#C9A24D]/40'
     },
     {
-      id: 'default',
-      name: 'داكن ذهبي وترابكوتة',
-      shortName: 'داكن ذهبي',
+      id: 'prestige-dark',
+      name: 'برستيج أكاديمي ليلي (عنابي وذهبي)',
+      shortName: 'عنابي ليلي',
       icon: Moon,
-      color: 'text-amber-400',
-      bg: 'bg-amber-500/15',
-      border: 'border-amber-500/30'
-    },
-    {
-      id: 'sand',
-      name: 'مظهر فاتح (رمالي وأبيض)',
-      shortName: 'مظهر فاتح',
-      icon: Sun,
-      color: 'text-orange-400',
-      bg: 'bg-orange-500/15',
-      border: 'border-orange-500/30'
+      color: 'text-[#C9A24D]',
+      bg: 'bg-[#7B1E3A]/30',
+      border: 'border-[#C9A24D]/40'
     }
   ];
 
   useEffect(() => {
     let savedTheme = localStorage.getItem('theme');
-    // Upgrade old theme values or default to the new Bleu Roi dark mode
-    if (savedTheme === 'dark' || !savedTheme || (savedTheme !== 'default' && savedTheme !== 'sand' && savedTheme !== 'blue-roi')) {
-      savedTheme = 'blue-roi';
-    } else if (savedTheme === 'light') {
-      savedTheme = 'sand';
+    // Default to Prestige Académique (Bordeaux + Crème)
+    if (!savedTheme || (savedTheme !== 'prestige' && savedTheme !== 'prestige-dark')) {
+      savedTheme = 'prestige';
     }
 
     setTheme(savedTheme);
@@ -59,13 +48,11 @@ export default function ThemeToggle() {
   }, []);
 
   const applyTheme = (selectedTheme) => {
-    document.documentElement.classList.remove('theme-sand', 'theme-default', 'theme-blue-roi', 'dark');
-    if (selectedTheme === 'blue-roi') {
-      document.documentElement.classList.add('theme-blue-roi', 'dark');
-    } else if (selectedTheme === 'sand') {
-      document.documentElement.classList.add('theme-sand');
+    document.documentElement.classList.remove('theme-sand', 'theme-default', 'theme-blue-roi', 'theme-prestige', 'theme-prestige-dark', 'dark');
+    if (selectedTheme === 'prestige-dark') {
+      document.documentElement.classList.add('theme-prestige-dark', 'dark');
     } else {
-      document.documentElement.classList.add('theme-default', 'dark');
+      document.documentElement.classList.add('theme-prestige', 'theme-sand');
     }
   };
 

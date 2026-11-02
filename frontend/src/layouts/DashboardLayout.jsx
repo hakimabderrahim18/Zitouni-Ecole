@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useChatStore } from '../store/useChatStore';
+import { useSchoolStore } from '../store/useSchoolStore';
+import SchoolLogo from '../components/SchoolLogo';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Menu, Bell, MessageSquare, BookOpen, CreditCard, Calendar, Users, X, Globe, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { LogOut, Menu, Bell, MessageSquare, BookOpen, CreditCard, Calendar, Users, X, Globe, ChevronLeft, ChevronRight, FileText, Palette, CheckSquare, Database, ShieldCheck, ShieldAlert, RefreshCw, Layers, AlertTriangle, Utensils, Camera, Trash2, Edit3, Save, Key, Phone, Check, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { motion } from 'framer-motion';
 import axios from 'axios';
-import ThemeToggle from '../components/ThemeToggle';
 
 const getNotificationIcon = (type) => {
   switch (type) {
@@ -40,15 +41,132 @@ const getNotificationIcon = (type) => {
 };
 
 export default function DashboardLayout({ children }) {
-  const { user, profile, logout } = useAuthStore();
+  const { user, profile, logout, updateUser } = useAuthStore();
   const { connectSocket, disconnectSocket } = useChatStore();
   const { notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
+  const { settings, fetchSettings } = useSchoolStore();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { t, i18n } = useTranslation();
+
+  const fileInputRef = useRef(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarDeleting, setAvatarDeleting] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMsg, setProfileMsg] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    password: '',
+  });
+
+  useEffect(() => {
+    if (user) {
+      setEditFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        phoneNumber: user.phoneNumber || '',
+        password: '',
+      });
+    }
+  }, [user, profileOpen]);
+
+  const handleAvatarFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    setProfileMsg(null);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const res = await axios.post('/api/auth/profile/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data?.user) {
+        updateUser(res.data.user);
+      } else if (res.data?.profilePic) {
+        updateUser({ profilePic: res.data.profilePic });
+      }
+      setProfileMsg({ type: 'success', text: 'تم تحديث الصورة الشخصية بنجاح' });
+    } catch (err) {
+      setProfileMsg({ type: 'error', text: err.response?.data?.message || 'فشل تحميل الصورة الشخصية' });
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAvatarDelete = async () => {
+    if (!window.confirm('هل أنت متأكد من رغبتك في حذف الصورة الشخصية؟')) return;
+    setAvatarDeleting(true);
+    setProfileMsg(null);
+    try {
+      const res = await axios.delete('/api/auth/profile/avatar');
+      if (res.data?.user) {
+        updateUser(res.data.user);
+      } else {
+        updateUser({ profilePic: '' });
+      }
+      setProfileMsg({ type: 'success', text: 'تم إزالة الصورة الشخصية' });
+    } catch (err) {
+      setProfileMsg({ type: 'error', text: err.response?.data?.message || 'فشل إزالة الصورة' });
+    } finally {
+      setAvatarDeleting(false);
+    }
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setProfileMsg(null);
+    try {
+      const payload = {
+        firstName: editFormData.firstName,
+        lastName: editFormData.lastName,
+        phoneNumber: editFormData.phoneNumber,
+      };
+      if (editFormData.password.trim()) {
+        payload.password = editFormData.password.trim();
+      }
+      const res = await axios.put('/api/auth/profile', payload);
+      if (res.data?.user) {
+        updateUser(res.data.user);
+      } else {
+        updateUser(payload);
+      }
+      setIsEditingProfile(false);
+      setProfileMsg({ type: 'success', text: 'تم تحديث بيانات الحساب بنجاح' });
+    } catch (err) {
+      setProfileMsg({ type: 'error', text: err.response?.data?.message || 'فشل حفظ التعديلات' });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      await axios.delete('/api/auth/account');
+      setProfileOpen(false);
+      logout();
+      navigate('/');
+    } catch (err) {
+      setProfileMsg({ type: 'error', text: err.response?.data?.message || 'تعذر حذف الحساب' });
+      setDeletingAccount(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -94,37 +212,49 @@ export default function DashboardLayout({ children }) {
   const getSidebarLinks = () => {
     switch (user?.role) {
       case 'admin':
-        return [
-          { to: '/dashboard/admin', label: 'نظرة عامة', icon: BookOpen },
-          { to: '/dashboard/admin/users', label: 'حسابات المستخدمين', icon: Users },
-          { to: '/dashboard/admin/finance', label: 'التسيير المالي والرواتب والخصم التلقائي', icon: CreditCard },
-          { to: '/dashboard/admin/audit', label: 'رقابة الرسائل', icon: MessageSquare },
-        ];
       case 'school':
         return [
-          { to: '/dashboard/admin', label: 'الأموال والفوترة', icon: CreditCard },
-          { to: '/dashboard/admin/finance', label: 'التسيير المالي والرواتب والخصم التلقائي', icon: CreditCard },
-          { to: '/dashboard/admin/accounts', label: 'تنشيط وتعديل حسابات النظام', icon: Users },
+          { to: '/dashboard/admin', label: 'لوحة القيادة والمؤشرات', icon: BookOpen },
+          { to: '/dashboard/admin/users', label: 'المستخدمين والصلاحيات', icon: Users },
+          { to: '/dashboard/admin/teachers', label: 'قائمة الأساتذة (المادة 23)', icon: Users },
           { to: '/dashboard/admin/students', label: 'قائمة التلاميذ', icon: Users },
-          { to: '/dashboard/admin/teachers', label: 'قائمة الأساتذة', icon: Users },
-          { to: '/dashboard/admin/classes-create', label: 'إنشاء قسم / فوج دراسي', icon: BookOpen },
-          { to: '/dashboard/admin/classes', label: 'قائمة الأقسام والأفواج الدراسية', icon: BookOpen },
+          { to: '/dashboard/admin/inscriptions', label: 'التسجيلات والملفات المدرسية', icon: FileText },
+          { to: '/dashboard/admin/classes', label: 'الأقسام والأفواج الدراسية', icon: BookOpen },
+          { to: '/dashboard/admin/attendance', label: 'سجل حضور وغياب التلاميذ والإنذارات', icon: CheckSquare },
+          { to: '/dashboard/admin/timetable-official', label: 'جدول التوقيت واستيراد RAN09', icon: Calendar },
+          { to: '/dashboard/admin/lessons', label: 'كراس الدروس والواجبات (Cahier de texte)', icon: BookOpen },
+          { to: '/dashboard/admin/finance', label: 'التسيير المالي والرواتب والخصم التلقائي', icon: CreditCard },
           { to: '/dashboard/admin/modules', label: 'المواد الدراسية', icon: BookOpen },
           { to: '/dashboard/admin/documents', label: 'المستندات الإدارية', icon: FileText },
-          { to: '/dashboard/admin/schedules', label: 'إنشاء أو تعديل جدول حصص / مخطط', icon: Calendar },
-          { to: '/dashboard/admin/schedules-guide', label: 'دليل الجداول والمخططات الحالية', icon: Calendar },
+          { to: '/dashboard/admin/schedules', label: 'المخططات والجداول', icon: Calendar },
+          { to: '/dashboard/admin/login-audit', label: 'سجل جلسات الدخول والأمان', icon: ShieldCheck },
+          { to: '/dashboard/admin/branding', label: 'الهوية البصرية للمؤسسة', icon: Palette },
+          { to: '/dashboard/admin/backups', label: 'النسخ الاحتياطي والأرشيف المشفر', icon: Database },
+          { to: '/dashboard/admin/requests', label: 'الطلبات والشهادات الإدارية (Art. 38)', icon: FileText },
+          { to: '/dashboard/admin/reported-messages', label: 'الرسائل المبلغ عنها', icon: ShieldAlert },
+          { to: '/dashboard/admin/audit', label: 'رقابة المحادثات', icon: MessageSquare },
         ];
       case 'general_supervisor':
         return [
           { to: '/dashboard/general-supervisor', label: 'لوحة المراقب العام', icon: BookOpen },
-          { to: '/dashboard/general-supervisor/attendance', label: 'مراقبة حضور الموظفين والأساتذة', icon: Users },
-          { to: '/dashboard/general-supervisor/classes-assignment', label: 'توزيع المراقبين على الأقسام', icon: Users },
-          { to: '/dashboard/general-supervisor/damages', label: 'تقارير الإتلاف والصيانة', icon: Calendar },
-          { to: '/dashboard/general-supervisor/canteen', label: 'حجوزات المطعم (الكانتين)', icon: CreditCard },
+          { to: '/dashboard/general-supervisor/student-attendance', label: 'حضور وغياب التلاميذ', icon: CheckSquare },
+          { to: '/dashboard/general-supervisor/inscriptions', label: 'التسجيلات والملفات المدرسية', icon: FileText },
+          { to: '/dashboard/general-supervisor/login-audit', label: 'سجل جلسات الدخول والأمان', icon: ShieldCheck },
+          { to: '/dashboard/general-supervisor/reported-messages', label: 'الرسائل المبلغ عنها', icon: ShieldAlert },
+          { to: '/dashboard/general-supervisor/timetable', label: 'جداول توقيت الأقسام والأساتذة', icon: Calendar },
+          { to: '/dashboard/general-supervisor/lessons', label: 'كراس الدروس والواجبات والتأشيرات', icon: BookOpen },
+          { to: '/dashboard/general-supervisor/attendance', label: 'حضور الأساتذة والموظفين والخصم', icon: Users },
+          { to: '/dashboard/general-supervisor/classes-assignment', label: 'توزيع المراقبين التربويين', icon: Layers },
+          { to: '/dashboard/general-supervisor/exit-passes', label: 'تراخيص خروج التلاميذ ومصادقة الإدارة', icon: LogOut },
+          { to: '/dashboard/general-supervisor/damages', label: 'رقابة التجهيزات وسجل الإتلافات', icon: AlertTriangle },
+          { to: '/dashboard/general-supervisor/canteen', label: 'حجوزات المطعم المدرسي (الكانتين)', icon: Utensils },
         ];
       case 'pedagogical_supervisor':
         return [
           { to: '/dashboard/pedagogical-supervisor', label: 'لوحة المراقب التربوي', icon: BookOpen },
+          { to: '/dashboard/pedagogical-supervisor/student-attendance', label: 'تسجيل حضور وغياب التلاميذ (6 حالات)', icon: CheckSquare },
+          { to: '/dashboard/pedagogical-supervisor/timetable', label: 'جداول توقيت الأقسام والأساتذة', icon: Calendar },
+          { to: '/dashboard/pedagogical-supervisor/lessons', label: 'تأشيرة ومراقبة كراس الدروس', icon: BookOpen },
           { to: '/dashboard/pedagogical-supervisor/attendance', label: 'تفقد حضور الموظفين والأساتذة', icon: Calendar },
           { to: '/dashboard/pedagogical-supervisor/exit-pass', label: 'إصدار بطاقة ترخيص خروج تلميذ', icon: Users },
           { to: '/dashboard/pedagogical-supervisor/damages', label: 'التبليغ عن إتلاف في التجهيزات', icon: MessageSquare },
@@ -139,23 +269,34 @@ export default function DashboardLayout({ children }) {
       case 'teacher':
         return [
           { to: '/dashboard/teacher', label: 'لوحة التحكم', icon: BookOpen },
+          { to: '/dashboard/teacher/lessons', label: 'كراس الدروس والواجبات المنزلية', icon: BookOpen },
+          { to: '/dashboard/teacher/timetable', label: 'جدول توقيتي الأسبوعي (RAN09)', icon: Calendar },
           { to: '/dashboard/teacher/courses', label: 'المواد والدروس', icon: BookOpen },
           { to: '/dashboard/teacher/classes', label: 'أقسامي وأفواجي', icon: Users },
           { to: '/dashboard/teacher/attendance', label: 'سجل الغيابات', icon: Calendar },
+          { to: '/dashboard/teacher/requests', label: 'الطلبات الإدارية وسكرتارية المؤسسة', icon: FileText },
         ];
       case 'student':
         return [
           { to: '/dashboard/student', label: 'لوحة التحكم', icon: BookOpen },
-          { to: '/dashboard/student/courses', label: 'الدروس والواجبات', icon: BookOpen },
-          { to: '/dashboard/student/schedules', label: 'جدول الحصص', icon: Calendar },
+          { to: '/dashboard/student/re-enrollment', label: 'إعادة التسجيل السنوية', icon: RefreshCw },
+          { to: '/dashboard/student/lessons', label: 'كراس الدروس والواجبات المنزلية', icon: BookOpen },
+          { to: '/dashboard/student/timetable', label: 'جدول توقيت القسم (RAN09)', icon: Calendar },
+          { to: '/dashboard/student/courses', label: 'المقررات الدراسية', icon: BookOpen },
+          { to: '/dashboard/student/schedules', label: 'مخطط الحصص', icon: Calendar },
           { to: '/dashboard/student/attendance', label: 'سجل الحضور', icon: Calendar },
         ];
       case 'parent':
         return [
           { to: '/dashboard/parent', label: 'لوحة التحكم', icon: BookOpen },
+          { to: '/dashboard/parent/re-enrollment', label: 'إعادة تسجيل الأبناء', icon: RefreshCw },
+          { to: '/dashboard/parent/lessons', label: 'كراس الدروس ومتابعة الواجبات', icon: BookOpen },
+          { to: '/dashboard/parent/timetable', label: 'جدول توقيت الأبناء (RAN09)', icon: Calendar },
           { to: '/dashboard/parent/payments', label: 'الفواتير والمدفوعات', icon: CreditCard },
-          { to: '/dashboard/parent/schedules', label: 'جدول التوقيت والبرامج', icon: Calendar },
+          { to: '/dashboard/parent/schedules', label: 'مخطط البرامج', icon: Calendar },
           { to: '/dashboard/parent/attendance', label: 'سجل الحضور والغيابات', icon: Users },
+          { to: '/dashboard/parent/exit-passes', label: 'تراخيص وأذونات خروج الأبناء', icon: LogOut },
+          { to: '/dashboard/parent/requests', label: 'الشهادات والطلبات الإدارية (Art. 38)', icon: FileText },
         ];
       default:
         return [];
@@ -193,7 +334,7 @@ export default function DashboardLayout({ children }) {
       : null;
 
   return (
-    <div className="theme-sand flex h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
+    <div className="theme-prestige flex h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden w-full max-w-full relative">
       {/* Mobile Sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -204,15 +345,26 @@ export default function DashboardLayout({ children }) {
 
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed inset-y-0 right-0 z-40 bg-slate-900/60 border-l border-luxury-border/50 glass-panel flex flex-col justify-between p-6 transform transition-transform duration-300 md:translate-x-0 md:static ${
-          sidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'
-        } ${sidebarCollapsed ? 'md:w-20 md:p-3' : 'md:w-64 md:p-6'} w-64`}
+        className={`fixed inset-y-0 right-0 z-40 bg-slate-900/60 border-l border-luxury-border/50 glass-panel flex flex-col justify-between transform transition-all duration-300 md:translate-x-0 md:static ${
+          sidebarOpen
+            ? 'translate-x-0 opacity-100 visible pointer-events-auto'
+            : 'translate-x-full opacity-0 invisible pointer-events-none md:visible md:opacity-100 md:pointer-events-auto md:translate-x-0'
+        } ${sidebarCollapsed ? 'md:w-20 md:p-3' : 'md:w-80 lg:w-[330px] md:p-4 lg:p-5'} w-80 max-w-[90vw] p-4 sm:p-5`}
       >
         <div className="flex-1 min-h-0 flex flex-col gap-8">
           <div className="flex justify-between items-center gap-2 shrink-0">
-            <Link to="/" className="text-xl font-bold bg-gradient-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent flex items-center gap-2 overflow-hidden shrink-0">
-              <span className="w-8 h-8 rounded-lg bg-brand-500 text-white flex items-center justify-center text-sm font-bold shadow-md shadow-brand-400/20 shrink-0">ز</span>
-              {!sidebarCollapsed && <span className="truncate">مدرسة الزيتوني <span className="text-[10px] font-mono text-brand-400">2025/2026</span></span>}
+            <Link to="/" className="text-xl font-bold flex items-center gap-2.5 overflow-hidden shrink-0 group">
+              <SchoolLogo size={36} />
+              {!sidebarCollapsed && (
+                <div className="flex flex-col min-w-0">
+                  <span className="font-black text-slate-100 text-base leading-tight break-words">
+                    {settings?.schoolNameArabic || 'مدرسة حبر'}
+                  </span>
+                  <span className="text-[10px] font-mono text-brand-400 font-bold">
+                    {settings?.academicYear || '2026-2027'}
+                  </span>
+                </div>
+              )}
             </Link>
             
             <div className="flex gap-1.5 items-center">
@@ -232,20 +384,20 @@ export default function DashboardLayout({ children }) {
             </div>
           </div>
 
-          <nav className="space-y-2 overflow-y-auto flex-1 min-h-0 pl-1 -ml-1 sidebar-scroll">
+          <nav className="space-y-1.5 overflow-y-auto flex-1 min-h-0 pl-1 -ml-1 sidebar-scroll">
             {/* News feed is the primary entry point for every role */}
             <Link
               to="/feed"
-              className={`flex items-center gap-3 py-3 px-4 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
+              className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
                 location.pathname === '/feed' ? 'bg-brand-500/10 border-brand-500/20 text-brand-600 font-semibold' : ''
               } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
             >
-              <Globe className={`w-4.5 h-4.5 group-hover:text-brand-500 transition-colors ${location.pathname === '/feed' ? 'text-brand-500' : 'text-brand-400'}`} />
-              {!sidebarCollapsed && <span className="truncate">آخر الأخبار والمستجدات</span>}
+              <Globe className={`w-4.5 h-4.5 shrink-0 group-hover:text-brand-500 transition-colors ${location.pathname === '/feed' ? 'text-brand-500' : 'text-brand-400'}`} />
+              {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-medium">آخر الأخبار والمستجدات</span>}
               {location.pathname === '/feed' && !sidebarCollapsed && (
                 <motion.span
                   layoutId="activeBar"
-                  className="absolute start-0 top-3 bottom-3 w-1.5 bg-brand-500 rounded-e-full"
+                  className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-500 rounded-e-full"
                 />
               )}
             </Link>
@@ -256,16 +408,16 @@ export default function DashboardLayout({ children }) {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`flex items-center gap-3 py-3 px-4 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
+                  className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
                     isActive ? 'bg-brand-500/10 border-brand-500/20 text-brand-600 font-semibold' : ''
                   } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
                 >
-                  <Icon className={`w-4.5 h-4.5 group-hover:text-brand-500 transition-colors ${isActive ? 'text-brand-500' : 'text-brand-400'}`} />
-                  {!sidebarCollapsed && <span className="truncate">{link.label}</span>}
+                  <Icon className={`w-4.5 h-4.5 shrink-0 group-hover:text-brand-500 transition-colors ${isActive ? 'text-brand-500' : 'text-brand-400'}`} />
+                  {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-medium">{link.label}</span>}
                   {isActive && !sidebarCollapsed && (
                     <motion.span 
                       layoutId="activeBar"
-                      className="absolute start-0 top-3 bottom-3 w-1.5 bg-brand-500 rounded-e-full"
+                      className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-500 rounded-e-full"
                     />
                   )}
                 </Link>
@@ -273,16 +425,16 @@ export default function DashboardLayout({ children }) {
             })}
             <Link
               to="/chat"
-              className={`flex items-center gap-3 py-3 px-4 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
+              className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
                 location.pathname === '/chat' ? 'bg-brand-500/10 border-brand-500/20 text-brand-600 font-semibold' : ''
               } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
             >
-              <MessageSquare className={`w-4.5 h-4.5 group-hover:text-brand-500 transition-colors ${location.pathname === '/chat' ? 'text-brand-500' : 'text-brand-400'}`} />
-              {!sidebarCollapsed && <span className="truncate">الرسائل والمحادثة</span>}
+              <MessageSquare className={`w-4.5 h-4.5 shrink-0 group-hover:text-brand-500 transition-colors ${location.pathname === '/chat' ? 'text-brand-500' : 'text-brand-400'}`} />
+              {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-medium">الرسائل والمحادثة</span>}
               {location.pathname === '/chat' && !sidebarCollapsed && (
                 <motion.span 
                   layoutId="activeBar"
-                  className="absolute start-0 top-3 bottom-3 w-1.5 bg-brand-500 rounded-e-full"
+                  className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-500 rounded-e-full"
                 />
               )}
             </Link>
@@ -291,13 +443,15 @@ export default function DashboardLayout({ children }) {
                 onClick={() => handleDownloadDocument(documentButton.url, documentButton.fileName)}
                 disabled={downloadingDoc}
                 title={documentButton.label}
-                className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative disabled:opacity-50 ${
+                className={`w-full flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative disabled:opacity-50 ${
                   sidebarCollapsed ? 'md:justify-center md:px-0' : ''
                 }`}
               >
-                <FileText className="w-4.5 h-4.5 text-brand-400 group-hover:text-brand-500 transition-colors" />
+                <FileText className="w-4.5 h-4.5 shrink-0 text-brand-400 group-hover:text-brand-500 transition-colors" />
                 {!sidebarCollapsed && (
-                  <span className="truncate">{downloadingDoc ? 'جاري التحميل...' : documentButton.label}</span>
+                  <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-medium text-start">
+                    {downloadingDoc ? 'جاري التحميل...' : documentButton.label}
+                  </span>
                 )}
               </button>
             )}
@@ -314,9 +468,9 @@ export default function DashboardLayout({ children }) {
               )}
             </div>
             {!sidebarCollapsed && (
-              <div className="min-w-0">
-                <span className="block text-xs font-semibold text-white truncate">{user?.firstName} {user?.lastName}</span>
-                <span className="block text-[9px] uppercase tracking-wider text-slate-500 truncate">
+              <div className="min-w-0 flex-1">
+                <span className="block text-xs font-semibold text-white leading-snug break-words">{user?.firstName} {user?.lastName}</span>
+                <span className="block text-[9px] uppercase tracking-wider text-slate-500 leading-tight">
                   {user?.role === 'school' ? 'إدارة المدرسة' : user?.role === 'admin' ? 'مدير المنصة' : user?.role === 'teacher' ? 'أستاذ' : user?.role === 'general_supervisor' ? 'مراقب عام' : user?.role === 'pedagogical_supervisor' ? 'مراقب تربوي' : user?.role === 'receptionist' ? 'موظف الاستقبال' : user?.role === 'student' ? 'تلميذ' : user?.role === 'parent' ? 'ولي أمر' : user?.role}
                 </span>
               </div>
@@ -342,26 +496,28 @@ export default function DashboardLayout({ children }) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 max-w-full overflow-hidden">
         
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-4 glass-panel border-b border-luxury-border/50 z-30">
-          <div className="flex items-center gap-2">
+        <header className="md:hidden flex items-center justify-between p-3 sm:p-4 glass-panel border-b border-luxury-border/50 z-30 max-w-full overflow-hidden">
+          <div className="flex items-center gap-2 min-w-0">
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="p-1.5 hover:bg-slate-900 rounded-lg text-slate-400"
+              className="p-1.5 hover:bg-slate-900 rounded-lg text-slate-400 shrink-0"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
-            <span className="text-lg font-bold bg-gradient-to-r from-brand-400 to-indigo-400 bg-clip-text text-transparent">
-              مدرسة الزيتوني
+            <SchoolLogo size={24} className="shrink-0" />
+            <span className="text-sm sm:text-base font-bold text-slate-100 whitespace-nowrap">
+              {settings?.schoolNameArabic || 'مدرسة حبر'}
             </span>
-            <span className="px-1.5 py-0.5 rounded bg-brand-500/10 border border-brand-500/20 text-brand-500 font-bold text-[10px]">2025/2026</span>
+            <span className="hidden xs:inline-block px-1.5 py-0.5 rounded bg-brand-500/10 border border-brand-500/20 text-brand-500 font-bold text-[9px] shrink-0">
+              {settings?.academicYear || '2026-2027'}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Notifications toggle on mobile */}
             <div className="relative">
               <button
@@ -476,7 +632,6 @@ export default function DashboardLayout({ children }) {
             <span className="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-500 font-extrabold text-xs">السنة الدراسية 2025/2026</span>
           </div>
           <div className="flex items-center gap-4">
-            <ThemeToggle />
             <div className="relative">
               <button
                 onClick={() => {
@@ -577,115 +732,312 @@ export default function DashboardLayout({ children }) {
           </div>
         </header>
 
-        <div className="flex-1 p-6 md:p-8 overflow-y-auto">
+        <div className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden min-w-0 max-w-full">
           {children}
         </div>
 
-        {/* User Profile Details Modal (Unified for Desktop and Mobile) */}
+        {/* User Profile Details & Management Modal */}
         {profileOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-            <div className="glass-panel w-full max-w-md border border-luxury-border rounded-2xl p-6 md:p-8 space-y-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+            <div className="glass-panel w-full max-w-lg border border-luxury-border rounded-2xl p-6 md:p-8 space-y-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] max-h-[90vh] overflow-y-auto">
+              {/* Header */}
               <div className="flex justify-between items-start border-b border-luxury-border/40 pb-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-brand-650 flex items-center justify-center font-bold text-white uppercase text-xl shrink-0 border border-brand-500/20">
+                  {/* Avatar with Upload & Delete Controls */}
+                  <div className="relative group w-16 h-16 rounded-full overflow-hidden bg-brand-650 flex items-center justify-center font-bold text-white uppercase text-xl shrink-0 border-2 border-brand-500/40 shadow-inner">
                     {user?.profilePic ? (
                       <img src={user.profilePic} className="w-full h-full object-cover" alt="" />
                     ) : (
                       <span>{user?.firstName?.[0]}{user?.lastName?.[0]}</span>
                     )}
+
+                    {/* Overlay Camera Button */}
+                    <button
+                      type="button"
+                      disabled={avatarUploading || avatarDeleting}
+                      onClick={() => fileInputRef.current?.click()}
+                      title="تغيير الصورة الشخصية"
+                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-semibold cursor-pointer"
+                    >
+                      <Camera className="w-5 h-5 mb-0.5 text-brand-300" />
+                      <span>{avatarUploading ? 'جاري الرفع...' : 'تغيير'}</span>
+                    </button>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleAvatarFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
                   </div>
+
                   <div className="min-w-0">
-                    <h3 className="text-base font-bold text-white truncate">{user?.firstName} {user?.lastName}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-white truncate">{user?.firstName} {user?.lastName}</h3>
+                      {user?.profilePic && (
+                        <button
+                          type="button"
+                          onClick={handleAvatarDelete}
+                          disabled={avatarDeleting}
+                          title="حذف الصورة والرجوع للحروف الأولى"
+                          className="p-1 rounded-lg bg-red-955/20 hover:bg-red-955/40 text-red-400 border border-red-900/30 transition-all text-xs"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                     <span className="inline-block px-2.5 py-0.5 text-[9px] uppercase font-bold tracking-wider rounded-full bg-brand-100 text-brand-700 border border-brand-300/40 mt-1">
                       {user?.role === 'school' ? 'إدارة المدرسة' : user?.role === 'admin' ? 'مدير المنصة' : user?.role === 'teacher' ? 'أستاذ' : user?.role === 'general_supervisor' ? 'مراقب عام' : user?.role === 'pedagogical_supervisor' ? 'مراقب تربوي' : user?.role === 'receptionist' ? 'موظف الاستقبال' : user?.role === 'student' ? 'تلميذ' : user?.role === 'parent' ? 'ولي أمر' : user?.role}
                     </span>
                   </div>
                 </div>
+
                 <button
                   type="button"
-                  onClick={() => setProfileOpen(false)}
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setIsEditingProfile(false);
+                    setShowDeleteConfirm(false);
+                    setProfileMsg(null);
+                  }}
                   className="p-1.5 hover:bg-slate-900 rounded-lg border border-luxury-border/50 text-slate-400 hover:text-white transition-all"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="space-y-3.5 text-sm text-slate-330 text-right">
-                <div className="flex justify-between items-center bg-slate-900/20 p-2.5 rounded-xl border border-luxury-border/30">
-                  <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold">البريد الإلكتروني:</span>
-                  <span className="text-white select-all text-xs truncate max-w-[220px]" title={user?.email}>{user?.email}</span>
+              {/* Status Message */}
+              {profileMsg && (
+                <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                  profileMsg.type === 'success'
+                    ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-300'
+                    : 'bg-red-955/40 border-red-900/40 text-red-300'
+                }`}>
+                  {profileMsg.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                  <span>{profileMsg.text}</span>
                 </div>
-                {user?.phoneNumber && (
+              )}
+
+              {/* Mode Selector Tabs */}
+              <div className="flex bg-slate-900/60 p-1 rounded-xl border border-luxury-border/30 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfile(false)}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    !isEditingProfile ? 'bg-brand-650 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  نظرة عامة
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfile(true)}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    isEditingProfile ? 'bg-brand-650 text-white shadow-md' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>تعديل البيانات</span>
+                </button>
+              </div>
+
+              {/* View Mode */}
+              {!isEditingProfile && (
+                <div className="space-y-3.5 text-sm text-slate-330 text-right">
                   <div className="flex justify-between items-center bg-slate-900/20 p-2.5 rounded-xl border border-luxury-border/30">
-                    <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">الهاتف:</span>
-                    <span className="text-white select-all font-mono text-xs">{user?.phoneNumber}</span>
+                    <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold">البريد الإلكتروني:</span>
+                    <span className="text-white select-all text-xs truncate max-w-[220px]" title={user?.email}>{user?.email}</span>
                   </div>
-                )}
+                  {user?.phoneNumber && (
+                    <div className="flex justify-between items-center bg-slate-900/20 p-2.5 rounded-xl border border-luxury-border/30">
+                      <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">الهاتف:</span>
+                      <span className="text-white select-all font-mono text-xs">{user?.phoneNumber}</span>
+                    </div>
+                  )}
 
-                {/* Role-Specific details */}
-                {user?.role === 'student' && profile && (
-                  <div className="bg-slate-900/20 p-3.5 rounded-xl border border-luxury-border/30 space-y-3.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">رقم التسجيل:</span>
-                      <span className="text-white font-mono text-xs">{profile.registrationNumber || '—'}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">القسم:</span>
-                      <span className="text-white text-xs">{profile.class?.name || '—'}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">الفوج:</span>
-                      <span className="text-white text-xs">{profile.group?.name || '—'}</span>
-                    </div>
-                  </div>
-                )}
-
-                {user?.role === 'teacher' && profile && (
-                  <div className="bg-slate-900/20 p-3.5 rounded-xl border border-luxury-border/30 space-y-2">
-                    <span className="block text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">المواد الموكلة:</span>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {profile.subjects?.map((sub, idx) => (
-                        <span key={idx} className="bg-slate-950 border border-luxury-border/50 px-2.5 py-1 rounded-lg text-xs text-brand-600 font-medium">{sub}</span>
-                      )) || <span className="text-xs text-slate-550 italic">لا توجد مواد.</span>}
-                    </div>
-                  </div>
-                )}
-
-                {user?.role === 'parent' && profile && (
-                  <div className="bg-slate-900/20 p-3.5 rounded-xl border border-luxury-border/30 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">المهنة:</span>
-                      <span className="text-white text-xs">{profile.profession || '—'}</span>
-                    </div>
-                    <div className="flex flex-col gap-1.5 pt-1 border-b border-luxury-border/10 pb-3">
-                      <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">العنوان الشخصي:</span>
-                      <span className="text-white text-xs bg-slate-950/40 p-2.5 rounded-lg border border-luxury-border/35 leading-relaxed">{profile.address || '—'}</span>
-                    </div>
-                    {profile.children && profile.children.length > 0 && (
-                      <div className="flex flex-col gap-2 pt-1">
-                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">الأبناء المتمدرسون:</span>
-                        <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
-                          {profile.children.map((child, idx) => (
-                            <div key={idx} className="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-luxury-border/25">
-                              <span className="text-white font-medium text-xs">
-                                {child.user?.firstName || child.firstName || '—'} {child.user?.lastName || child.lastName || '—'}
-                              </span>
-                              <span className="text-brand-600 text-[10px] font-semibold bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200/30">
-                                {child.class?.name || '—'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                  {/* Role-Specific details */}
+                  {user?.role === 'student' && profile && (
+                    <div className="bg-slate-900/20 p-3.5 rounded-xl border border-luxury-border/30 space-y-3.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">رقم التسجيل:</span>
+                        <span className="text-white font-mono text-xs">{profile.registrationNumber || '—'}</span>
                       </div>
-                    )}
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">القسم:</span>
+                        <span className="text-white text-xs">{profile.class?.name || '—'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">الفوج:</span>
+                        <span className="text-white text-xs">{profile.group?.name || '—'}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {user?.role === 'teacher' && profile && (
+                    <div className="bg-slate-900/20 p-3.5 rounded-xl border border-luxury-border/30 space-y-2">
+                      <span className="block text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">المواد الموكلة:</span>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {profile.subjects?.map((sub, idx) => (
+                          <span key={idx} className="bg-slate-950 border border-luxury-border/50 px-2.5 py-1 rounded-lg text-xs text-brand-600 font-medium">{sub}</span>
+                        )) || <span className="text-xs text-slate-550 italic">لا توجد مواد.</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {user?.role === 'parent' && profile && (
+                    <div className="bg-slate-900/20 p-3.5 rounded-xl border border-luxury-border/30 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">المهنة:</span>
+                        <span className="text-white text-xs">{profile.profession || '—'}</span>
+                      </div>
+                      <div className="flex flex-col gap-1.5 pt-1 border-b border-luxury-border/10 pb-3">
+                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">العنوان الشخصي:</span>
+                        <span className="text-white text-xs bg-slate-950/40 p-2.5 rounded-lg border border-luxury-border/35 leading-relaxed">{profile.address || '—'}</span>
+                      </div>
+                      {profile.children && profile.children.length > 0 && (
+                        <div className="flex flex-col gap-2 pt-1">
+                          <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">الأبناء المتمدرسون:</span>
+                          <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                            {profile.children.map((child, idx) => (
+                              <div key={idx} className="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-luxury-border/25">
+                                <span className="text-white font-medium text-xs">
+                                  {child.user?.firstName || child.firstName || '—'} {child.user?.lastName || child.lastName || '—'}
+                                </span>
+                                <span className="text-brand-600 text-[10px] font-semibold bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200/30">
+                                  {child.class?.name || '—'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Edit Mode */}
+              {isEditingProfile && (
+                <form onSubmit={handleSaveProfile} className="space-y-4 text-right">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-350">الاسم الأول</label>
+                      <input
+                        type="text"
+                        value={editFormData.firstName}
+                        onChange={(e) => setEditFormData({ ...editFormData, firstName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-luxury-border text-white text-xs focus:outline-none focus:border-brand-500"
+                        placeholder="الاسم"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-350">اللقب</label>
+                      <input
+                        type="text"
+                        value={editFormData.lastName}
+                        onChange={(e) => setEditFormData({ ...editFormData, lastName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-luxury-border text-white text-xs focus:outline-none focus:border-brand-500"
+                        placeholder="اللقب"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-350 flex items-center justify-between">
+                      <span>رقم الهاتف</span>
+                      <Phone className="w-3.5 h-3.5 text-slate-500" />
+                    </label>
+                    <input
+                      type="tel"
+                      value={editFormData.phoneNumber}
+                      onChange={(e) => setEditFormData({ ...editFormData, phoneNumber: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-luxury-border text-white text-xs focus:outline-none focus:border-brand-500 text-left font-mono"
+                      placeholder="0797060052"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-350 flex items-center justify-between">
+                      <span>تغيير كلمة المرور (اتركها فارغة للإبقاء على الحالية)</span>
+                      <Key className="w-3.5 h-3.5 text-slate-500" />
+                    </label>
+                    <input
+                      type="password"
+                      value={editFormData.password}
+                      onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-luxury-border text-white text-xs focus:outline-none focus:border-brand-500 text-left"
+                      placeholder="••••••••"
+                      minLength={6}
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="submit"
+                      disabled={savingProfile}
+                      className="flex-1 py-2.5 rounded-xl bg-brand-650 hover:bg-brand-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>{savingProfile ? 'جاري الحفظ...' : 'حفظ التعديلات'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingProfile(false)}
+                      className="py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-luxury-border text-slate-400 text-xs font-bold transition-all"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Account Deletion Area (App Store Guideline 5.1.1(v) Compliant) */}
+              <div className="border-t border-luxury-border/30 pt-3">
+                {!showDeleteConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="text-[11px] text-red-400/80 hover:text-red-400 underline transition-colors block text-center w-full"
+                  >
+                    حذف الحساب نهائياً (App Store 5.1.1(v))
+                  </button>
+                ) : (
+                  <div className="bg-red-955/20 border border-red-900/40 rounded-xl p-3 space-y-2 text-right">
+                    <p className="text-xs text-red-300 font-semibold">هل أنت متأكد من رغبتك في حذف هذا الحساب نهائياً؟ سيتم حذف جميع بياناتك ولا يمكن استرجاعها.</p>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="px-3 py-1.5 rounded-lg bg-slate-900 text-slate-300 text-xs font-medium"
+                      >
+                        تراجع
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeleteAccount}
+                        disabled={deletingAccount}
+                        className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold"
+                      >
+                        {deletingAccount ? 'جاري الحذف...' : 'نعم، حذف الحساب'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
 
+              {/* Modal Footer */}
               <div className="border-t border-luxury-border/40 pt-4 flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setProfileOpen(false)}
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setIsEditingProfile(false);
+                    setShowDeleteConfirm(false);
+                    setProfileMsg(null);
+                  }}
                   className="flex-1 py-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-luxury-border text-slate-350 hover:text-white transition-all text-xs font-bold"
                 >
                   إغلاق

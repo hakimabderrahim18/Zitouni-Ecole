@@ -2,10 +2,13 @@ import { motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
-import { BookOpen, Download, Calendar, Bus, Soup, FileText, GraduationCap, Sparkles } from 'lucide-react';
+import { BookOpen, Download, Calendar, Bus, Soup, FileText, GraduationCap, Sparkles, RefreshCw } from 'lucide-react';
 import ScheduleCard from '../components/ScheduleCard';
 import SchedulesView from '../components/SchedulesView';
 import AttendanceView from '../components/AttendanceView';
+import TimetableGrid from '../components/TimetableGrid';
+import LessonNotebook from '../components/LessonNotebook';
+import StudentReEnrollmentView from '../components/StudentReEnrollmentView';
 import axios from 'axios';
 
 // Palette of gradient accents assigned deterministically per subject
@@ -30,8 +33,11 @@ export default function StudentDashboard() {
 
   const getActiveTab = () => {
     const path = location.pathname;
+    if (path.endsWith('/re-enrollment')) return 're-enrollment';
     if (path.endsWith('/schedules')) return 'schedules';
+    if (path.endsWith('/timetable')) return 'timetable';
     if (path.endsWith('/attendance')) return 'attendance';
+    if (path.endsWith('/lessons')) return 'lessons';
     return 'courses'; // default tab (covers /dashboard/student and /dashboard/student/courses)
   };
 
@@ -72,9 +78,31 @@ export default function StudentDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-8 text-right"
       >
+        {activeTab === 're-enrollment' && <StudentReEnrollmentView />}
+        {activeTab === 'lessons' && <LessonNotebook />}
+        {activeTab === 'timetable' && <TimetableGrid canImport={false} />}
 
         {activeTab === 'courses' && (
-          <div className="max-w-5xl">
+          <div className="max-w-5xl space-y-6">
+            {/* Re-enrollment Notification Banner */}
+            <div className="glass-panel p-5 rounded-2xl border border-brand-500/30 bg-gradient-to-r from-brand-950/40 via-brand-900/20 to-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-300 shrink-0">
+                  <RefreshCw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-100">فترة إعادة التسجيل للموسم الدراسي الجديد مفتوحة</h4>
+                  <p className="text-xs text-slate-400">يمكنك تأكيد رغبتك في إعادة التسجيل، اختيار القسم، وتوليد استمارة التسجيل وعقد التمدرس الرسمي.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/dashboard/student/re-enrollment')}
+                className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md transition-colors whitespace-nowrap shrink-0"
+              >
+                إعادة التسجيل الآن
+              </button>
+            </div>
+
             <div className="glass-panel p-6 md:p-8 rounded-3xl border border-luxury-border space-y-7 relative overflow-hidden">
               {/* Decorative ambient glow */}
               <div className="absolute -top-24 -left-24 w-64 h-64 bg-brand-500/10 rounded-full blur-[90px] pointer-events-none" />
@@ -82,7 +110,7 @@ export default function StudentDashboard() {
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-[0_8px_25px_rgba(197,106,61,0.3)] shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-[0_8px_25px_rgba(123,30,58,0.25)] shrink-0">
                     <BookOpen className="w-6 h-6 text-[#050505]" />
                   </div>
                   <div>
@@ -151,15 +179,21 @@ export default function StudentDashboard() {
                           </div>
                         </div>
 
-                        <a
-                          href={c.fileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-4 w-full py-2.5 rounded-xl bg-brand-500/10 hover:bg-brand-500 border border-brand-500/30 hover:border-brand-500 text-brand-400 hover:text-[#050505] font-bold text-xs transition-all duration-300 flex items-center justify-center gap-2"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>تحميل الملف</span>
-                        </a>
+                        {c.fileUrl ? (
+                          <a
+                            href={c.fileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-4 w-full py-2.5 rounded-xl bg-brand-500/10 hover:bg-brand-500 border border-brand-500/30 hover:border-brand-500 text-brand-400 hover:text-[#050505] font-bold text-xs transition-all duration-300 flex items-center justify-center gap-2"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>تحميل الملف المرفق</span>
+                          </a>
+                        ) : (
+                          <div className="mt-4 w-full py-2 rounded-xl bg-slate-900/50 border border-luxury-border/30 text-slate-400 text-xs text-center font-medium">
+                            درس نصي وتوجيهي (بدون ملف)
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -170,11 +204,17 @@ export default function StudentDashboard() {
         )}
 
         {activeTab === 'schedules' && (
-          <SchedulesView
-            schedules={schedules}
-            loading={loading}
-            emptyLabel="لا يوجد جدول حصص أو برنامج مسجل لقسمك الدراسي حالياً."
-          />
+          <div className="space-y-8">
+            <TimetableGrid canImport={false} />
+            <div className="border-t border-luxury-border/50 pt-8">
+              <h3 className="text-base font-bold text-white mb-4">البرامج والمخططات المدرسية الإضافية</h3>
+              <SchedulesView
+                schedules={schedules}
+                loading={loading}
+                emptyLabel="لا يوجد مخططات إضافية مسجلة حالياً."
+              />
+            </div>
+          </div>
         )}
 
         {activeTab === 'attendance' && (

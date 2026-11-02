@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
+import { useSchoolStore } from '../store/useSchoolStore';
+import SchoolLogo from '../components/SchoolLogo';
 import { 
   Shield, 
   MessageSquare, 
@@ -21,12 +23,16 @@ import {
   GraduationCap,
   Sparkles
 } from 'lucide-react';
-import ThreeDScene from '../components/ThreeDScene';
-import ThemeToggle from '../components/ThemeToggle';
+import SchoolImageCarousel from '../components/SchoolImageCarousel';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const [activeFaq, setActiveFaq] = useState(null);
+  const { settings, fetchSettings } = useSchoolStore();
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -171,35 +177,41 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden mesh-gradient font-cairo">
-      {/* Dynamic Background Glow Orbs */}
-      <motion.div 
-        animate={{ 
-          scale: [1, 1.15, 1],
-          x: [0, 30, 0],
-          y: [0, -20, 0]
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="glow-orb w-[500px] h-[500px] bg-brand-200/50 top-[-10%] start-[-10%]" 
-      />
+    <div className="theme-prestige min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden mesh-gradient font-sans relative w-full max-w-full">
+      {/* Dynamic Background Glow Orbs — strictly clipped within viewport */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.15, 1],
+            x: [0, 20, 0],
+            y: [0, -15, 0]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="glow-orb w-72 sm:w-[500px] h-72 sm:h-[500px] bg-brand-200/50 top-[-5%] start-[-5%]" 
+        />
 
-      <motion.div
-        animate={{
-          scale: [1, 1.2, 1],
-          x: [0, -25, 0],
-          y: [0, 25, 0]
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        className="glow-orb w-[420px] h-[420px] bg-brand-400/30 top-[20%] end-[-8%]"
-      />
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            x: [0, -20, 0],
+            y: [0, 20, 0]
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="glow-orb w-64 sm:w-[420px] h-64 sm:h-[420px] bg-brand-400/30 top-[20%] end-[-5%]"
+        />
+      </div>
 
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-luxury-border">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link to="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-2xl font-extrabold bg-gradient-to-r from-brand-300 to-brand-500 bg-clip-text text-transparent flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg bg-brand-500 text-white flex items-center justify-center text-lg font-bold shadow-md shadow-brand-400/20">ز</span>
-            <span>مدرسة الزيتوني</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-500 font-extrabold text-xs tracking-wider">السنة الدراسية 2025/2026</span>
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-luxury-border w-full max-w-full">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+          <Link to="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-lg sm:text-2xl font-extrabold flex items-center gap-2 sm:gap-2.5 group min-w-0">
+            <SchoolLogo size={32} className="shrink-0" />
+            <span className="bg-gradient-to-r from-brand-300 to-brand-500 bg-clip-text text-transparent font-black truncate">
+              {settings?.schoolNameArabic || 'مدرسة حبر'}
+            </span>
+            <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-500 font-extrabold text-xs tracking-wider shrink-0">
+              {settings?.academicYear ? `السنة الدراسية ${settings.academicYear}` : 'السنة الدراسية 2026/2027'}
+            </span>
           </Link>
           
           <div className="hidden lg:flex items-center gap-8 text-sm font-semibold">
@@ -211,11 +223,10 @@ export default function LandingPage() {
             <a href="#contact" className="text-slate-400 hover:text-brand-500 transition-colors">اتصل بنا</a>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-4">
-            <ThemeToggle />
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <Link
               to="/login"
-              className="px-6 py-2.5 rounded-full bg-brand-500 hover:bg-brand-400 font-bold text-white transition-all hover:shadow-[0_4px_15px_rgba(197,106,61,0.3)] text-xs md:text-sm"
+              className="px-3.5 py-2 sm:px-6 sm:py-2.5 rounded-full bg-brand-500 hover:bg-brand-400 font-bold text-white transition-all hover:shadow-[0_4px_15px_rgba(123,30,58,0.25)] text-xs sm:text-sm whitespace-nowrap"
             >
               فضاء المستخدمين
             </Link>
@@ -224,7 +235,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section - Split screen with premium 3D illustration */}
-      <section id="hero" className="relative pt-32 pb-20 md:pt-40 md:pb-28 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10">
+      <section id="hero" className="relative pt-28 pb-16 sm:pt-36 sm:pb-20 md:pt-40 md:pb-28 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 overflow-hidden">
 
         {/* Left Side: Marketing Context */}
         <div className="w-full lg:w-1/2 text-right space-y-6 z-10">
@@ -257,7 +268,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-base md:text-lg text-slate-400 leading-relaxed font-medium max-w-xl"
           >
-            منصة إلكترونية متكاملة تهدف إلى تعزيز العلاقة بين الإدارة، المعلمين، الأولياء والتلاميذ في مدرسة الزيتوني. تتبع لحظي للمستوى الأكاديمي، جدول التوقيت، الدفع الإلكتروني، والغيابات بكل شفافية وأمان.
+            منصة إلكترونية متكاملة تهدف إلى تعزيز التواصل الإداري والتربوي بين الإدارة، المعلمين، الأولياء والتلاميذ في مدرسة حبر (مؤسسة حبر وألوان الخاصة). تتبع لحظي للمستوى الأكاديمي، كراس الدروس والواجبات، جدول التوقيت، والمتابعة اليومية للغيابات والأنشطة بكل أمان.
           </motion.p>
 
           <motion.div
@@ -268,7 +279,7 @@ export default function LandingPage() {
           >
             <button
               onClick={() => navigate('/login')}
-              className="px-8 py-4 rounded-full bg-gradient-to-l from-brand-500 to-brand-400 hover:from-brand-400 hover:to-brand-300 font-bold text-white flex items-center justify-center gap-2 group transition-all hover:shadow-[0_8px_30px_rgba(197,106,61,0.35)] text-sm"
+              className="px-8 py-4 rounded-full bg-gradient-to-l from-brand-500 to-brand-400 hover:from-brand-400 hover:to-brand-300 font-bold text-white flex items-center justify-center gap-2 group transition-all hover:shadow-[0_8px_30px_rgba(123,30,58,0.30)] text-sm"
             >
               <span>دخول فضاء المنصة</span>
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -302,73 +313,14 @@ export default function LandingPage() {
           </motion.div>
         </div>
 
-        {/* Right Side: Interactive 3D Canvas */}
+        {/* Right Side: School Facility Image Carousel (Customizable) */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
-          className="w-full lg:w-1/2 h-[420px] md:h-[560px] relative z-0"
+          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+          className="w-full lg:w-1/2 relative z-10"
         >
-          {/* Layered ambient glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] h-[360px] bg-brand-500/15 filter blur-[110px] rounded-full pointer-events-none" />
-          <div className="absolute top-1/3 right-1/4 w-[180px] h-[180px] bg-brand-300/10 filter blur-[80px] rounded-full pointer-events-none" />
-
-          {/* Decorative rotating dashed ring framing the scene */}
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-full border border-dashed border-brand-500/20 pointer-events-none"
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 55, repeat: Infinity, ease: 'linear' }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] md:w-[300px] md:h-[300px] rounded-full border border-brand-400/10 pointer-events-none"
-          />
-
-          <ThreeDScene type="landing" />
-
-          {/* Floating glass info badges - academic dark glass */}
-          <motion.div
-            initial={{ opacity: 0, x: 20, y: -10 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.6 }}
-            className="absolute top-6 start-0 hidden sm:flex items-center gap-2.5 px-4 py-3 rounded-2xl glass-panel border border-brand-500/20 shadow-xl shadow-brand-950/30"
-          >
-            <span className="w-9 h-9 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center">
-              <CheckCircle className="w-5 h-5" />
-            </span>
-            <div className="text-right leading-tight">
-              <p className="text-slate-100 font-bold text-xs">حضور لحظي</p>
-              <p className="text-slate-450 text-[10px] font-semibold">إشعار فوري للأولياء</p>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: -20, y: 10 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.8 }}
-            className="absolute bottom-8 end-0 hidden sm:flex items-center gap-2.5 px-4 py-3 rounded-2xl glass-panel border border-brand-500/20 shadow-xl shadow-brand-950/30"
-          >
-            <span className="w-9 h-9 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center">
-              <CreditCard className="w-5 h-5" />
-            </span>
-            <div className="text-right leading-tight">
-              <p className="text-slate-100 font-bold text-xs">دفع آمن</p>
-              <p className="text-slate-450 text-[10px] font-semibold">مدفوعات مشفّرة 100%</p>
-            </div>
-          </motion.div>
-
-          {/* Floating academic metric chip */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 1 }}
-            className="absolute top-1/2 -translate-y-1/2 end-2 hidden md:flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl glass-panel border border-brand-500/20 shadow-xl shadow-brand-950/30"
-          >
-            <GraduationCap className="w-5 h-5 text-brand-300" />
-            <p className="text-brand-300 font-extrabold text-sm leading-none">3</p>
-            <p className="text-slate-450 text-[9px] font-semibold">أطوار تعليمية</p>
-          </motion.div>
+          <SchoolImageCarousel height="h-[380px] sm:h-[460px] lg:h-[500px]" />
         </motion.div>
 
         {/* Scroll indicator */}
@@ -390,11 +342,11 @@ export default function LandingPage() {
       </section>
 
       {/* Vision & Values Section */}
-      <section id="vision" className="py-24 px-6 max-w-7xl mx-auto border-t border-luxury-border/30 relative">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">القيم والرؤية التربوية</h2>
-          <p className="text-slate-400 text-sm md:text-base leading-relaxed">
-            نؤمن في مدرسة الزيتوني الخاصة بأن التعليم ليس مجرد تلقين، بل هو بناء متكامل يعتمد على الابتكار، التوجيه السليم والرعاية المستمرة للتلميذ.
+      <section id="vision" className="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto border-t border-luxury-border/30 relative overflow-hidden">
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 sm:mb-6">القيم والرؤية التربوية</h2>
+          <p className="text-slate-400 text-xs sm:text-sm md:text-base leading-relaxed">
+            نؤمن في مؤسسة التربية والتعليم حبر وألوان الخاصة (مدرسة حبر) بأن التعليم ليس مجرد تلقين، بل هو بناء متكامل يعتمد على الابتكار، التوجيه السليم وشعارنا الدائم « يا نشء أنت رجاؤنا ».
           </p>
         </div>
 
@@ -403,7 +355,7 @@ export default function LandingPage() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
         >
           {valuesList.map((val, idx) => {
             const Icon = val.icon;
@@ -412,7 +364,7 @@ export default function LandingPage() {
                 key={idx}
                 variants={itemVariants}
                 whileHover={{ y: -8, scale: 1.02 }}
-                className="p-6 rounded-2xl glass-panel border border-luxury-border hover:border-brand-500/30 hover:shadow-[0_10px_35px_rgba(197,106,61,0.06)] transition-all flex flex-col gap-4 text-right bg-white/60"
+                className="p-5 sm:p-6 rounded-2xl glass-panel border border-luxury-border hover:border-brand-500/30 hover:shadow-[0_10px_35px_rgba(201,162,77,0.12)] transition-all flex flex-col gap-4 text-right bg-white/60"
               >
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${val.color} text-white flex items-center justify-center shadow-md`}>
                   <Icon className="w-6 h-6" />
@@ -426,15 +378,15 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 px-6 max-w-7xl mx-auto border-t border-luxury-border/30">
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">ميزات المنصة الذكية</h2>
-          <p className="text-slate-400 text-sm md:text-base leading-relaxed">
+      <section id="features" className="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto border-t border-luxury-border/30 overflow-hidden">
+        <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-20">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 sm:mb-6">ميزات المنصة الذكية</h2>
+          <p className="text-slate-400 text-xs sm:text-sm md:text-base leading-relaxed">
             مجموعة متكاملة من الخدمات الرقمية المصممة بعناية لتوفير الوقت والجهد وتجعل تجربة التمدرس أكثر فاعلية ووضوحاً.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {featuresList.map((feat, idx) => {
             const Icon = feat.icon;
             return (
@@ -444,8 +396,8 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                whileHover={{ y: -6, borderColor: "rgba(197, 106, 61, 0.4)", boxShadow: "0 10px 30px rgba(197,106,61,0.05)" }}
-                className={`p-8 rounded-2xl glass-panel border hover:shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all flex flex-col gap-5 text-right bg-white/60`}
+                whileHover={{ y: -6, borderColor: "rgba(201, 162, 77, 0.45)", boxShadow: "0 10px 30px rgba(123,30,58,0.06)" }}
+                className={`p-6 sm:p-8 rounded-2xl glass-panel border hover:shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all flex flex-col gap-5 text-right bg-white/60`}
               >
                 <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-200/30 flex items-center justify-center shrink-0">
                   <Icon className="w-6 h-6 text-brand-600" />
@@ -461,15 +413,15 @@ export default function LandingPage() {
       </section>
 
       {/* Educational Levels Section */}
-      <section id="levels" className="py-24 px-6 max-w-7xl mx-auto border-t border-luxury-border/30">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">أطوار التعليم لدينا</h2>
-          <p className="text-slate-400 text-sm md:text-base leading-relaxed">
+      <section id="levels" className="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto border-t border-luxury-border/30 overflow-hidden">
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 sm:mb-6">أطوار التعليم لدينا</h2>
+          <p className="text-slate-400 text-xs sm:text-sm md:text-base leading-relaxed">
             نغطي كافة المراحل التعليمية من الطفولة المبكرة وحتى التحضير الجامعي ببرامج معتمدة ومؤطرين ذوي خبرة واسعة.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {levelsList.map((lvl, idx) => (
             <motion.div
               key={idx}
@@ -478,7 +430,7 @@ export default function LandingPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: idx * 0.15 }}
               whileHover={{ y: -8 }}
-              className="p-8 rounded-2xl glass-panel border border-luxury-border hover:border-brand-500/20 flex flex-col justify-between text-right relative overflow-hidden group bg-white/40"
+              className="p-6 sm:p-8 rounded-2xl glass-panel border border-luxury-border hover:border-brand-500/20 flex flex-col justify-between text-right relative overflow-hidden group bg-white/40"
             >
               <div className="absolute top-0 end-0 bg-brand-500 text-white font-bold text-[10px] px-3.5 py-1.5 rounded-bl-xl shadow-sm">
                 {lvl.badge}
@@ -490,7 +442,7 @@ export default function LandingPage() {
               </div>
               
               <div className="mt-8 border-t border-luxury-border/20 pt-4 flex items-center justify-between">
-                <span className="text-[10px] text-slate-500">مدرسة الزيتوني الخاصة</span>
+                <span className="text-[10px] text-slate-500">{settings?.institutionName || 'مؤسسة التربية والتعليم حبر وألوان الخاصة'}</span>
                 <span className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs group-hover:bg-brand-500 group-hover:text-white transition-colors">←</span>
               </div>
             </motion.div>
@@ -499,15 +451,15 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Section */}
-      <section id="stats" className="py-20 bg-slate-900/40 border-y border-luxury-border px-6 text-slate-100 bg-white/40">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+      <section id="stats" className="py-14 sm:py-20 bg-slate-900/40 border-y border-luxury-border px-4 sm:px-6 text-slate-100 bg-white/40 overflow-hidden">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-12 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <span className="text-4xl md:text-5xl font-extrabold text-brand-600 block mb-2 font-mono">1,200+</span>
+            <span className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-brand-600 block mb-2 font-mono">1,200+</span>
             <span className="text-slate-400 text-xs md:text-sm font-bold">تلميذ مسجل بالمنصة</span>
           </motion.div>
           <motion.div
@@ -516,7 +468,7 @@ export default function LandingPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <span className="text-4xl md:text-5xl font-extrabold text-brand-600 block mb-2 font-mono">80+</span>
+            <span className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-brand-600 block mb-2 font-mono">80+</span>
             <span className="text-slate-400 text-xs md:text-sm font-bold">أستاذ وإداري مؤهل</span>
           </motion.div>
           <motion.div
@@ -525,7 +477,7 @@ export default function LandingPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <span className="text-4xl md:text-5xl font-extrabold text-brand-600 block mb-2 font-mono">99.2%</span>
+            <span className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-brand-600 block mb-2 font-mono">99.2%</span>
             <span className="text-slate-400 text-xs md:text-sm font-bold">نسبة النجاح الباهر</span>
           </motion.div>
           <motion.div
@@ -534,22 +486,22 @@ export default function LandingPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <span className="text-4xl md:text-5xl font-extrabold text-brand-600 block mb-2 font-mono">15+</span>
+            <span className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-brand-600 block mb-2 font-mono">15+</span>
             <span className="text-slate-400 text-xs md:text-sm font-bold">سنة من التميز التربوي</span>
           </motion.div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-24 px-6 max-w-7xl mx-auto border-t border-luxury-border/30">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">آراء أولياء الأمور</h2>
-          <p className="text-slate-400 text-sm md:text-base leading-relaxed">
+      <section id="testimonials" className="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto border-t border-luxury-border/30 overflow-hidden">
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 sm:mb-6">آراء أولياء الأمور</h2>
+          <p className="text-slate-400 text-xs sm:text-sm md:text-base leading-relaxed">
             نسعد ونعتز دائماً بشهادات أولياء الأمور والأساتذة حول مدى مساهمة المنصة في تحسين التجربة التعليمية في المؤسسة.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {testimonialList.map((test, idx) => (
             <motion.div
               key={idx}
@@ -558,7 +510,7 @@ export default function LandingPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: idx * 0.1 }}
               whileHover={{ scale: 1.01 }}
-              className="p-8 rounded-2xl glass-panel border border-luxury-border flex flex-col justify-between text-right relative overflow-hidden bg-white/40"
+              className="p-6 sm:p-8 rounded-2xl glass-panel border border-luxury-border flex flex-col justify-between text-right relative overflow-hidden bg-white/40"
             >
               <Quote className="w-8 h-8 text-brand-200/50 absolute top-4 end-4 rtl-flip" />
               <p className="text-slate-455 leading-relaxed text-xs italic relative z-10 font-medium pt-2">
@@ -580,18 +532,18 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Accordion Section */}
-      <section className="py-24 px-6 max-w-4xl mx-auto border-t border-luxury-border/30">
-        <h2 className="text-3xl md:text-5xl font-bold text-center mb-16">الأسئلة الشائعة</h2>
+      <section className="py-16 sm:py-24 px-4 sm:px-6 max-w-4xl mx-auto border-t border-luxury-border/30 overflow-hidden">
+        <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-center mb-12 sm:mb-16">الأسئلة الشائعة</h2>
 
         <div className="space-y-4">
           {faqList.map((faq, idx) => (
             <div key={idx} className="rounded-xl glass-panel border border-luxury-border overflow-hidden bg-white/40">
               <button
                 onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                className="w-full p-6 text-right flex justify-between items-center hover:bg-slate-900/5 transition-all"
+                className="w-full p-4 sm:p-6 text-right flex justify-between items-center hover:bg-slate-900/5 transition-all gap-3"
               >
-                <span className="font-bold text-base md:text-lg text-slate-100">{faq.q}</span>
-                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${activeFaq === idx ? 'rotate-180' : ''}`} />
+                <span className="font-bold text-sm sm:text-base md:text-lg text-slate-100 leading-snug">{faq.q}</span>
+                <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform ${activeFaq === idx ? 'rotate-180' : ''}`} />
               </button>
               <AnimatePresence>
                 {activeFaq === idx && (
@@ -601,7 +553,7 @@ export default function LandingPage() {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="p-6 border-t border-luxury-border/50 text-slate-455 text-xs md:text-sm leading-relaxed font-semibold">
+                    <div className="p-4 sm:p-6 border-t border-luxury-border/50 text-slate-455 text-xs sm:text-sm leading-relaxed font-semibold">
                       {faq.a}
                     </div>
                   </motion.div>
@@ -613,18 +565,18 @@ export default function LandingPage() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-24 px-6 max-w-7xl mx-auto border-t border-luxury-border/30">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">اتصل بنا</h2>
-          <p className="text-slate-400 text-sm md:text-base leading-relaxed">
+      <section id="contact" className="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto border-t border-luxury-border/30 overflow-hidden">
+        <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 sm:mb-6">اتصل بنا</h2>
+          <p className="text-slate-400 text-xs sm:text-sm md:text-base leading-relaxed">
             يسعدنا تواصلكم معنا للاستفسار أو زيارة مقر المؤسسة بأولاد فايت.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-right">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-right">
           <motion.div 
             whileHover={{ y: -4 }}
-            className="p-6 rounded-2xl glass-panel border border-luxury-border flex items-start gap-4 text-slate-100 bg-white/40"
+            className="p-5 sm:p-6 rounded-2xl glass-panel border border-luxury-border flex items-start gap-4 text-slate-100 bg-white/40"
           >
             <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200/30 flex items-center justify-center text-brand-600 shrink-0">
               <MapPin className="w-5 h-5" />
@@ -637,7 +589,7 @@ export default function LandingPage() {
 
           <motion.div 
             whileHover={{ y: -4 }}
-            className="p-6 rounded-2xl glass-panel border border-luxury-border flex items-start gap-4 text-slate-100 bg-white/40"
+            className="p-5 sm:p-6 rounded-2xl glass-panel border border-luxury-border flex items-start gap-4 text-slate-100 bg-white/40"
           >
             <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200/30 flex items-center justify-center text-brand-600 shrink-0">
               <Phone className="w-5 h-5" />
@@ -651,24 +603,24 @@ export default function LandingPage() {
 
           <motion.div 
             whileHover={{ y: -4 }}
-            className="p-6 rounded-2xl glass-panel border border-luxury-border flex items-start gap-4 text-slate-100 bg-white/40"
+            className="p-5 sm:p-6 rounded-2xl glass-panel border border-luxury-border flex items-start gap-4 text-slate-100 bg-white/40"
           >
             <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200/30 flex items-center justify-center text-brand-600 shrink-0">
               <Mail className="w-5 h-5" />
             </div>
             <div className="space-y-1">
               <h4 className="font-bold text-sm text-slate-100">البريد الإلكتروني</h4>
-              <p className="text-slate-455 text-xs font-semibold leading-relaxed select-all">contact@ecole-zitouni.dz</p>
-              <p className="text-slate-455 text-xs font-semibold leading-relaxed select-all">support@ecole-zitouni.dz</p>
+              <p className="text-slate-455 text-xs font-semibold leading-relaxed select-all">contact@ecole-hebr.dz</p>
+              <p className="text-slate-455 text-xs font-semibold leading-relaxed select-all">support@ecole-hebr.dz</p>
             </div>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-luxury-border py-12 px-6 text-center text-slate-500 text-xs bg-white/20">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <span>© 2026 مدرسة الزيتوني الخاصة. جميع الحقوق محفوظة.</span>
+      <footer className="border-t border-luxury-border py-8 sm:py-12 px-4 sm:px-6 text-center text-slate-500 text-xs bg-white/20 overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6">
+          <span>© 2026 {settings?.institutionName || 'مؤسسة التربية والتعليم حبر وألوان الخاصة'}. جميع الحقوق محفوظة.</span>
           <div className="flex gap-6">
             <a href="#" className="hover:text-slate-350">الشروط والأحكام</a>
             <a href="#" className="hover:text-slate-350">سياسة الخصوصية</a>

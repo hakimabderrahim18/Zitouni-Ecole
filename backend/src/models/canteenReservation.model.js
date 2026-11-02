@@ -9,19 +9,28 @@ const canteenReservationSchema = new mongoose.Schema(
     },
     mealType: {
       type: String,
-      enum: ['Déjeuner (Glaçé/Normal)', 'Snack / Goûter', 'Menu Régime Spécial'],
-      default: 'Déjeuner (Glaçé/Normal)',
+      default: 'Lunch',
+      trim: true,
     },
     date: {
       type: Date,
       required: true,
+      default: Date.now,
     },
     status: {
       type: String,
       enum: ['Reserved', 'Served', 'Cancelled'],
       default: 'Reserved',
     },
+    isPaid: {
+      type: Boolean,
+      default: true,
+    },
     remarks: {
+      type: String,
+      default: '',
+    },
+    notes: {
       type: String,
       default: '',
     },
@@ -32,6 +41,6 @@ const canteenReservationSchema = new mongoose.Schema(
 );
 
 canteenReservationSchema.index({ date: 1, status: 1 });
-canteenReservationSchema.index({ user: 1, date: 1 }, { unique: true });
+canteenReservationSchema.index({ user: 1, date: 1 });
 
 module.exports = mongoose.model('CanteenReservation', canteenReservationSchema);

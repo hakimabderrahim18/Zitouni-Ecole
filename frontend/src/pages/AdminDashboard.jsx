@@ -3,11 +3,26 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuthStore } from '../store/useAuthStore';
-import { Users, CreditCard, BookOpen, Upload, Plus, FileText, Calendar, ShieldAlert, Check, X, Edit2, Trash2, MessageSquare, Search, Eye, Download, Bus, Utensils, GraduationCap } from 'lucide-react';
+import { Users, CreditCard, BookOpen, Upload, Plus, FileText, FileSpreadsheet, Calendar, ShieldAlert, Check, X, Edit2, Trash2, MessageSquare, Search, Eye, Download, Bus, Utensils, GraduationCap, ShieldCheck, Palette, Database, Clock, LogOut } from 'lucide-react';
 import ScheduleCard from '../components/ScheduleCard';
 import ScheduleTypePanel from '../components/ScheduleTypePanel';
 import SchedulesGuide from '../components/SchedulesGuide';
 import FinanceModule from '../components/FinanceModule';
+import SchoolBrandingSettings from '../components/SchoolBrandingSettings';
+import StudentExcelImportModal from '../components/StudentExcelImportModal';
+import AttendanceManager from '../components/AttendanceManager';
+import TimetableGrid from '../components/TimetableGrid';
+import LessonNotebook from '../components/LessonNotebook';
+import DatabaseBackupManager from '../components/DatabaseBackupManager';
+import AdministrativeRequestsManager from '../components/AdministrativeRequestsManager';
+import AdministrativeDocumentsManager from '../components/AdministrativeDocumentsManager';
+import LoginAuditView from '../components/LoginAuditView';
+import EnrollmentManager from '../components/EnrollmentManager';
+import ReportedMessagesManager from '../components/ReportedMessagesManager';
+import StudentProfileFileModal from '../components/StudentProfileFileModal';
+import TeacherProfileFileModal from '../components/TeacherProfileFileModal';
+import TeacherExcelImportModal from '../components/TeacherExcelImportModal';
+import ErrorBoundary from '../components/ErrorBoundary';
 import axios from 'axios';
 
 export default function AdminDashboard() {
@@ -18,9 +33,17 @@ export default function AdminDashboard() {
   // Determine active tab dynamically from pathname
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path.endsWith('/users')) return 'users';
+    if (path.endsWith('/inscriptions')) return 'inscriptions';
+    if (path.endsWith('/login-audit')) return 'login-audit';
+    if (path.endsWith('/reported-messages')) return 'reported-messages';
+    if (path.endsWith('/users') || path.endsWith('/accounts')) return 'users';
+    if (path.endsWith('/branding')) return 'branding';
+    if (path.endsWith('/attendance')) return 'attendance';
+    if (path.endsWith('/timetable-official')) return 'timetable-official';
+    if (path.endsWith('/lessons')) return 'lessons';
+    if (path.endsWith('/backups')) return 'backups';
+    if (path.endsWith('/requests')) return 'requests';
     if (path.endsWith('/finance')) return 'finance';
-    if (path.endsWith('/accounts')) return 'accounts';
     if (path.endsWith('/students')) return 'students';
     if (path.endsWith('/teachers')) return 'teachers';
     if (path.endsWith('/classes-create')) return 'create';
@@ -31,6 +54,31 @@ export default function AdminDashboard() {
     if (path.endsWith('/schedules')) return 'schedules';
     if (path.endsWith('/audit')) return 'audit';
     return 'overview';
+  };
+
+  const getNavTabs = () => {
+    const tabs = [
+      { id: 'overview', label: 'لوحة القيادة والمؤشرات', icon: BookOpen, path: '/dashboard/admin' },
+      { id: 'users', label: 'المستخدمين والصلاحيات', icon: Users, path: '/dashboard/admin/users' },
+      { id: 'teachers', label: 'قائمة الأساتذة (المادة 23)', icon: Users, path: '/dashboard/admin/teachers' },
+      { id: 'students', label: 'قائمة التلاميذ', icon: Users, path: '/dashboard/admin/students' },
+      { id: 'inscriptions', label: '📋 التسجيلات والملفات المدرسية', icon: FileText, path: '/dashboard/admin/inscriptions' },
+      { id: 'classes', label: 'الأقسام والأفواج', icon: BookOpen, path: '/dashboard/admin/classes' },
+      { id: 'attendance', label: 'الغيابات والانضباط', icon: Check, path: '/dashboard/admin/attendance' },
+      { id: 'timetable-official', label: 'جدول التوقيت', icon: Calendar, path: '/dashboard/admin/timetable-official' },
+      { id: 'lessons', label: 'كراس الدروس', icon: BookOpen, path: '/dashboard/admin/lessons' },
+      { id: 'finance', label: 'المالية والرواتب', icon: CreditCard, path: '/dashboard/admin/finance' },
+      { id: 'modules', label: 'المواد الدراسية', icon: BookOpen, path: '/dashboard/admin/modules' },
+      { id: 'documents', label: 'المستندات الإدارية', icon: FileText, path: '/dashboard/admin/documents' },
+      { id: 'schedules', label: 'المخططات والجداول', icon: Calendar, path: '/dashboard/admin/schedules' },
+      { id: 'login-audit', label: '🛡️ سجل جلسات الدخول والأمان', icon: ShieldCheck, path: '/dashboard/admin/login-audit' },
+      { id: 'branding', label: 'الهوية البصرية', icon: Palette, path: '/dashboard/admin/branding' },
+      { id: 'backups', label: 'النسخ الاحتياطي', icon: Database, path: '/dashboard/admin/backups' },
+      { id: 'requests', label: 'الطلبات الإدارية', icon: FileText, path: '/dashboard/admin/requests' },
+      { id: 'reported-messages', label: '⚠️ الرسائل المبلغ عنها', icon: ShieldAlert, path: '/dashboard/admin/reported-messages' },
+      { id: 'audit', label: 'رقابة المحادثات', icon: MessageSquare, path: '/dashboard/admin/audit' },
+    ];
+    return tabs;
   };
 
   const activeTab = getActiveTab();
@@ -45,12 +93,17 @@ export default function AdminDashboard() {
   const [modules, setModules] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isStudentImportModalOpen, setIsStudentImportModalOpen] = useState(false);
+  const [selectedStudentForDossier, setSelectedStudentForDossier] = useState(null);
+  const [isTeacherImportModalOpen, setIsTeacherImportModalOpen] = useState(false);
+  const [selectedTeacherForDossier, setSelectedTeacherForDossier] = useState(null);
 
   // Module & document management state
   const [newModule, setNewModule] = useState({ name: '', description: '' });
   const [editingModule, setEditingModule] = useState(null);
   const [editingClass, setEditingClass] = useState(null);
   const [editingGroup, setEditingGroup] = useState(null);
+  const [isAddGroupModalOpen, setIsAddGroupModalOpen] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState('');
 
   // System accounts management (activate / edit)
@@ -103,7 +156,9 @@ export default function AdminDashboard() {
     assignments: [],
     profession: '',
     address: '',
+    children: [],
   });
+  const [studentLinkSearch, setStudentLinkSearch] = useState('');
   const [newClass, setNewClass] = useState({ name: '', description: '', level: 'primary', teacherIds: [], modules: [] });
   const [newGroup, setNewGroup] = useState({ name: '', classId: '', capacity: 30, teacherIds: [], modules: [] });
   const [newSchedule, setNewSchedule] = useState({ type: 'Timetable', title: '', classId: '', groupId: '', data: '' });
@@ -121,6 +176,8 @@ export default function AdminDashboard() {
   // Student directory state controls
   const [studentSearch, setStudentSearch] = useState('');
   const [studentClassFilter, setStudentClassFilter] = useState('');
+  const [teacherSearch, setTeacherSearch] = useState('');
+  const [teacherStatusFilter, setTeacherStatusFilter] = useState('all');
 
   // Conversation audit state controls
   const [auditMessages, setAuditMessages] = useState([]);
@@ -137,17 +194,7 @@ export default function AdminDashboard() {
   }, [user]);
 
   useEffect(() => {
-    if (user) {
-      if (user.role === 'admin' && ['students', 'teachers', 'classes', 'schedules', 'accounts', 'guide', 'create', 'modules', 'documents'].includes(activeTab)) {
-        navigate('/dashboard/admin', { replace: true });
-      } else if (user.role === 'school' && ['users', 'audit'].includes(activeTab)) {
-        navigate('/dashboard/admin', { replace: true });
-      }
-    }
-  }, [activeTab, user, navigate]);
-
-  useEffect(() => {
-    if (activeTab === 'audit' && user?.role === 'admin') {
+    if (activeTab === 'audit' && ['admin', 'school'].includes(user?.role)) {
       fetchAuditMessages();
     }
   }, [activeTab, user]);
@@ -168,47 +215,30 @@ export default function AdminDashboard() {
     if (!user) return;
     setLoading(true);
     try {
-      if (user.role === 'admin') {
-        const [statsRes, usersRes, classesRes, groupsRes, parentsRes, modulesRes] = await Promise.all([
-          axios.get('/api/admin/dashboard/stats'),
-          axios.get('/api/admin/users'),
-          axios.get('/api/admin/classes'),
-          axios.get('/api/admin/groups'),
-          axios.get('/api/admin/parents'),
-          axios.get('/api/admin/modules'),
-        ]);
-        setStats(statsRes.data);
-        setSystemUsers(usersRes.data);
-        setClasses(classesRes.data);
-        setGroups(groupsRes.data);
-        setParents(parentsRes.data);
-        setModules(modulesRes.data);
-      } else if (user.role === 'school') {
-        const [statsRes, classesRes, groupsRes, parentsRes, studentsRes, teachersRes, schedulesRes, modulesRes, documentsRes, usersRes] = await Promise.all([
-          axios.get('/api/admin/dashboard/stats'),
-          axios.get('/api/admin/classes'),
-          axios.get('/api/admin/groups'),
-          axios.get('/api/admin/parents'),
-          axios.get('/api/admin/students'),
-          axios.get('/api/admin/teachers'),
-          axios.get('/api/admin/schedules'),
-          axios.get('/api/admin/modules'),
-          axios.get('/api/admin/documents'),
-          axios.get('/api/admin/users'),
-        ]);
-        setStats(statsRes.data);
-        setClasses(classesRes.data);
-        setGroups(groupsRes.data);
-        setParents(parentsRes.data);
-        setStudents(studentsRes.data);
-        setTeachers(teachersRes.data);
-        setSchedules(schedulesRes.data);
-        setModules(modulesRes.data);
-        setDocuments(documentsRes.data);
-        setSystemUsers(usersRes.data);
-      }
+      const [statsRes, classesRes, groupsRes, parentsRes, studentsRes, teachersRes, schedulesRes, modulesRes, documentsRes, usersRes] = await Promise.all([
+        axios.get('/api/admin/dashboard/stats'),
+        axios.get('/api/admin/classes'),
+        axios.get('/api/admin/groups'),
+        axios.get('/api/admin/parents'),
+        axios.get('/api/admin/students'),
+        axios.get('/api/admin/teachers'),
+        axios.get('/api/admin/schedules'),
+        axios.get('/api/admin/modules'),
+        axios.get('/api/admin/documents'),
+        axios.get('/api/admin/users'),
+      ]);
+      setStats(statsRes.data);
+      setClasses(classesRes.data);
+      setGroups(groupsRes.data);
+      setParents(parentsRes.data);
+      setStudents(studentsRes.data);
+      setTeachers(teachersRes.data);
+      setSchedules(schedulesRes.data);
+      setModules(modulesRes.data);
+      setDocuments(documentsRes.data);
+      setSystemUsers(usersRes.data);
     } catch (err) {
-      console.error(err);
+      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -256,23 +286,35 @@ export default function AdminDashboard() {
       } else if (newUser.role === 'parent') {
         details.profession = newUser.profession;
         details.address = newUser.address;
+        details.children = newUser.children || [];
       }
+
+      // Clean phone number (pure digits login like 0797060052, no @, no .com)
+      const cleanPhone = (newUser.phoneNumber || '').trim().replace(/[\s\-_().]/g, '');
+      const username = cleanPhone || (newUser.email ? newUser.email.split('@')[0] : `user_${Date.now()}`);
+      const finalEmail = (newUser.email && newUser.email.includes('@'))
+        ? newUser.email.trim()
+        : `${cleanPhone || username}@ecole-zitouni.dz`;
 
       // Enforced password rules: parent = phone number, student = date of birth.
       let password = newUser.password;
-      if (newUser.role === 'parent') password = newUser.phoneNumber;
-      else if (newUser.role === 'student') password = newUser.dateOfBirth;
+      if (newUser.role === 'parent' || newUser.role === 'general_supervisor' || newUser.role === 'pedagogical_supervisor' || newUser.role === 'receptionist') {
+        password = newUser.password || cleanPhone;
+      } else if (newUser.role === 'student') {
+        password = newUser.dateOfBirth;
+      }
 
       await axios.post('/api/admin/users', {
-        email: newUser.email,
+        username,
+        email: finalEmail,
         password,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         role: newUser.role,
-        phoneNumber: newUser.phoneNumber,
+        phoneNumber: cleanPhone,
         details
       });
-      alert('Utilisateur créé avec succès !');
+      alert('تم إنشاء الحساب بنجاح! اسم الدخول (Login) هو رقم الهاتف: ' + (cleanPhone || username));
       setNewUser({
         email: '',
         password: '',
@@ -340,11 +382,12 @@ export default function AdminDashboard() {
     e.preventDefault();
     try {
       const res = await axios.post('/api/admin/groups', newGroup);
-      alert('Groupe créé avec succès !');
+      alert('تم إنشاء الفوج الدراسي بنجاح!');
       setGroups([...groups, res.data]);
       setNewGroup({ name: '', classId: '', capacity: 30, teacherIds: [], modules: [] });
+      setIsAddGroupModalOpen(false);
     } catch (err) {
-      alert(err.response?.data?.message || 'Error creating group');
+      alert(err.response?.data?.message || 'خطأ أثناء إنشاء الفوج');
     }
   };
 
@@ -567,7 +610,7 @@ export default function AdminDashboard() {
           "07:15 - Cité 1200 Logements (Départ)",
           "07:30 - Cité 800 Logements (Entrée)",
           "07:45 - Ouled Fayet Centre (Poste)",
-          "08:00 - École Zitouni (Arrivée)"
+          "08:00 - مدرسة حبر - مؤسسة حبر وألوان (Arrivée)"
         ]
       };
     } else if (type === 'Exam') {
@@ -829,13 +872,177 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-
+      <div className="space-y-6 font-cairo text-right" dir="rtl">
+        {activeTab === 'inscriptions' && <EnrollmentManager />}
+        {activeTab === 'login-audit' && <LoginAuditView />}
+        {activeTab === 'reported-messages' && <ReportedMessagesManager />}
         {activeTab === 'finance' && <FinanceModule />}
+        {activeTab === 'branding' && <SchoolBrandingSettings />}
+        {activeTab === 'attendance' && <AttendanceManager />}
+        {activeTab === 'timetable-official' && <TimetableGrid canImport={true} />}
+        {activeTab === 'lessons' && <LessonNotebook />}
+        {activeTab === 'backups' && <DatabaseBackupManager />}
+        {activeTab === 'requests' && (
+          <ErrorBoundary>
+            <AdministrativeRequestsManager />
+          </ErrorBoundary>
+        )}
 
         {activeTab === 'overview' && (
           <div className="space-y-8 text-right">
-            {/* Metric Cards Grid */}
+            {/* Quick Access Banners for Core Modules */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 1. Login & Security Audit Trail */}
+              <div 
+                onClick={() => navigate('/dashboard/admin/login-audit')}
+                className="group relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-white to-[#FDFBF7] border-2 border-[#7B1E3A]/25 hover:border-[#7B1E3A] shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="w-11 h-11 rounded-xl bg-[#7B1E3A] flex items-center justify-center shadow-sm">
+                    <ShieldCheck className="w-6 h-6 text-[#C9A24D]" />
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#7B1E3A]/10 text-[#7B1E3A] border border-[#7B1E3A]/20">
+                    أمان وحماية
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <h3 className="font-serif font-black text-[#7B1E3A] text-base group-hover:text-[#60162c] transition-colors">
+                    سجل جلسات الدخول والأمان
+                  </h3>
+                  <p className="text-xs text-[#2B2022]/70 mt-1 leading-relaxed">
+                    متابعة سجلات تسجيل الدخول، رصد المحاولات الفاشلة، الأجهزة والمتصفحات، وإلغاء حظر الحسابات المقفلة.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#C9A24D]/25 flex items-center justify-between text-xs font-bold text-[#7B1E3A]">
+                  <span>فتح السجل والمتابعة</span>
+                  <span className="text-sm font-sans">←</span>
+                </div>
+              </div>
+
+              {/* 2. School Inscriptions & Receipts */}
+              <div 
+                onClick={() => navigate('/dashboard/admin/inscriptions')}
+                className="group relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-white to-[#FDFBF7] border-2 border-[#C9A24D]/40 hover:border-[#C9A24D] shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="w-11 h-11 rounded-xl bg-[#C9A24D] flex items-center justify-center shadow-sm">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#C9A24D]/15 text-[#7B1E3A] border border-[#C9A24D]/30">
+                    تسجيلات رسمية
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <h3 className="font-serif font-black text-[#7B1E3A] text-base group-hover:text-[#60162c] transition-colors">
+                    التسجيلات واستخراج الوصولات
+                  </h3>
+                  <p className="text-xs text-[#2B2022]/70 mt-1 leading-relaxed">
+                    تسجيل التلاميذ باستمارة أو Excel، استخراج وصل التسجيل الفوري، وتوليد وحفظ وطباعة الملف المدرسي الشامل.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#C9A24D]/25 flex items-center justify-between text-xs font-bold text-[#7B1E3A]">
+                  <span>إدارة التسجيلات والوصولات</span>
+                  <span className="text-sm font-sans">←</span>
+                </div>
+              </div>
+
+              {/* 3. Reported Messages Moderation */}
+              <div 
+                onClick={() => navigate('/dashboard/admin/reported-messages')}
+                className="group relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-white to-[#FDFBF7] border-2 border-rose-200 hover:border-rose-400 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="w-11 h-11 rounded-xl bg-rose-600 flex items-center justify-center shadow-sm">
+                    <ShieldAlert className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                    بلاغات وانضباط
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <h3 className="font-serif font-black text-[#7B1E3A] text-base group-hover:text-[#60162c] transition-colors">
+                    الرسائل والمحادثات المبلغ عنها
+                  </h3>
+                  <p className="text-xs text-[#2B2022]/70 mt-1 leading-relaxed">
+                    مراجعة البلاغات الواردة من المستخدمين حول الرسائل والمحادثات المخالفة واتخاذ إجراء الحذف أو الإخفاء.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-[#C9A24D]/25 flex items-center justify-between text-xs font-bold text-[#7B1E3A]">
+                  <span>معالجة البلاغات الإدارية</span>
+                  <span className="text-sm font-sans">←</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Core Administrative KPI Metrics (Requested Requirements) */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="grid grid-cols-2 md:grid-cols-5 gap-4"
+            >
+              {/* 1. Absences */}
+              <div className="p-4 rounded-2xl bg-white border border-[#C9A24D]/35 shadow-xs space-y-1">
+                <div className="flex items-center justify-between text-xs text-rose-700 font-bold">
+                  <span>الغيابات اليومية</span>
+                  <ShieldAlert className="w-4 h-4 text-rose-600" />
+                </div>
+                <div className="text-2xl font-black font-serif text-rose-700">
+                  {stats?.todayAbsences ?? 0}
+                </div>
+                <span className="text-[10px] text-slate-500 block">غيابات التلاميذ المسجلة اليوم</span>
+              </div>
+
+              {/* 2. Lates */}
+              <div className="p-4 rounded-2xl bg-white border border-[#C9A24D]/35 shadow-xs space-y-1">
+                <div className="flex items-center justify-between text-xs text-amber-700 font-bold">
+                  <span>التأخرات المسجلة</span>
+                  <Calendar className="w-4 h-4 text-amber-600" />
+                </div>
+                <div className="text-2xl font-black font-serif text-amber-600">
+                  {stats?.todayLates ?? 0}
+                </div>
+                <span className="text-[10px] text-slate-500 block">تأخرات بحاجة إلى تبرير</span>
+              </div>
+
+              {/* 3. New Registrations */}
+              <div className="p-4 rounded-2xl bg-white border border-[#C9A24D]/35 shadow-xs space-y-1">
+                <div className="flex items-center justify-between text-xs text-emerald-800 font-bold">
+                  <span>التسجيلات الجديدة</span>
+                  <GraduationCap className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="text-2xl font-black font-serif text-emerald-700">
+                  {stats?.newRegistrations ?? stats?.students ?? 0}
+                </div>
+                <span className="text-[10px] text-slate-500 block">ملفات التسجيل المكتملة</span>
+              </div>
+
+              {/* 4. Unread Messages */}
+              <div className="p-4 rounded-2xl bg-white border border-[#C9A24D]/35 shadow-xs space-y-1">
+                <div className="flex items-center justify-between text-xs text-[#7B1E3A] font-bold">
+                  <span>رسائل الإدارة غير المقروءة</span>
+                  <MessageSquare className="w-4 h-4 text-[#7B1E3A]" />
+                </div>
+                <div className="text-2xl font-black font-serif text-[#7B1E3A]">
+                  {stats?.unreadAdminMessages ?? 0}
+                </div>
+                <span className="text-[10px] text-slate-500 block">مرسلة للإدارة ولم تُستعرض</span>
+              </div>
+
+              {/* 5. Received Requests */}
+              <div className="p-4 rounded-2xl bg-white border border-[#C9A24D]/35 shadow-xs space-y-1">
+                <div className="flex items-center justify-between text-xs text-blue-800 font-bold">
+                  <span>الطلبات الإدارية المستلمة</span>
+                  <FileText className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="text-2xl font-black font-serif text-blue-700">
+                  {stats?.receivedRequests ?? 0}
+                </div>
+                <span className="text-[10px] text-slate-500 block">شهادات ومبررات قيد المعالجة</span>
+              </div>
+            </motion.div>
+
+            {/* General Counts Grid */}
             <motion.div 
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -909,7 +1116,7 @@ export default function AdminDashboard() {
                   </button>
                   <button
                     onClick={() => setIsBillingModalOpen(true)}
-                    className="px-4 py-2 bg-brand-500 hover:bg-brand-400 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-[0_2px_10px_rgba(197,106,61,0.15)]"
+                    className="px-4 py-2 bg-brand-500 hover:bg-brand-400 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-[0_2px_10px_rgba(123,30,58,0.20)]"
                   >
                     <Plus className="w-4 h-4" />
                     <span>إنشاء فاتورة جديدة</span>
@@ -996,12 +1203,51 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-300 font-bold block">نوع الحساب *</label>
+                    <select
+                      value={newUser.role}
+                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none text-slate-100 font-semibold cursor-pointer"
+                    >
+                      <option value="student">تلميذ (Student)</option>
+                      <option value="teacher">أستاذ (Teacher)</option>
+                      <option value="parent">ولي أمر (Parent)</option>
+                      <option value="general_supervisor">مشرف عام (Superviseur Général)</option>
+                      <option value="pedagogical_supervisor">مشرف تربوي (Superviseur Pédagogique)</option>
+                      <option value="receptionist">موظف الاستقبال (Réceptionniste)</option>
+                      <option value="school">إدارة المدرسة (School)</option>
+                      <option value="admin">مدير النظام (Admin)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-brand-400 font-bold block flex items-center justify-between">
+                      <span>رقم الهاتف (معرف الدخول الرسمي / Login) *</span>
+                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">أرقام نقية فقط (Login)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required={newUser.role !== 'student'}
+                      placeholder="مثال: 0797060052"
+                      value={newUser.phoneNumber}
+                      onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
+                      className="w-full bg-slate-900 border border-brand-500/40 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none text-right font-mono font-bold"
+                    />
+                    <span className="text-[10px] text-slate-400 block">
+                      يُعتمد مباشرة كمعرف رسمي لتسجيل الدخول (أرقام مثل 0797060052 دون @ أو .com).
+                    </span>
+                  </div>
+                </div>
+
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-455 font-bold block">البريد الإلكتروني</label>
+                  <label className="text-xs text-slate-400 font-medium block flex items-center justify-between">
+                    <span>البريد الإلكتروني (اختياري)</span>
+                    <span className="text-[10px] text-slate-500">يُنشأ تلقائياً برقم الهاتف إن تُرك فارغاً</span>
+                  </label>
                   <input
                     type="email"
-                    required
-                    placeholder="البريد الإلكتروني"
+                    placeholder="اختياري (يمكن تركه فارغاً)"
                     value={newUser.email}
                     onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                     className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none text-right"
@@ -1009,56 +1255,26 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-455 font-bold block">كلمة المرور</label>
+                  <label className="text-xs text-slate-300 font-bold block">كلمة المرور</label>
                   {newUser.role === 'teacher' || newUser.role === 'admin' || newUser.role === 'school' ? (
                     <input
                       type="password"
-                      placeholder="كلمة المرور (أو تُحدد تلقائياً)"
+                      placeholder="كلمة المرور (أو تُحدد تلقائياً كرقم الهاتف)"
                       value={newUser.password}
                       onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none text-right"
                     />
                   ) : newUser.role === 'parent' || newUser.role === 'general_supervisor' || newUser.role === 'pedagogical_supervisor' || newUser.role === 'receptionist' ? (
                     <div className="w-full bg-slate-950/60 border border-brand-500/20 rounded-xl px-4 py-2.5 text-xs text-brand-300 text-right">
-                      كلمة المرور تُحدَّد تلقائياً = رقم الهاتف (أو أدخلها في خانة الهاتف)
-                      <span className="block text-slate-500 font-mono mt-1">{newUser.phoneNumber || '— أدخل رقم الهاتف —'}</span>
+                      كلمة المرور تُحدَّد تلقائياً = رقم الهاتف نفسه
+                      <span className="block text-slate-400 font-mono font-bold mt-1">{newUser.phoneNumber || '— أدخل رقم الهاتف أعلاه —'}</span>
                     </div>
                   ) : (
                     <div className="w-full bg-slate-950/60 border border-brand-500/20 rounded-xl px-4 py-2.5 text-xs text-brand-300 text-right">
                       كلمة المرور تُحدَّد تلقائياً = تاريخ ميلاد التلميذ
-                      <span className="block text-slate-500 font-mono mt-1">{newUser.dateOfBirth || '— أدخل تاريخ الميلاد —'}</span>
+                      <span className="block text-slate-400 font-mono font-bold mt-1">{newUser.dateOfBirth || '— أدخل تاريخ الميلاد —'}</span>
                     </div>
                   )}
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs text-slate-455 font-bold block">نوع الحساب</label>
-                    <select
-                      value={newUser.role}
-                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none text-slate-100 font-semibold"
-                    >
-                      <option value="student">تلميذ</option>
-                      <option value="teacher">أستاذ</option>
-                      <option value="parent">ولي أمر</option>
-                      <option value="general_supervisor">مشرف عام</option>
-                      <option value="pedagogical_supervisor">مشرف تربوي</option>
-                      <option value="receptionist">موظف الاستقبال</option>
-                      <option value="school">إدارة المدرسة (School)</option>
-                      <option value="admin">مدير النظام (Admin)</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-slate-455 font-bold block">الهاتف</label>
-                    <input
-                      type="text"
-                      placeholder="رقم الهاتف"
-                      value={newUser.phoneNumber}
-                      onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
-                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none text-right font-mono"
-                    />
-                  </div>
                 </div>
 
                 {/* Conditional fields based on Student registration */}
@@ -1281,7 +1497,7 @@ export default function AdminDashboard() {
 
                 {/* Conditional fields based on Parent registration */}
                 {newUser.role === 'parent' && (
-                  <div className="space-y-3 p-4 bg-slate-950/40 border border-luxury-border rounded-xl">
+                  <div className="space-y-4 p-4 bg-slate-950/40 border border-luxury-border rounded-xl">
                     <span className="text-xs font-semibold text-slate-450 block">تفاصيل ولي الأمر</span>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1">
@@ -1303,6 +1519,115 @@ export default function AdminDashboard() {
                           onChange={(e) => setNewUser({ ...newUser, address: e.target.value })}
                           className="bg-slate-900 border border-luxury-border rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-brand-500 focus:outline-none"
                         />
+                      </div>
+                    </div>
+
+                    {/* Link Students to this Parent (User Request: affecter des eleves a ce parent avec champ de recherche libre) */}
+                    <div className="pt-3 border-t border-luxury-border/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-serif font-black text-[#C9A24D] block">
+                          ربط التلاميذ بالأب / ولي الأمر (الأبناء)
+                        </label>
+                        <span className="text-[11px] font-bold text-white bg-[#7B1E3A] px-3 py-0.5 rounded-full border border-[#C9A24D]/40 shadow-xs">
+                          {newUser.children?.length || 0} تلميذ محدد
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        حدد التلميذ أو التلاميذ التابعين لهذا الولي لمزامنة حساباتهم فورياً:
+                      </p>
+
+                      {/* Free search input bar (Champ libre de recherche) */}
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-[#C9A24D] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          placeholder="ابحث عن التلميذ بالاسم، اللقب، القسم أو رقم التسجيل..."
+                          value={studentLinkSearch}
+                          onChange={(e) => setStudentLinkSearch(e.target.value)}
+                          className="w-full bg-slate-900 border border-luxury-border rounded-xl pr-9 pl-8 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 shadow-2xs"
+                        />
+                        {studentLinkSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setStudentLinkSearch('')}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-0.5"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="max-h-52 overflow-y-auto rounded-xl border border-luxury-border/40 bg-slate-900/90 p-2 space-y-1.5 sidebar-scroll">
+                        {students.length === 0 ? (
+                          <p className="text-xs text-slate-500 text-center py-3">لا يوجد تلاميذ مسجلين في النظام حالياً.</p>
+                        ) : (() => {
+                          const filtered = students.filter((stu) => {
+                            if (!studentLinkSearch.trim()) return true;
+                            const q = studentLinkSearch.toLowerCase().trim();
+                            const nameAr = `${stu.firstNameArabic || ''} ${stu.lastNameArabic || ''}`.toLowerCase();
+                            const nameFr = `${stu.user?.firstName || ''} ${stu.user?.lastName || ''}`.toLowerCase();
+                            const classNameStr = (stu.class?.name || (classes.find(c => c._id === (stu.class?._id || stu.class))?.name) || '').toLowerCase();
+                            const regNum = (stu.registrationNumber || '').toLowerCase();
+                            const natId = (stu.nationalIdDigitization || '').toLowerCase();
+                            return nameAr.includes(q) || nameFr.includes(q) || classNameStr.includes(q) || regNum.includes(q) || natId.includes(q);
+                          });
+
+                          if (filtered.length === 0) {
+                            return (
+                              <p className="text-xs text-slate-500 text-center py-3">
+                                لا توجد نتائج مطابقة للبحث "{studentLinkSearch}".
+                              </p>
+                            );
+                          }
+
+                          return filtered.map((stu) => {
+                            const isSelected = (newUser.children || []).includes(stu._id);
+                            const stuName = stu.firstNameArabic && stu.lastNameArabic
+                              ? `${stu.firstNameArabic} ${stu.lastNameArabic}`
+                              : `${stu.user?.firstName || ''} ${stu.user?.lastName || ''}`.trim() || 'تلميذ';
+                            const classNameStr = stu.class?.name || (classes.find(c => c._id === (stu.class?._id || stu.class))?.name) || '';
+
+                            return (
+                              <label
+                                key={stu._id}
+                                className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors text-xs border ${
+                                  isSelected
+                                    ? 'bg-[#7B1E3A]/40 border-[#C9A24D]/60 text-white font-bold'
+                                    : 'bg-slate-950/40 hover:bg-slate-800 border-luxury-border/20 text-slate-300'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      const checked = e.target.checked;
+                                      setNewUser((prev) => {
+                                        const cur = prev.children || [];
+                                        return {
+                                          ...prev,
+                                          children: checked ? [...cur, stu._id] : cur.filter((id) => id !== stu._id),
+                                        };
+                                      });
+                                    }}
+                                    className="w-4 h-4 rounded text-[#7B1E3A] focus:ring-0 accent-[#7B1E3A] cursor-pointer"
+                                  />
+                                  <span>{stuName}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                  {classNameStr && (
+                                    <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-medium border border-luxury-border/30">
+                                      {classNameStr}
+                                    </span>
+                                  )}
+                                  <span className="font-mono text-[#C9A24D] font-bold">
+                                    {stu.nationalIdDigitization || stu.registrationNumber || ''}
+                                  </span>
+                                </div>
+                              </label>
+                            );
+                          });
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -1365,10 +1690,20 @@ export default function AdminDashboard() {
             {/* Excel uploader and User Toggle Grid */}
             <div className="space-y-6">
               <div className="glass-panel p-6 md:p-8 rounded-2xl border border-luxury-border space-y-4">
-                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2 border-b border-luxury-border/30 pb-3">
-                  <Upload className="w-5 h-5 text-brand-500" />
-                  <span>استيراد جماعي عبر Excel</span>
-                </h3>
+                <div className="flex items-center justify-between border-b border-luxury-border/30 pb-3">
+                  <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <Upload className="w-5 h-5 text-brand-500" />
+                    <span>استيراد جماعي عبر Excel</span>
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsTeacherImportModalOpen(true)}
+                    className="px-3.5 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-[#C9A24D]" />
+                    <span>استيراد أساتذة وموظفين (المادة 23)</span>
+                  </button>
+                </div>
                 <form onSubmit={handleExcelUpload} className="space-y-4">
                   <div className="border border-dashed border-luxury-border rounded-xl p-6 text-center relative cursor-pointer hover:bg-slate-900/20 transition-all">
                     <input
@@ -1405,6 +1740,37 @@ export default function AdminDashboard() {
                           <span className="text-xs text-slate-450">{u.role === 'student' ? 'تلميذ' : u.role === 'teacher' ? 'أستاذ' : u.role === 'parent' ? 'ولي أمر' : u.role} &bull; {u.email}</span>
                         </div>
                         <div className="flex items-center gap-2">
+                          {['teacher', 'general_supervisor', 'pedagogical_supervisor', 'receptionist'].includes(u.role) && (
+                            <button
+                              onClick={() => setSelectedTeacherForDossier(u._id)}
+                              className="px-3 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                              title="عرض وطباعة الملف المهني الشامل (المادة 23)"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
+                              <span>الملف المهني (المادة 23)</span>
+                            </button>
+                          )}
+                          {u.role === 'student' && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  let st = students.find((s) => s.user?._id === u._id);
+                                  if (!st) {
+                                    const res = await axios.get('/api/admin/students');
+                                    st = res.data.find((s) => s.user?._id === u._id);
+                                  }
+                                  if (st) setSelectedStudentForDossier(st);
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-brand-700 hover:bg-brand-600 text-white rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                              title="عرض الملف الإداري المدرسي للتلميذ"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-amber-300" />
+                              <span>الملف المدرسي</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => handleToggleStatus(u._id)}
                             className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
@@ -1417,14 +1783,14 @@ export default function AdminDashboard() {
                           </button>
                           <button
                             onClick={() => handleOpenEdit(u)}
-                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all"
+                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all cursor-pointer"
                             title="تعديل"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteUser(u._id)}
-                            className="p-2 bg-red-950/20 hover:bg-red-950/50 text-red-400 rounded-lg transition-all"
+                            className="p-2 bg-red-950/20 hover:bg-red-950/50 text-red-400 rounded-lg transition-all cursor-pointer"
                             title="حذف"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1520,6 +1886,37 @@ export default function AdminDashboard() {
                           >
                             {u.isActive ? 'تعطيل' : 'تنشيط'}
                           </button>
+                          {['teacher', 'general_supervisor', 'pedagogical_supervisor', 'receptionist'].includes(u.role) && (
+                            <button
+                              onClick={() => setSelectedTeacherForDossier(u._id)}
+                              className="px-2.5 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                              title="عرض وطباعة الملف المهني الشامل (المادة 23)"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
+                              <span className="hidden sm:inline">الملف المهني</span>
+                            </button>
+                          )}
+                          {u.role === 'student' && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  let st = students.find((s) => s.user?._id === u._id);
+                                  if (!st) {
+                                    const res = await axios.get('/api/admin/students');
+                                    st = res.data.find((s) => s.user?._id === u._id);
+                                  }
+                                  if (st) setSelectedStudentForDossier(st);
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              }}
+                              className="px-2.5 py-1.5 bg-brand-700 hover:bg-brand-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                              title="عرض الملف الإداري المدرسي للتلميذ"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-amber-300" />
+                              <span className="hidden sm:inline">الملف المدرسي</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => handleOpenEdit(u)}
                             className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all"
@@ -1567,11 +1964,18 @@ export default function AdminDashboard() {
                   <span>{exporting === 'students' ? 'جاري التصدير...' : 'تصدير Excel'}</span>
                 </button>
                 <button
+                  onClick={() => setIsStudentImportModalOpen(true)}
+                  className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-slate-950 font-black rounded-xl text-sm transition-all flex items-center gap-2 shadow-lg shadow-brand-500/20"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>استيراد نموذج الرقمنة (School Story)</span>
+                </button>
+                <button
                   onClick={() => setShowExcelUpload(!showExcelUpload)}
-                  className="px-5 py-2.5 bg-brand-950 hover:bg-brand-900 border border-brand-850 hover:border-brand-700 text-brand-400 font-semibold rounded-xl text-sm transition-all flex items-center gap-2"
+                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-luxury-border text-slate-300 font-semibold rounded-xl text-sm transition-all flex items-center gap-2"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>{showExcelUpload ? "إخفاء استيراد Excel" : "استيراد جماعي عبر Excel"}</span>
+                  <span>{showExcelUpload ? "إخفاء الاستيراد العادي" : "استيراد عادي"}</span>
                 </button>
               </div>
             </div>
@@ -1633,69 +2037,55 @@ export default function AdminDashboard() {
 
             {students.length === 0 ? (
               <div className="text-slate-500 text-sm text-center py-6">لا يوجد تلاميذ مسجلين حالياً.</div>
-            ) : students.filter((student) => {
-              const firstName = student.user?.firstName || '';
-              const lastName = student.user?.lastName || '';
-              const name = `${firstName} ${lastName}`.toLowerCase();
-              const email = (student.user?.email || '').toLowerCase();
-              const regNum = (student.registrationNumber || '').toLowerCase();
-              const parentName = student.parent && student.parent.user
-                ? `${student.parent.user.firstName} ${student.parent.user.lastName}`.toLowerCase()
-                : '';
-              const parentEmail = student.parent && student.parent.user
-                ? (student.parent.user.email || '').toLowerCase()
-                : '';
-              const search = studentSearch.toLowerCase();
-              
-              const matchesSearch =
-                name.includes(search) ||
-                email.includes(search) ||
-                regNum.includes(search) ||
-                parentName.includes(search) ||
-                parentEmail.includes(search);
+            ) : (() => {
+              const matchesFilter = (student) => {
+                const firstName = student.user?.firstName || '';
+                const lastName = student.user?.lastName || '';
+                const name = `${firstName} ${lastName} ${student.firstNameArabic || ''} ${student.lastNameArabic || ''}`.toLowerCase();
+                const email = (student.user?.email || '').toLowerCase();
+                const phone = (student.user?.phoneNumber || student.user?.username || '').toLowerCase();
+                const regNum = (student.registrationNumber || '').toLowerCase();
+                const parentName = student.parent && student.parent.user
+                  ? `${student.parent.user.firstName} ${student.parent.user.lastName}`.toLowerCase()
+                  : '';
+                const parentPhone = (student.parent?.user?.phoneNumber || student.parentPhoneNumber || '').toLowerCase();
+                const parentEmail = student.parent && student.parent.user
+                  ? (student.parent.user.email || '').toLowerCase()
+                  : '';
+                const search = studentSearch.toLowerCase();
+                
+                const matchesSearch =
+                  name.includes(search) ||
+                  email.includes(search) ||
+                  phone.includes(search) ||
+                  regNum.includes(search) ||
+                  parentName.includes(search) ||
+                  parentPhone.includes(search) ||
+                  parentEmail.includes(search) ||
+                  (student.isExitAuthorized && (search.includes('مرخص') || search.includes('خروج') || search.includes('sortie'))) ||
+                  (student.todayExitPass && (search.includes('مرخص') || search.includes('خروج') || search.includes('sortie')));
 
-              const matchesClass =
-                !studentClassFilter ||
-                student.class?._id === studentClassFilter ||
-                student.class === studentClassFilter;
+                const matchesClass =
+                  !studentClassFilter ||
+                  student.class?._id === studentClassFilter ||
+                  student.class === studentClassFilter;
 
-              return matchesSearch && matchesClass;
-            }).length === 0 ? (
-              <div className="text-slate-500 text-sm italic text-center py-10 bg-slate-950/20 rounded-xl border border-luxury-border/30">
-                لا يوجد تلاميذ يطابقون معايير البحث المحددة.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {students
-                  .filter((student) => {
-                    const firstName = student.user?.firstName || '';
-                    const lastName = student.user?.lastName || '';
-                    const name = `${firstName} ${lastName}`.toLowerCase();
-                    const email = (student.user?.email || '').toLowerCase();
-                    const regNum = (student.registrationNumber || '').toLowerCase();
-                    const parentName = student.parent && student.parent.user
-                      ? `${student.parent.user.firstName} ${student.parent.user.lastName}`.toLowerCase()
-                      : '';
-                    const parentEmail = student.parent && student.parent.user
-                      ? (student.parent.user.email || '').toLowerCase()
-                      : '';
-                    const search = studentSearch.toLowerCase();
-                    
-                    const matchesSearch =
-                      name.includes(search) ||
-                      email.includes(search) ||
-                      regNum.includes(search) ||
-                      parentName.includes(search) ||
-                      parentEmail.includes(search);
+                return matchesSearch && matchesClass;
+              };
 
-                    const matchesClass =
-                      !studentClassFilter ||
-                      student.class?._id === studentClassFilter ||
-                      student.class === studentClassFilter;
+              const displayedStudents = students.filter(matchesFilter);
 
-                    return matchesSearch && matchesClass;
-                  })
-                  .map((student) => {
+              if (displayedStudents.length === 0) {
+                return (
+                  <div className="text-slate-500 text-sm italic text-center py-10 bg-slate-950/20 rounded-xl border border-luxury-border/30">
+                    لا يوجد تلاميذ يطابقون معايير البحث المحددة.
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {displayedStudents.map((student) => {
                     const studentTeachers = teachers.filter((t) => 
                       t.classes?.some((c) => c._id === student.class?._id || c === student.class?._id) && 
                       t.groups?.some((g) => g._id === student.group?._id || g === student.group?._id)
@@ -1795,10 +2185,44 @@ export default function AdminDashboard() {
                                 {student.user?.isActive ? 'نشط' : 'غير نشط'}
                               </span>
                             </div>
+
+                            {student.todayExitPass && (
+                              <div className={`mt-2 p-2 rounded-xl border text-[11px] font-bold flex items-center justify-between ${
+                                student.todayExitPass.status === 'Approved'
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-2xs'
+                                  : student.todayExitPass.status === 'Used'
+                                  ? 'bg-slate-100 border-slate-300 text-slate-800'
+                                  : 'bg-amber-50 border-amber-300 text-amber-900'
+                              }`}>
+                                <div className="flex items-center gap-1.5">
+                                  <LogOut className={`w-3.5 h-3.5 ${
+                                    student.todayExitPass.status === 'Approved' ? 'text-emerald-700' : 'text-slate-600'
+                                  }`} />
+                                  <span>
+                                    {student.todayExitPass.status === 'Approved'
+                                      ? 'مرخص له بالخروج اليوم (Sortie autorisée)'
+                                      : student.todayExitPass.status === 'Used'
+                                      ? 'تم تسجيل الخروج عبر البوابة (Sorti)'
+                                      : 'طلب ترخيص خروج (قيد المصادقة)'}
+                                  </span>
+                                </div>
+                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white border border-black/10" dir="ltr">
+                                  {student.todayExitPass.exitTime}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
-                        <div className="flex justify-end gap-2 pt-2.5 border-t border-luxury-border/20">
+                        <div className="flex flex-wrap justify-end gap-2 pt-2.5 border-t border-luxury-border/20">
+                          <button
+                            onClick={() => setSelectedStudentForDossier(student)}
+                            className="px-3 py-1.5 bg-[#F3E9DC] hover:bg-[#ebdcc7] text-[#7B1E3A] border border-[#C9A24D]/40 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                            title="طباعة الملف الإداري المدرسي الشامل (Dossier Scolaire)"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            طباعة الملف الإداري
+                          </button>
                           <button
                             onClick={() => {
                               setSelectedStudent(student);
@@ -1827,8 +2251,9 @@ export default function AdminDashboard() {
                       </div>
                     );
                   })}
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
         </motion.div>
       )}
@@ -1840,23 +2265,35 @@ export default function AdminDashboard() {
             className="glass-panel p-6 md:p-8 rounded-2xl border border-luxury-border space-y-6 text-right"
           >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Users className="w-6 h-6 text-brand-400" />
-                <span>دليل الأساتذة والمعلمين</span>
-              </h3>
-              <div className="flex flex-wrap gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Users className="w-6 h-6 text-brand-400" />
+                  <span>دليل الأساتذة والموظفين - الملفات المهنية (المادة 23)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  الفصل التاسع: ملفات الأساتذة والموظفين • الربط التلقائي بالأقسام والأفواج • سجل التدقيق الإداري
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
                 <button
-                  onClick={() => handleExport('teachers', 'teachers.xlsx')}
+                  onClick={() => setIsTeacherImportModalOpen(true)}
+                  className="px-4 py-2.5 bg-[#7B1E3A] hover:bg-[#60162c] border border-[#C9A24D]/40 text-white font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center gap-2 shadow-md cursor-pointer"
+                >
+                  <Upload className="w-4 h-4 text-[#C9A24D]" />
+                  <span>استيراد أساتذة عبر Excel (ربط الأقسام والأفواج)</span>
+                </button>
+                <button
+                  onClick={() => handleExport('teachers', 'teachers_article23.xlsx')}
                   disabled={exporting === 'teachers'}
-                  className="px-5 py-2.5 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-800/60 hover:border-emerald-600 text-emerald-400 font-semibold rounded-xl text-sm transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2.5 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-800/60 hover:border-emerald-600 text-emerald-400 font-semibold rounded-xl text-xs sm:text-sm transition-all flex items-center gap-2 disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
-                  <span>{exporting === 'teachers' ? 'جاري التصدير...' : 'تصدير Excel'}</span>
+                  <span>{exporting === 'teachers' ? 'جاري التصدير...' : 'تصدير Excel (المادة 23)'}</span>
                 </button>
                 <button
                   onClick={() => handleExport('parents', 'parents.xlsx')}
                   disabled={exporting === 'parents'}
-                  className="px-5 py-2.5 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-800/60 hover:border-emerald-600 text-emerald-400 font-semibold rounded-xl text-sm transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2.5 bg-slate-800/70 hover:bg-slate-700/70 border border-slate-700 text-slate-300 font-semibold rounded-xl text-xs sm:text-sm transition-all flex items-center gap-2 disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
                   <span>{exporting === 'parents' ? 'جاري التصدير...' : 'تصدير أولياء الأمور'}</span>
@@ -1864,56 +2301,221 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* Teachers Search and Filters Bar */}
+            <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-luxury-border flex flex-col md:flex-row gap-3 items-center justify-between bg-slate-900/40">
+              <div className="w-full md:flex-1 relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
+                <input
+                  type="text"
+                  placeholder="البحث عن أستاذ بالاسم، رقم الهاتف، المادة أو البريد الإلكتروني..."
+                  value={teacherSearch}
+                  onChange={(e) => setTeacherSearch(e.target.value)}
+                  className="w-full bg-slate-900 border border-luxury-border rounded-xl pl-11 pr-4 py-2.5 text-xs sm:text-sm focus:border-brand-500 focus:outline-none placeholder-slate-500 text-white"
+                />
+                {teacherSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setTeacherSearch('')}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="w-full md:w-56">
+                <select
+                  value={teacherStatusFilter}
+                  onChange={(e) => setTeacherStatusFilter(e.target.value)}
+                  className="w-full bg-slate-900 border border-luxury-border rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500 font-semibold"
+                >
+                  <option value="all">جميع الحالات المهنية</option>
+                  <option value="active">نشط (Active)</option>
+                  <option value="suspended">موقوف مؤقتاً</option>
+                  <option value="resigned">مستقيل</option>
+                  <option value="terminated">منتهية العلاقة</option>
+                </select>
+              </div>
+            </div>
+
             {teachers.length === 0 ? (
               <div className="text-slate-500 text-sm">لا يوجد أساتذة مسجلون حالياً.</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {teachers.map((teacher) => (
-                  <div key={teacher._id} className="p-5 bg-slate-900/30 border border-luxury-border rounded-2xl flex flex-col justify-between space-y-4 hover:border-brand-500/20 transition-all">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-brand-900/40 flex items-center justify-center font-bold text-brand-450 uppercase">
-                          {teacher.user?.firstName?.[0]}{teacher.user?.lastName?.[0]}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-white text-sm">
-                            {teacher.user?.firstName} {teacher.user?.lastName}
-                          </h4>
-                          <span className="text-[10px] text-slate-550 truncate block max-w-[150px]">
-                            {teacher.user?.email}
+            ) : (() => {
+              const filteredTeachers = teachers.filter((teacher) => {
+                const pStatus = teacher.professionalStatus || (teacher.user?.isActive ? 'active' : 'inactive');
+                if (teacherStatusFilter !== 'all' && pStatus !== teacherStatusFilter) return false;
+                if (!teacherSearch.trim()) return true;
+                const q = teacherSearch.trim().toLowerCase();
+                const fullName = `${teacher.user?.firstName || ''} ${teacher.user?.lastName || ''}`.toLowerCase();
+                const phone = (teacher.user?.phoneNumber || teacher.user?.username || '').toLowerCase();
+                const email = (teacher.user?.email || '').toLowerCase();
+                const subjects = (teacher.subjects || []).join(' ').toLowerCase();
+                const matricule = (teacher.nationalIdNumber || teacher.socialSecurityNumber || '').toLowerCase();
+                return fullName.includes(q) || phone.includes(q) || email.includes(q) || subjects.includes(q) || matricule.includes(q);
+              });
+
+              if (filteredTeachers.length === 0) {
+                return (
+                  <div className="p-8 text-center text-slate-500 text-xs italic bg-slate-900/20 rounded-xl border border-luxury-border/30">
+                    لا يوجد أي أستاذ يطابق نتيجة البحث «{teacherSearch}».
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredTeachers.map((teacher) => {
+                  const pStatus = teacher.professionalStatus || (teacher.user?.isActive ? 'active' : 'inactive');
+                  const statusColors = {
+                    active: 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50',
+                    suspended: 'bg-amber-950/40 text-amber-400 border-amber-800/50',
+                    resigned: 'bg-slate-800 text-slate-400 border-slate-700',
+                    terminated: 'bg-red-950/40 text-red-400 border-red-800/50',
+                  };
+                  const statusArabic = {
+                    active: 'نشط',
+                    suspended: 'موقوف مؤقتاً',
+                    resigned: 'مستقيل',
+                    terminated: 'منتهية العلاقة',
+                  };
+
+                  return (
+                    <div
+                      key={teacher._id}
+                      className="p-5 bg-slate-900/40 border border-luxury-border hover:border-[#C9A24D]/40 rounded-2xl flex flex-col justify-between space-y-4 transition-all shadow-xs"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-2xl bg-[#7B1E3A]/30 border border-[#C9A24D]/30 flex items-center justify-center font-bold text-[#C9A24D] uppercase text-sm">
+                              {teacher.user?.firstName?.[0]}{teacher.user?.lastName?.[0]}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-white text-sm">
+                                {teacher.user?.firstName} {teacher.user?.lastName}
+                              </h4>
+                              <span className="text-[10px] text-slate-400 truncate block max-w-[170px]" dir="ltr">
+                                {teacher.user?.email}
+                              </span>
+                            </div>
+                          </div>
+                          <span
+                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                              statusColors[pStatus] || statusColors.active
+                            }`}
+                          >
+                            {statusArabic[pStatus] || (teacher.user?.isActive ? 'نشط' : 'معطّل')}
                           </span>
                         </div>
+
+                        <div className="space-y-2 text-xs text-slate-400 border-t border-luxury-border/30 pt-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400">التخصص / المادة:</span>
+                            <span className="text-white font-medium">
+                              {teacher.specialization || teacher.subjects?.join(', ') || 'غير محدد'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400">الطور التعليمي:</span>
+                            <span className="text-amber-200/90 font-medium text-[11px]">
+                              {teacher.cycle === 'middle' ? 'متوسط' : teacher.cycle === 'secondary' ? 'ثانوي' : 'ابتدائي'}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-slate-400 block mb-1">الأقسام المسندة (كلاسته):</span>
+                            <div className="flex flex-wrap gap-1">
+                              {teacher.classes && teacher.classes.length > 0 ? (
+                                teacher.classes.map((c) => (
+                                  <span
+                                    key={c._id || c}
+                                    className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-white text-[10px] font-semibold"
+                                  >
+                                    {c.name || c}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-slate-500 text-[10px] italic">لا يوجد</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <span className="text-slate-400 block mb-1">الأفواج المسندة (أفواجه):</span>
+                            <div className="flex flex-wrap gap-1">
+                              {teacher.groups && teacher.groups.length > 0 ? (
+                                teacher.groups.map((g) => (
+                                  <span
+                                    key={g._id || g}
+                                    className="px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-900/40 text-emerald-300 text-[10px] font-semibold"
+                                  >
+                                    {g.name || g}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-slate-500 text-[10px] italic">لا يوجد</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-slate-400">الهاتف:</span>
+                            <span className="text-white font-mono text-[11px]">{teacher.user?.phoneNumber || '—'}</span>
+                          </div>
+
+                          {/* Article 24 Contract Expiry Badge */}
+                          {teacher.contractEndDate && (() => {
+                            const diffDays = Math.ceil((new Date(teacher.contractEndDate) - new Date()) / (1000 * 60 * 60 * 24));
+                            if (diffDays <= 60) {
+                              return (
+                                <div className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center justify-between mt-1 ${
+                                  diffDays <= 30
+                                    ? 'bg-red-950/40 text-red-300 border-red-800/60'
+                                    : 'bg-amber-950/40 text-amber-300 border-amber-800/60'
+                                }`}>
+                                  <span>انتهاء العقد (المادة 24):</span>
+                                  <span className="font-mono">{diffDays > 0 ? `متبقي ${diffDays} يوم` : 'منتهي'}</span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
                       </div>
 
-                      <div className="space-y-1.5 text-xs text-slate-400 border-t border-luxury-border/30 pt-2.5">
-                        <p>المواد: <span className="text-white font-medium">{teacher.subjects?.join(', ') || 'غير محدد'}</span></p>
-                        <p>الأقسام: <span className="text-white font-medium">{teacher.classes?.map(c => c.name).join(', ') || 'لا يوجد'}</span></p>
-                        <p>الأفواج: <span className="text-white font-medium">{teacher.groups?.map(g => g.name).join(', ') || 'لا يوجد'}</span></p>
-                        <p>الهاتف: <span className="text-white font-medium">{teacher.user?.phoneNumber || '—'}</span></p>
-                        <p>حالة الحساب: <span className={teacher.user?.isActive ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>{teacher.user?.isActive ? 'نشط' : 'غير نشط'}</span></p>
+                      {/* Card Actions */}
+                      <div className="flex items-center justify-between gap-2 pt-3 border-t border-luxury-border/30">
+                        <button
+                          onClick={() => setSelectedTeacherForDossier(teacher._id)}
+                          className="flex-1 px-3 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                          title="عرض وطباعة الملف المهني الشامل وفق المادة 23"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
+                          <span>الملف المهني (المادة 23)</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleOpenEdit(teacher.user)}
+                          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                          title="تعديل الحساب"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(teacher.user?._id)}
+                          className="p-2 bg-red-950/20 hover:bg-red-950/40 text-red-400 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                          title="حذف الأستاذ"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex justify-end gap-2 pt-2 border-t border-luxury-border/20">
-                      <button
-                        onClick={() => handleOpenEdit(teacher.user)}
-                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                        تعديل
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(teacher.user?._id)}
-                        className="px-3 py-1.5 bg-red-950/20 hover:bg-red-950/40 text-red-400 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        حذف
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-            )}
+            );
+          })()}
           </motion.div>
         )}
 
@@ -2115,10 +2717,29 @@ export default function AdminDashboard() {
           >
             {/* Display list of classes & groups */}
             <div className="glass-panel p-6 rounded-2xl border border-luxury-border space-y-4 shadow-lg bg-slate-950/20">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2 border-b border-luxury-border/30 pb-3">
-                <BookOpen className="w-5 h-5 text-brand-400" />
-                <span>قائمة الأقسام والأفواج الدراسية</span>
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-luxury-border/30 pb-3">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-brand-400" />
+                  <span>قائمة الأقسام والأفواج الدراسية</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewGroup({
+                      name: '',
+                      classId: classes[0]?._id || '',
+                      capacity: 30,
+                      teacherIds: [],
+                      modules: [],
+                    });
+                    setIsAddGroupModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#7B1E3A] hover:bg-[#62162d] text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-[#7B1E3A]/20 cursor-pointer border border-[#C9A24D]/35 self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4 text-[#C9A24D]" />
+                  <span>إضافة فوج دراسي</span>
+                </button>
+              </div>
               {classes.length === 0 ? (
                 <div className="text-slate-500 text-sm">لا يوجد classe disponible.</div>
               ) : (
@@ -2175,9 +2796,49 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="space-y-3 pt-1">
-                          <span className="text-[10px] font-bold text-slate-350 block uppercase tracking-wide">الأفواج / الأفواج الفرعية:</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-350 block uppercase tracking-wide">
+                              الأفواج / الأفواج الفرعية:
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewGroup({
+                                  name: '',
+                                  classId: cls._id,
+                                  capacity: 30,
+                                  teacherIds: [],
+                                  modules: cls.modules || [],
+                                });
+                                setIsAddGroupModalOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-950/50 hover:bg-[#7B1E3A] text-brand-300 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-brand-800/40 cursor-pointer shadow-2xs"
+                              title={`إضافة فوج لقسم ${cls.name}`}
+                            >
+                              <Plus className="w-3 h-3 text-[#C9A24D]" />
+                              <span>إضافة فوج لهذا القسم</span>
+                            </button>
+                          </div>
                           {classGroups.length === 0 ? (
-                            <span className="text-xs text-slate-500 italic block pl-1">لا يوجد groupe rattaché.</span>
+                            <div className="p-3 bg-slate-950/30 border border-dashed border-luxury-border/30 rounded-xl flex items-center justify-between gap-2">
+                              <span className="text-xs text-slate-500 italic">لا يوجد فوج مرتبط بهذا القسم حالياً.</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewGroup({
+                                    name: '',
+                                    classId: cls._id,
+                                    capacity: 30,
+                                    teacherIds: [],
+                                    modules: cls.modules || [],
+                                  });
+                                  setIsAddGroupModalOpen(true);
+                                }}
+                                className="text-[10px] text-brand-400 hover:underline font-bold cursor-pointer"
+                              >
+                                + إنشاء أول فوج الآن
+                              </button>
+                            </div>
                           ) : (
                             <div className="grid grid-cols-1 gap-3">
                               {classGroups.map((g) => {
@@ -2351,60 +3012,10 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === 'documents' && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-right"
-          >
-            {/* ===== Administrative Documents ===== */}
-            <div className="glass-panel p-6 rounded-2xl border border-luxury-border space-y-5 shadow-lg bg-slate-950/20">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2 border-b border-luxury-border/30 pb-3">
-                <FileText className="w-5 h-5 text-brand-400" />
-                <span>المستندات الإدارية (PDF)</span>
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { type: 'teacher_contract', label: 'عقد العمل (للأساتذة)' },
-                  { type: 'parent_regulations', label: 'القانون الداخلي (للأولياء)' },
-                ].map((docType) => {
-                  const existing = documents.find((d) => d.type === docType.type);
-                  return (
-                    <div key={docType.type} className="p-4 bg-slate-900/40 border border-luxury-border rounded-xl space-y-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-white">{docType.label}</span>
-                        {existing ? (
-                          <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-                            <Check className="w-3 h-3" /> منشور
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-slate-500">غير منشور</span>
-                        )}
-                      </div>
-                      {existing && (
-                        <p className="text-[10px] text-slate-450 truncate">
-                          {existing.originalName} — {new Date(existing.updatedAt).toLocaleDateString('fr-FR')}
-                        </p>
-                      )}
-                      <label className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs transition-all cursor-pointer">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>{uploadingDoc === docType.type ? 'جاري الرفع...' : existing ? 'استبدال الملف' : 'رفع ملف PDF'}</span>
-                        <input
-                          type="file"
-                          accept="application/pdf"
-                          className="hidden"
-                          disabled={uploadingDoc === docType.type}
-                          onChange={(e) => {
-                            handleUploadDocument(docType.type, e.target.files[0]);
-                            e.target.value = '';
-                          }}
-                        />
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
+          <AdministrativeDocumentsManager
+            documents={documents}
+            onRefresh={fetchData}
+          />
         )}
 
         {activeTab === 'schedules' && (
@@ -3630,6 +4241,36 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+              {selectedStudent.todayExitPass && (
+                <div className={`p-4 rounded-xl border text-xs font-bold space-y-1.5 ${
+                  selectedStudent.todayExitPass.status === 'Approved'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-2xs'
+                    : selectedStudent.todayExitPass.status === 'Used'
+                    ? 'bg-slate-100 border-slate-300 text-slate-800'
+                    : 'bg-amber-50 border-amber-300 text-amber-950'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 font-bold">
+                      <LogOut className="w-4 h-4 text-emerald-700" />
+                      <span>
+                        {selectedStudent.todayExitPass.status === 'Approved'
+                          ? 'مرخص له بالخروج اليوم من المؤسسة (Sortie autorisée)'
+                          : selectedStudent.todayExitPass.status === 'Used'
+                          ? 'تم توثيق خروج التلميذ من البوابة الرئيسية (Sorti)'
+                          : 'طلب ترخيص خروج (قيد المصادقة)'}
+                      </span>
+                    </span>
+                    <span className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-black/10" dir="ltr">
+                      الساعة: {selectedStudent.todayExitPass.exitTime}
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-normal text-slate-700 flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-black/10">
+                    <span>المرافق: <strong>{selectedStudent.todayExitPass.accompaniedBy || 'ولي الأمر'}</strong></span>
+                    <span>المبرر: <strong>{selectedStudent.todayExitPass.reason}</strong></span>
+                  </div>
+                </div>
+              )}
+
               {/* Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* School Details */}
@@ -3674,6 +4315,36 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+
+              {selectedStudent.todayExitPass && (
+                <div className={`p-4 rounded-xl border text-xs font-bold space-y-1.5 ${
+                  selectedStudent.todayExitPass.status === 'Approved'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-2xs'
+                    : selectedStudent.todayExitPass.status === 'Used'
+                    ? 'bg-slate-100 border-slate-300 text-slate-800'
+                    : 'bg-amber-50 border-amber-300 text-amber-950'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 font-bold">
+                      <LogOut className="w-4 h-4 text-emerald-700" />
+                      <span>
+                        {selectedStudent.todayExitPass.status === 'Approved'
+                          ? 'مرخص له بالخروج اليوم من المؤسسة (Sortie autorisée)'
+                          : selectedStudent.todayExitPass.status === 'Used'
+                          ? 'تم توثيق خروج التلميذ من البوابة الرئيسية (Sorti)'
+                          : 'طلب ترخيص خروج (قيد المصادقة)'}
+                      </span>
+                    </span>
+                    <span className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-black/10" dir="ltr">
+                      الساعة: {selectedStudent.todayExitPass.exitTime}
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-normal text-slate-700 flex flex-wrap gap-x-4 gap-y-1 pt-1 border-t border-black/10">
+                    <span>المرافق: <strong>{selectedStudent.todayExitPass.accompaniedBy || 'ولي الأمر'}</strong></span>
+                    <span>المبرر: <strong>{selectedStudent.todayExitPass.reason}</strong></span>
+                  </div>
+                </div>
+              )}
 
               {/* Parent Details Card */}
               {selectedStudent.parent ? (
@@ -3803,6 +4474,148 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Add Group Modal */}
+      {isAddGroupModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 overflow-y-auto"
+          dir="rtl"
+          onClick={() => setIsAddGroupModalOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg glass-panel border border-luxury-border rounded-2xl p-6 space-y-4 text-right bg-slate-900/95 shadow-2xl my-8 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex justify-between items-center border-b border-luxury-border/30 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Users className="w-5 h-5 text-brand-400" />
+                <span>إضافة فوج دراسي جديد</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddGroupModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateGroup} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">اسم الفوج الدراسي *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: الفوج 1 أو Groupe A"
+                  value={newGroup.name}
+                  onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+                  className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">القسم الدراسي المرتبط *</label>
+                <select
+                  value={newGroup.classId}
+                  required
+                  onChange={(e) => setNewGroup({ ...newGroup, classId: e.target.value })}
+                  className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500"
+                >
+                  <option value="">اختر القسم الدراسي</option>
+                  {classes.map((c) => (
+                    <option key={c._id} value={c._id}>{c.name} ({c.level})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">الطاقة الاستيعابية للفوج</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  placeholder="30"
+                  value={newGroup.capacity}
+                  onChange={(e) => setNewGroup({ ...newGroup, capacity: Number(e.target.value) || 30 })}
+                  className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Modules selection */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300 block">المواد المقررة لهذا الفوج</label>
+                <div className="bg-slate-900/80 border border-luxury-border rounded-xl p-3 max-h-32 overflow-y-auto grid grid-cols-2 gap-1.5 text-right">
+                  {modules.length === 0 ? (
+                    <span className="text-[10px] text-slate-500 italic col-span-2">لا توجد مواد مسجلة.</span>
+                  ) : (
+                    modules.map((m) => (
+                      <label key={m._id} className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 hover:text-white">
+                        <input
+                          type="checkbox"
+                          checked={newGroup.modules?.includes(m.name)}
+                          onChange={(e) => {
+                            const cur = newGroup.modules || [];
+                            setNewGroup({
+                              ...newGroup,
+                              modules: e.target.checked
+                                ? [...cur, m.name]
+                                : cur.filter((s) => s !== m.name),
+                            });
+                          }}
+                          className="rounded border-luxury-border bg-slate-950 text-brand-600 focus:ring-0"
+                        />
+                        <span className="truncate">{m.name}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Teachers selection */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300 block">تعيين الأساتذة (اختياري)</label>
+                <div className="bg-slate-900/80 border border-luxury-border rounded-xl p-3 max-h-32 overflow-y-auto space-y-1.5">
+                  {teachers.map((t) => (
+                    <label key={t._id} className="flex items-center gap-2 cursor-pointer text-xs text-slate-300 hover:text-white">
+                      <input
+                        type="checkbox"
+                        checked={newGroup.teacherIds?.includes(t._id)}
+                        onChange={(e) => {
+                          const cur = newGroup.teacherIds || [];
+                          setNewGroup({
+                            ...newGroup,
+                            teacherIds: e.target.checked
+                              ? [...cur, t._id]
+                              : cur.filter((tid) => tid !== t._id),
+                          });
+                        }}
+                        className="rounded border-luxury-border bg-slate-950 text-brand-600 focus:ring-0"
+                      />
+                      <span>{t.user?.firstName} {t.user?.lastName} {t.subjects?.length ? `(${t.subjects.join(', ')})` : ''}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-luxury-border/30">
+                <button
+                  type="button"
+                  onClick={() => setIsAddGroupModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs transition-colors cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-[#7B1E3A] hover:bg-[#62162d] text-white font-bold text-xs transition-colors cursor-pointer border border-[#C9A24D]/35 shadow-md shadow-[#7B1E3A]/20"
+                >
+                  حفظ وإضافة الفوج
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Edit Group Modal */}
       {editingGroup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" dir="rtl" onClick={() => setEditingGroup(null)}>
@@ -3874,6 +4687,39 @@ export default function AdminDashboard() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Student Excel Import Modal (School Story template) */}
+      <StudentExcelImportModal
+        isOpen={isStudentImportModalOpen}
+        onClose={() => setIsStudentImportModalOpen(false)}
+        onImportSuccess={fetchData}
+      />
+
+      {/* Official Student Dossier & Information File Modal */}
+      {selectedStudentForDossier && (
+        <StudentProfileFileModal
+          student={selectedStudentForDossier}
+          onClose={() => setSelectedStudentForDossier(null)}
+        />
+      )}
+
+      {/* Teacher Excel Import Modal (Article 23: Auto-linking classes & groups) */}
+      <TeacherExcelImportModal
+        isOpen={isTeacherImportModalOpen}
+        onClose={() => setIsTeacherImportModalOpen(false)}
+        onImportSuccess={fetchData}
+      />
+
+      {/* Official Teacher Professional File Modal (Article 23: Dossier Professionnel) */}
+      {selectedTeacherForDossier && (
+        <ErrorBoundary onClose={() => setSelectedTeacherForDossier(null)}>
+          <TeacherProfileFileModal
+            teacherId={selectedTeacherForDossier}
+            onClose={() => setSelectedTeacherForDossier(null)}
+            onUpdated={fetchData}
+          />
+        </ErrorBoundary>
       )}
 
     </DashboardLayout>

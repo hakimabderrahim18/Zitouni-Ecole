@@ -2,143 +2,149 @@
 @tailwind components;
 @tailwind utilities;
 
-:root, .theme-default {
-  /* Default Terracotta + Gold — Luxury Dark scheme */
-  --brand-50: #FBF3EC;
-  --brand-100: #F7E7D9;
-  --brand-200: #F4C7A1;
-  --brand-300: #E9A878;
-  --brand-400: #D98553;
-  --brand-500: #C56A3D;
-  --brand-600: #A9522C;
-  --brand-700: #8A4222;
-  --brand-800: #6B331A;
-  --brand-900: #4D2412;
-  --brand-950: #2E150A;
+:root, .theme-default, .theme-prestige, .theme-sand {
+  /* ------------------------------------------------------------------ */
+  /*  1. Prestige Académique (Bordeaux + Crème) — Grande École          */
+  /*  Principal : Bordeaux #7B1E3A                                      */
+  /*  Secondaire : Beige Crème #F3E9DC                                  */
+  /*  Accent : Or #C9A24D                                               */
+  /*  Texte : #2B2022                                                   */
+  /*  Polices : Cormorant Garamond (titres) + Lato (texte)              */
+  /* ------------------------------------------------------------------ */
+  --brand-50: #FAF2F4;
+  --brand-100: #F4E2E7;
+  --brand-200: #E7C1CB;
+  --brand-300: #D399A8;
+  --brand-400: #B35870;
+  --brand-500: #7B1E3A;   /* Bordeaux Principal */
+  --brand-600: #68172F;   /* Bordeaux Profond (hover) */
+  --brand-700: #551125;
+  --brand-800: #420A1B;
+  --brand-900: #300612;
+  --brand-950: #1F030B;
 
-  --bg-950: #050505;
-  --bg-905: #0a0a0a;
-  --bg-900: #0f172a;
-  --bg-850: #1e293b;
-  --bg-800: #334155;
-  --border-700: #334155;
-  --border-650: #475569;
-  --border-600: #64748b;
-  --border-550: #94a3b8;
-  --text-500: #64748b;
-  --text-455: #94a3b8;
-  --text-450: #94a3b8;
-  --text-400: #94a3b8;
-  --text-350: #cbd5e1;
-  --text-330: #cbd5e1;
-  --text-300: #e2e8f0;
-  --text-200: #f1f5f9;
-  --text-100: #f8fafc;
-  --text-50: #ffffff;
+  /* Beige Crème (#F3E9DC) Palette de fond et surfaces chaudes */
+  --bg-950: #F3E9DC;      /* Fond de page principal (Beige Crème exact) */
+  --bg-905: #FAF4EB;      /* Surfaces intérieures et inputs */
+  --bg-900: #FCF8F2;      /* Cartes et barres latérales */
+  --bg-850: #EAE0D1;      /* Élévation douce / hover */
+  --bg-800: #DFD3C2;      /* Bordures et séparateurs */
+  --border-700: #DFD3C2;
+  --border-650: #D3C3AF;
+  --border-600: #C4B19A;
+  --border-550: #B29D83;
 
-  --luxury-card: rgba(15, 23, 42, 0.75);
-  --luxury-border: rgba(255, 255, 255, 0.1);
-  --scrollbar-track: #050505;
-  --scrollbar-thumb: #334155;
-  --scrollbar-hover: #C56A3D;
+  /* Texte (#2B2022) Encre d'imprimerie chaude et contrastée */
+  --text-50: #191214;
+  --text-100: #2B2022;    /* Texte courant et titres (exact #2B2022) */
+  --text-200: #3A2C2F;
+  --text-300: #4A3A3D;
+  --text-330: #574549;
+  --text-350: #665256;
+  --text-400: #766065;
+  --text-450: #887075;
+  --text-455: #887075;
+  --text-500: #9C8288;
+
+  /* Accent Or (#C9A24D) */
+  --accent-gold: #C9A24D;
+  --accent-gold-light: #F7EED8;
+  --accent-gold-dark: #A37E30;
+
+  --luxury-card: rgba(252, 248, 242, 0.94);
+  --luxury-border: rgba(201, 162, 77, 0.35);  /* Liseré Or Prestige */
+  --scrollbar-track: #F3E9DC;
+  --scrollbar-thumb: #C9A24D;
+  --scrollbar-hover: #7B1E3A;
 }
 
-.theme-sand {
-  /* Sand + Terracotta — Premium light scheme (warm, paper-like) */
-  --brand-50: #FBF3EC;
-  --brand-100: #F7E7D9;
-  --brand-200: #F4C7A1;
-  --brand-300: #E9A878;
-  --brand-400: #D98553;
-  --brand-500: #C56A3D;
-  --brand-600: #A9522C;
-  --brand-700: #8A4222;
-  --brand-800: #6B331A;
-  --brand-900: #4D2412;
-  --brand-950: #2E150A;
+/* Thème Nuit Prestige Académique (Velours Bordeaux Profond & Or/Crème) */
+.theme-prestige-dark, .theme-blue-roi, .dark:not(.theme-sand):not(.theme-prestige) {
+  --brand-50: #FAF2F4;
+  --brand-100: #F4E2E7;
+  --brand-200: #E7C1CB;
+  --brand-300: #D399A8;
+  --brand-400: #B35870;
+  --brand-500: #962847;
+  --brand-600: #7B1E3A;   /* Bordeaux Principal */
+  --brand-700: #68172F;
+  --brand-800: #551125;
+  --brand-900: #300612;
+  --brand-950: #1A030A;
 
-  --bg-950: #FFFDF9;   /* page background */
-  --bg-905: #FFFAF5;   /* surface */
-  --bg-900: #FFFAF5;   /* surface / inputs / sidebar */
-  --bg-850: #F7EFE6;   /* slightly raised */
-  --bg-800: #EFE4DA;   /* raised / hover / disabled */
-  --border-700: #E7DACE;
-  --border-650: #D8C9BB;
-  --border-600: #C4B4A4;
-  --border-550: #AEA095;
-  --text-500: #756F69;  /* muted / placeholder (darkened for clarity) */
-  --text-455: #7A746E;
-  --text-450: #7A746E;  /* secondary text */
-  --text-400: #7A746E;
-  --text-350: #524C46;
-  --text-330: #524C46;
-  --text-300: #4A443E;  /* body text */
-  --text-200: #3A352F;
-  --text-100: #2D2A26;  /* primary text */
-  --text-50: #2D2A26;
+  --bg-950: #160408;      /* Fond velours bordeaux nocturne */
+  --bg-905: #21070E;
+  --bg-900: #2C0C15;
+  --bg-850: #3D121F;
+  --bg-800: #50192A;
+  --border-700: #50192A;
+  --border-650: #682237;
+  --border-600: #812E46;
+  --border-550: #A03D5A;
 
-  --luxury-card: rgba(255, 255, 255, 0.88);
-  --luxury-border: #EFE4DA;
-  --scrollbar-track: #F7EFE6;
-  --scrollbar-thumb: #E0CFBF;
-  --scrollbar-hover: #C56A3D;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Bleu Roi & Blanc Dark Theme (Royal Blue & White Dark Mode)        */
-/* ------------------------------------------------------------------ */
-.theme-blue-roi {
-  /* Royal Blue & White Brand Palette */
-  --brand-50: #EFF6FF;
-  --brand-100: #DBEAFE;
-  --brand-200: #BFDBFE;
-  --brand-300: #93C5FD;
-  --brand-400: #60A5FA;
-  --brand-500: #2563EB;   /* Bleu Roi (Royal Blue) */
-  --brand-600: #1D4ED8;   /* Bleu Roi Hover */
-  --brand-700: #1E40AF;
-  --brand-800: #1E3A8A;
-  --brand-900: #172554;
-  --brand-950: #0B132B;
-
-  /* Deep Royal Navy Dark Backgrounds */
-  --bg-950: #070d1e;
-  --bg-905: #0a1329;
-  --bg-900: #0f1c3f;
-  --bg-850: #162650;
-  --bg-800: #1e3368;
-  --border-700: #1e3368;
-  --border-650: #2a4380;
-  --border-600: #3b5998;
-  --border-550: #6082b6;
-  --text-500: #94A3B8;
-  --text-455: #CBD5E1;
-  --text-450: #CBD5E1;
-  --text-400: #CBD5E1;
-  --text-350: #E2E8F0;
-  --text-330: #E2E8F0;
-  --text-300: #F1F5F9;
-  --text-200: #F8FAFC;
-  --text-100: #FFFFFF;
   --text-50: #FFFFFF;
+  --text-100: #F3E9DC;    /* Crème éclatant pour les titres */
+  --text-200: #EADCCB;
+  --text-300: #DFCEBA;
+  --text-330: #DFCEBA;
+  --text-350: #D2BEA8;
+  --text-400: #C3AC93;
+  --text-450: #B29B81;
+  --text-455: #B29B81;
+  --text-500: #9E876F;
 
-  --luxury-card: rgba(15, 28, 63, 0.85);
-  --luxury-border: rgba(96, 165, 250, 0.25);
-  --scrollbar-track: #070d1e;
-  --scrollbar-thumb: #1E3A8A;
-  --scrollbar-hover: #2563EB;
+  --accent-gold: #C9A24D;
+  --accent-gold-light: #F7EED8;
+  --accent-gold-dark: #A37E30;
+
+  --luxury-card: rgba(44, 12, 21, 0.88);
+  --luxury-border: rgba(201, 162, 77, 0.40);
+  --scrollbar-track: #160408;
+  --scrollbar-thumb: #7B1E3A;
+  --scrollbar-hover: #C9A24D;
 }
 
 @layer base {
-  body {
-    @apply bg-slate-950 text-slate-100 overflow-x-hidden transition-colors duration-300;
-    font-family: 'Tajawal', 'Cairo', sans-serif;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  *, *::before, *::after {
+    box-sizing: border-box;
   }
 
-  /* Refined serif display for headings (premium private-school feel) */
-  h1, h2, h3 {
-    font-family: 'Lora', 'Tajawal', serif;
+  html {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+    position: relative;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 transition-colors duration-300;
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    font-family: 'Lato', 'Tajawal', 'Cairo', sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #root {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  img, video, canvas, svg {
+    max-width: 100%;
+  }
+
+  /* Refined Cormorant Garamond display for headings (Prestige académique - très Grande École) */
+  h1, h2, h3, h4, .font-display, .font-heading {
+    font-family: 'Cormorant Garamond', 'Amiri', serif;
     letter-spacing: -0.01em;
   }
 
@@ -178,29 +184,29 @@
   background: var(--scrollbar-hover);
 }
 
-/* Glassmorphism primitives — soft paper cards with gentle depth */
+/* Glassmorphism primitives — soft cream paper cards with gentle depth & gold border */
 .glass-panel {
   background: var(--luxury-card);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid var(--luxury-border);
-  box-shadow: 0 1px 2px rgba(45, 42, 38, 0.04), 0 12px 30px -12px rgba(45, 42, 38, 0.10);
+  box-shadow: 0 1px 3px rgba(43, 32, 34, 0.05), 0 14px 35px -12px rgba(123, 30, 58, 0.08);
 }
 
 .glass-panel-heavy {
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(252, 248, 242, 0.96);
   backdrop-filter: blur(24px);
   border: 1px solid var(--luxury-border);
-  box-shadow: 0 2px 4px rgba(45, 42, 38, 0.05), 0 18px 40px -16px rgba(45, 42, 38, 0.14);
+  box-shadow: 0 2px 5px rgba(43, 32, 34, 0.06), 0 20px 45px -16px rgba(123, 30, 58, 0.12);
 }
 
-/* Premium Animated Backgrounds — warm sand & terracotta glow */
+/* Premium Animated Backgrounds — Bordeaux & Crème + Gold subtle glow */
 .mesh-gradient {
   background-color: transparent;
   background-image:
-    radial-gradient(at 0% 0%, rgba(197, 106, 61, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(244, 199, 161, 0.18) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(197, 106, 61, 0.05) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(123, 30, 58, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(201, 162, 77, 0.14) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(123, 30, 58, 0.05) 0px, transparent 50%);
 }
 
 .glow-orb {
@@ -218,15 +224,39 @@
 }
 
 /* ------------------------------------------------------------------ */
-/*  Light-theme compatibility layer                                    */
-/*  The UI was authored for dark mode with literal `text-white` used   */
-/*  both for headings (on surfaces) and for labels on colored buttons. */
-/*  Inside `.theme-sand`, base `text-white` becomes dark ink, while    */
-/*  white is preserved on solid colored / gradient backgrounds.        */
+/*  Inputs & Form Controls - High Contrast Prestige Styling          */
 /* ------------------------------------------------------------------ */
-.theme-sand .text-white { color: var(--text-100); }
+.theme-prestige input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([type="range"]):not([type="file"]),
+.theme-prestige select,
+.theme-prestige textarea {
+  color: #2B2022;
+}
+
+.theme-prestige input::placeholder,
+.theme-prestige textarea::placeholder {
+  color: #766065;
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Prestige Académique compatibility layer                           */
+/*  Base `text-white` on surfaces becomes deep warm ink (#2B2022),     */
+/*  while white/cream is preserved on solid colored buttons.          */
+/* ------------------------------------------------------------------ */
+.theme-sand .text-white:not([class*="bg-"]):not([class*="!text-white"]),
+.theme-prestige .text-white:not([class*="bg-"]):not([class*="!text-white"]) { 
+  color: var(--text-100); 
+}
+
+/* Explicitly preserve white text on dark solid elements like burgundy buttons and own chat messages */
+.theme-prestige [class~="bg-[#7B1E3A]"],
+.theme-prestige [class~="bg-[#62162d]"],
+.theme-prestige .chat-own-bubble {
+  color: #FFFFFF;
+}
 
 .theme-sand [class*="bg-brand-"].text-white,
+.theme-prestige [class*="bg-brand-"].text-white,
 .theme-sand [class*="bg-emerald-"].text-white,
 .theme-sand [class*="bg-green-"].text-white,
 .theme-sand [class*="bg-red-"].text-white,
@@ -241,15 +271,20 @@
 .theme-sand [class*="bg-teal-"].text-white,
 .theme-sand [class*="bg-fuchsia-"].text-white,
 .theme-sand [class*="bg-pink-"].text-white,
-.theme-sand [class*="bg-gradient-to"].text-white {
+.theme-sand [class*="bg-gold-"].text-white,
+.theme-sand [class*="bg-gradient-to"].text-white,
+.theme-prestige [class*="bg-gradient-to"].text-white {
   color: #ffffff;
 }
 
-/* Hover state: plain `hover:text-white` on surfaces becomes ink,
-   but stays white when the element also gains a colored hover bg. */
-.theme-sand .hover\:text-white:hover { color: var(--text-100); }
+/* Hover state: plain `hover:text-white` on surfaces becomes ink */
+.theme-sand .hover\:text-white:hover,
+.theme-prestige .hover\:text-white:hover { 
+  color: var(--text-100); 
+}
 
 .theme-sand [class*="bg-brand-"].hover\:text-white:hover,
+.theme-prestige [class*="bg-brand-"].hover\:text-white:hover,
 .theme-sand [class*="bg-emerald-"].hover\:text-white:hover,
 .theme-sand [class*="bg-green-"].hover\:text-white:hover,
 .theme-sand [class*="bg-red-"].hover\:text-white:hover,
@@ -257,33 +292,34 @@
 .theme-sand [class*="bg-indigo-"].hover\:text-white:hover,
 .theme-sand [class*="bg-violet-"].hover\:text-white:hover,
 .theme-sand [class*="bg-sky-"].hover\:text-white:hover,
-.theme-sand [class*="bg-gradient-to"].hover\:text-white:hover {
+.theme-sand [class*="bg-gradient-to"].hover\:text-white:hover,
+.theme-prestige [class*="bg-gradient-to"].hover\:text-white:hover {
   color: #ffffff;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Accent text legibility on light surfaces                           */
-/*  The light 300/400 accent shades were authored for dark mode and    */
-/*  read poorly on the warm light surfaces. Inside `.theme-sand` they  */
-/*  are mapped to deeper, AA-contrast tones. White-on-colored buttons  */
-/*  are untouched (they use `text-white`, handled above).              */
+/*  Accent text legibility on cream surfaces                          */
 /* ------------------------------------------------------------------ */
 .theme-sand .text-brand-300,
-.theme-sand .text-brand-400 { color: #A9522C; }
+.theme-sand .text-brand-400,
+.theme-prestige .text-brand-300,
+.theme-prestige .text-brand-400 { 
+  color: #7B1E3A; /* Bordeaux */
+}
 .theme-sand .text-emerald-300,
 .theme-sand .text-emerald-400 { color: #047857; }
 .theme-sand .text-green-300,
 .theme-sand .text-green-400 { color: #15803D; }
 .theme-sand .text-red-300,
-.theme-sand .text-red-400 { color: #B91C1C; }
+.theme-sand .text-red-400 { color: #7B1E3A; }
 .theme-sand .text-rose-300,
-.theme-sand .text-rose-400 { color: #BE123C; }
+.theme-sand .text-rose-400 { color: #7B1E3A; }
 .theme-sand .text-amber-300,
-.theme-sand .text-amber-400 { color: #B45309; }
+.theme-sand .text-amber-400 { color: #C9A24D; }
 .theme-sand .text-yellow-300,
-.theme-sand .text-yellow-400 { color: #A16207; }
+.theme-sand .text-yellow-400 { color: #C9A24D; }
 .theme-sand .text-orange-300,
-.theme-sand .text-orange-400 { color: #C2410C; }
+.theme-sand .text-orange-400 { color: #B28B36; }
 .theme-sand .text-sky-300,
 .theme-sand .text-sky-400 { color: #0369A1; }
 .theme-sand .text-blue-300,
@@ -299,7 +335,6 @@
 .theme-sand .text-teal-300,
 .theme-sand .text-teal-400 { color: #0F766E; }
 .theme-sand .text-pink-300,
-.theme-sand .text-pink-400 { color: #BE185D; }
+.theme-sand .text-pink-400 { color: #7B1E3A; }
 .theme-sand .text-fuchsia-300,
-.theme-sand .text-fuchsia-400 { color: #A21CAF; }
-
+.theme-sand .text-fuchsia-400 { color: #7B1E3A; }

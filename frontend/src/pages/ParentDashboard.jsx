@@ -1,20 +1,31 @@
 import { motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import ScheduleCard from '../components/ScheduleCard';
 import SchedulesView from '../components/SchedulesView';
 import AttendanceView from '../components/AttendanceView';
-import { Users, CreditCard, Calendar, Download, CheckCircle, Clock, Baby, Bus, Soup, Banknote, Globe, FileText, X, Receipt } from 'lucide-react';
+import TimetableGrid from '../components/TimetableGrid';
+import LessonNotebook from '../components/LessonNotebook';
+import AdministrativeRequestsManager from '../components/AdministrativeRequestsManager';
+import ParentReEnrollmentView from '../components/ParentReEnrollmentView';
+import ParentExitPassManager from '../components/ParentExitPassManager';
+import { Users, CreditCard, Calendar, Download, CheckCircle, Clock, Baby, Bus, Soup, Banknote, Globe, FileText, X, Receipt, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 
 export default function ParentDashboard() {
   const location = useLocation();
+  const navigate = useNavigate();
   const getActiveTab = () => {
     const path = location.pathname;
+    if (path.endsWith('/re-enrollment')) return 're-enrollment';
     if (path.endsWith('/payments')) return 'payments';
     if (path.endsWith('/schedules')) return 'schedules';
+    if (path.endsWith('/timetable')) return 'timetable';
     if (path.endsWith('/attendance')) return 'attendance';
+    if (path.endsWith('/lessons')) return 'lessons';
+    if (path.endsWith('/requests')) return 'requests';
+    if (path.endsWith('/exit-passes') || path.endsWith('/exit-pass')) return 'exit_passes';
     return 'overview';
   };
   const activeTab = getActiveTab();
@@ -126,7 +137,7 @@ export default function ParentDashboard() {
       >
 
         {/* Child selector — shared across per-child sections */}
-        {children.length > 0 && (activeTab === 'overview' || activeTab === 'schedules' || activeTab === 'attendance') && (
+        {children.length > 0 && (activeTab === 'overview' || activeTab === 'schedules' || activeTab === 'attendance' || activeTab === 'lessons' || activeTab === 'timetable') && (
           <div className="glass-panel p-4 rounded-2xl border border-luxury-border space-y-3">
             <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
               <Baby className="w-4.5 h-4.5 text-brand-400" />
@@ -141,7 +152,7 @@ export default function ParentDashboard() {
                     onClick={() => handleSelectChild(child)}
                     className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all ${
                       isSelected
-                        ? 'bg-brand-950/40 border-brand-500 text-white shadow-[0_0_15px_rgba(197,106,61,0.15)]'
+                        ? 'bg-brand-950/40 border-brand-500 text-white shadow-[0_0_15px_rgba(123,30,58,0.20)]'
                         : 'bg-slate-900/40 border-luxury-border text-slate-400 hover:text-white'
                     }`}
                   >
@@ -159,9 +170,46 @@ export default function ParentDashboard() {
           </div>
         )}
 
+        {activeTab === 're-enrollment' && <ParentReEnrollmentView />}
+        {activeTab === 'lessons' && (
+          <LessonNotebook
+            key={selectedChild?._id}
+            defaultClassId={selectedChild?.class?._id || selectedChild?.class}
+          />
+        )}
+        {activeTab === 'timetable' && (
+          <TimetableGrid
+            key={selectedChild?._id}
+            canImport={false}
+            fixedDivision={selectedChild?.class?.name}
+          />
+        )}
+        {activeTab === 'requests' && <AdministrativeRequestsManager />}
+        {activeTab === 'exit_passes' && <ParentExitPassManager children={children} />}
+
         {/* ===== OVERVIEW ===== */}
         {activeTab === 'overview' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Re-enrollment Notification Banner */}
+            <div className="glass-panel p-5 rounded-2xl border border-brand-500/30 bg-gradient-to-r from-brand-950/40 via-brand-900/20 to-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-300 shrink-0">
+                  <RefreshCw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-100">فترة إعادة تسجيل الأبناء للموسم الدراسي الجديد 2026-2027</h4>
+                  <p className="text-xs text-slate-400">يمكنك تأكيد رغبة إعادة التسجيل لكل ابن، الاستفادة من تخفيض الإخوة (15%)، وطباعة عقد التمدرس واستمارة التسجيل.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/dashboard/parent/re-enrollment')}
+                className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md transition-colors whitespace-nowrap shrink-0 flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>إعادة تسجيل الأبناء الآن</span>
+              </button>
+            </div>
+
             <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
               <Baby className="w-5.5 h-5.5 text-brand-400" />
               <span>حسابات أبنائي / قائمة الأبناء</span>
@@ -175,7 +223,7 @@ export default function ParentDashboard() {
                     onClick={() => handleSelectChild(child)}
                     className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-4 ${
                       isSelected
-                        ? 'bg-brand-950/40 border-brand-500 shadow-[0_0_20px_rgba(14,143,227,0.2)]'
+                        ? 'bg-brand-950/40 border-brand-500 shadow-[0_0_20px_rgba(123,30,58,0.2)]'
                         : 'glass-panel border-luxury-border hover:border-luxury-border/80 hover:bg-slate-900/10'
                     }`}
                   >
@@ -201,7 +249,18 @@ export default function ParentDashboard() {
                       )}
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex items-center justify-between pt-2 border-t border-luxury-border/30">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/dashboard/parent/re-enrollment');
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white border border-brand-500/30 text-[11px] font-bold transition-all flex items-center gap-1.5"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>إعادة التسجيل</span>
+                      </button>
+
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
                         isSelected ? 'bg-brand-600 text-white' : 'bg-slate-900 text-slate-400'
                       }`}>
@@ -217,16 +276,20 @@ export default function ParentDashboard() {
 
         {/* ===== SCHEDULES ===== */}
         {activeTab === 'schedules' && (
-          <div className="space-y-4">
+          <div className="space-y-8">
             <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-brand-400" />
-              <span>الجداول والمخططات — {selectedChild?.user?.firstName || 'الابن'}</span>
+              <span>جدول الحصص والتوقيت الأسبوعي — {selectedChild?.firstNameArabic || selectedChild?.user?.firstName || 'الابن'}</span>
             </h3>
-            <SchedulesView
-              schedules={schedules}
-              loading={loadingDetails}
-              emptyLabel="لا يوجد جدول حصص أو برنامج مسجل لقسم الابن حالياً."
-            />
+            <TimetableGrid canImport={false} fixedDivision={selectedChild?.class?.name} />
+            <div className="border-t border-luxury-border/50 pt-6">
+              <h4 className="text-sm font-bold text-white mb-3">البرامج والمخططات المدرسية الإضافية</h4>
+              <SchedulesView
+                schedules={schedules}
+                loading={loadingDetails}
+                emptyLabel="لا يوجد برامج إضافية مسجلة حالياً."
+              />
+            </div>
           </div>
         )}
 
@@ -395,7 +458,7 @@ export default function ParentDashboard() {
                       onClick={() => setPayMethod(m.value)}
                       className={`flex flex-col items-center gap-2 py-3 rounded-xl border text-xs font-semibold transition-all ${
                         active
-                          ? 'bg-brand-500/15 border-brand-500/50 text-brand-300 shadow-[0_0_15px_rgba(197,106,61,0.15)]'
+                          ? 'bg-brand-500/15 border-brand-500/50 text-brand-300 shadow-[0_0_15px_rgba(123,30,58,0.20)]'
                           : 'bg-slate-900/40 border-luxury-border text-slate-400 hover:text-white'
                       }`}
                     >

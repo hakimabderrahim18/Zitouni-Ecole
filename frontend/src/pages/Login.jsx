@@ -1,267 +1,479 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { useTranslation } from 'react-i18next';
-import { Lock, Mail, AlertTriangle, Sparkles, GraduationCap, Globe, Phone, ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
-import ThreeDScene from '../components/ThreeDScene';
-import ThemeToggle from '../components/ThemeToggle';
+import { useSchoolStore } from '../store/useSchoolStore';
+import SchoolLogo from '../components/SchoolLogo';
+import {
+  Lock,
+  User as UserIcon,
+  AlertTriangle,
+  Sparkles,
+  GraduationCap,
+  Eye,
+  EyeOff,
+  Phone,
+  X,
+  ShieldAlert,
+  ArrowLeft,
+  Clock,
+  MessageCircle,
+  ExternalLink,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import SchoolImageCarousel from '../components/SchoolImageCarousel';
 
 export default function Login() {
-  const { login, isLoading, error } = useAuthStore();
+  const { user, login, isLoading, error } = useAuthStore();
+  const { settings, fetchSettings } = useSchoolStore();
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [localError, setLocalError] = useState('');
+  const [isLockedAccount, setIsLockedAccount] = useState(false);
+  const [lockCountdown, setLockCountdown] = useState(0);
 
-  const prefilledAccounts = {
-    admin: { identifier: 'admin', password: 'Admin123!' },
-    school: { identifier: 'school', password: 'School123!' },
-    teacher: { identifier: 'teacher.math', password: '0550111111' },
-    general_supervisor: { identifier: 'superviseur.gen', password: '0550112233' },
-    pedagogical_supervisor: { identifier: 'superviseur.ped', password: '0550445566' },
-    receptionist: { identifier: 'receptionniste', password: '0550778899' },
-    student: { identifier: 'student.yanis', password: '2014-03-20' },
-    parent: { identifier: 'parent.meziane', password: '0550110011' },
-  };
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
-  const handleRoleSelect = (role) => {
-    setSelectedRole(role);
-    setIdentifier(prefilledAccounts[role].identifier);
-    setPassword(prefilledAccounts[role].password);
+  // If already authenticated, redirect to the news feed (fil d'actualité)
+  useEffect(() => {
+    if (user) {
+      navigate('/feed', { replace: true });
+    }
+  }, [user, navigate]);
+
+  // 5-minute lockout countdown timer (Security Rule: Stop 5 min after 4 attempts)
+  useEffect(() => {
+    if (lockCountdown <= 0) return;
+    const interval = setInterval(() => {
+      setLockCountdown((prev) => {
+        if (prev <= 1) {
+          setIsLockedAccount(false);
+          setLocalError('انتهت فترة الحظر المؤقت (5 دقائق). يمكنك الآن إعادة المحاولة.');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockCountdown]);
+
+  const primaryColor = settings?.primaryColor || '#7B1E3A';
+
+  const handleOpenWhatsApp = (customMsg = '') => {
+    const schoolPhone = '213554075701';
+    const textMsg =
+      customMsg ||
+      `السلام عليكم إدارة مؤسسة حبر وألوان، أود استرجاع كلمة المرور الخاصة بحسابي على المنصة.\nالمعرف / رقم الهاتف: ${identifier || 'غير محدد'}`;
+    const url = `https://wa.me/${schoolPhone}?text=${encodeURIComponent(textMsg)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (lockCountdown > 0) return;
+
+    setLocalError('');
+    setIsLockedAccount(false);
+
     try {
-      await login(identifier, password);
-      navigate('/feed');
+      const result = await login(identifier, password);
+      // Requirement: First page after login is News Feed (fil d'actualité) in all roles
+      navigate('/feed', { replace: true });
     } catch (err) {
-      console.error(err);
+      const errMsg = err.message || 'فشل تسجيل الدخول. يرجى التأكد من البيانات المدخلة.';
+      setLocalError(errMsg);
+
+      // Handle 5-minute lockout rule: Triggered ONLY after 4 failed attempts (HTTP 429 or isLocked5Min)
+      if (err.isLocked5Min || err.response?.status === 429) {
+        setIsLockedAccount(true);
+        const seconds = err.secondsLeft || 300;
+        setLockCountdown(seconds);
+      } else {
+        setIsLockedAccount(false);
+        setLockCountdown(0);
+      }
     }
   };
 
-  const roleLabels = {
-    admin: 'مدير المنصة',
-    school: 'الإدارة المدرسيّة',
-    teacher: 'أستاذ',
-    general_supervisor: 'مراقب عام',
-    pedagogical_supervisor: 'مراقب تربوي',
-    receptionist: 'موظف الاستقبال',
-    student: 'تلميذ',
-    parent: 'ولي أمر',
-  };
-
   return (
-    <div dir="rtl" className="min-h-screen bg-slate-950 flex flex-col font-cairo">
+    <div dir="rtl" className="theme-prestige min-h-screen bg-slate-950 flex flex-col font-sans overflow-x-hidden w-full max-w-full">
       {/* ===== HEADER ===== */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="sticky top-0 z-50 flex items-center justify-between px-6 md:px-10 lg:px-14 py-4 border-b border-luxury-border/30 bg-slate-900/80 backdrop-blur-2xl"
+        className="sticky top-0 z-40 flex items-center justify-between px-3.5 sm:px-6 md:px-10 lg:px-14 py-3 sm:py-4 border-b border-luxury-border/30 bg-slate-900/80 backdrop-blur-2xl max-w-full overflow-hidden"
       >
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-[0_8px_25px_rgba(244,180,0,0.3)] transition-transform duration-300 group-hover:scale-105">
-            <GraduationCap className="w-6 h-6 text-slate-950" />
-            <div className="absolute inset-0 rounded-2xl ring-1 ring-white/20" />
-          </div>
-          <div className="leading-tight">
-            <div className="flex items-center gap-2">
-              <p className="text-white font-black text-base tracking-tight group-hover:text-brand-400 transition-colors">مدرسة الزيتوني</p>
-              <span className="px-2 py-0.5 rounded-md bg-brand-500/10 border border-brand-500/20 text-brand-500 font-extrabold text-[10px]">2025/2026</span>
+        <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
+          <SchoolLogo size={36} className="shadow-lg border-luxury-border shrink-0" />
+          <div className="leading-tight min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <p className="text-white font-black text-sm sm:text-base tracking-tight truncate">
+                {settings?.schoolNameArabic || 'مدرسة حبر'}
+              </p>
+              <span
+                className="hidden sm:inline-block px-2 py-0.5 rounded-md border text-[10px] font-extrabold shrink-0"
+                style={{
+                  borderColor: `${primaryColor}40`,
+                  backgroundColor: `${primaryColor}15`,
+                  color: primaryColor,
+                }}
+              >
+                {settings?.academicYear || '2026-2027'}
+              </span>
             </div>
-            <p className="text-brand-500 text-[11px] font-bold tracking-wide">المنصة التعليمية الذكية</p>
+            <p className="text-[10px] sm:text-[11px] font-bold tracking-wide text-slate-400 truncate">
+              {settings?.slogan || 'يا نشء أنت رجاؤنا'}
+            </p>
           </div>
         </Link>
 
-        <div className="flex items-center gap-3 md:gap-4">
-          <ThemeToggle />
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <Link
             to="/"
-            className="px-5 py-2 rounded-full border border-luxury-border/30 text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-xs md:text-sm font-bold flex items-center gap-2"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-luxury-border/40 text-slate-300 hover:text-white hover:bg-slate-800 transition-all text-xs font-bold flex items-center gap-1.5 sm:gap-2"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>العودة للرئيسية</span>
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>الرئيسية</span>
           </Link>
         </div>
       </motion.header>
 
-      {/* ===== MAIN ===== */}
-      <div className="flex-1 flex flex-col-reverse md:flex-row overflow-hidden relative">
-        {/* Left Side - Login Form (Ultra-Premium Glassmorphism layout) */}
-        <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col justify-center px-6 md:px-12 lg:px-16 py-12 relative z-10 border-l border-luxury-border/30 bg-slate-900/80 backdrop-blur-3xl shadow-[20px_0_50px_rgba(0,0,0,0.5)]">
+      {/* ===== MAIN CONTENT ===== */}
+      <div className="flex-1 flex flex-col-reverse md:flex-row overflow-hidden relative max-w-full">
+        {/* Left Side: Login Form (Pure Two-Field Authentication) */}
+        <div className="w-full md:w-[48%] lg:w-[42%] flex flex-col justify-center px-4 sm:px-8 md:px-12 lg:px-16 py-8 sm:py-10 relative z-10 border-l border-luxury-border/30 bg-slate-900/80 backdrop-blur-3xl shadow-[20px_0_50px_rgba(0,0,0,0.5)] overflow-hidden max-w-full">
           
-          {/* Subtle decorative glow behind form */}
-          <div className="absolute top-1/4 -right-20 w-64 h-64 bg-brand-500/10 rounded-full blur-[80px] pointer-events-none" />
-          <div className="absolute bottom-1/4 -left-20 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none" />
+          {/* Decorative Backlight — strictly clipped */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div
+              className="absolute top-1/4 -right-20 w-64 h-64 rounded-full blur-[90px] opacity-15"
+              style={{ backgroundColor: primaryColor }}
+            />
+          </div>
 
-          <div className="max-w-md w-full mx-auto space-y-10 relative z-10">
-            
-            <motion.div 
+          <div className="max-w-md w-full mx-auto space-y-8 relative z-10">
+            {/* Header Titles */}
+            <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="space-y-4"
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="space-y-3"
             >
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-bold w-fit shadow-[0_0_15px_rgba(244,180,0,0.1)]">
+              <div
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold w-fit shadow-sm"
+                style={{
+                  borderColor: `${primaryColor}30`,
+                  backgroundColor: `${primaryColor}10`,
+                  color: primaryColor,
+                }}
+              >
                 <Sparkles className="w-4 h-4" />
-                <span>مدرسة الزيتوني الخاصة</span>
+                <span>{settings?.institutionName || 'مؤسسة التربية والتعليم حبر وألوان الخاصة'}</span>
               </div>
-              
-              <h2 className="text-4xl font-black text-white tracking-tight">
-                مرحباً بعودتك
+
+              <h2 className="text-3xl sm:text-4xl font-black text-[#2B2022] tracking-tight font-display">
+                تسجيل الدخول
               </h2>
-              <p className="text-slate-400 text-sm font-medium leading-relaxed">
-                يرجى تسجيل الدخول للوصول إلى لوحة التحكم الخاصة بك وتجربة المنصة.
+              <p className="text-[#2B2022]/70 text-xs sm:text-sm font-medium leading-relaxed">
+                أدخل اسم المستخدم أو رقم الهاتف، وكلمة المرور الخاصة بحسابك للولوج إلى فضائك المخصص.
               </p>
             </motion.div>
 
-            {/* Role Quick Switcher Grid (Segmented Control Style) */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-              className="space-y-3"
-            >
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                تحديد الحساب للتجربة السريعة
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {Object.keys(prefilledAccounts).map((role) => (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    key={role}
-                    type="button"
-                    onClick={() => handleRoleSelect(role)}
-                    className={`py-2 px-2.5 rounded-xl text-[11px] font-bold transition-all duration-300 flex-grow text-center truncate ${
-                      selectedRole === role
-                        ? 'bg-brand-500/15 border border-brand-500/50 text-brand-400 shadow-[0_0_15px_rgba(244,180,0,0.15)]'
-                        : 'bg-white/[0.03] border border-white/5 text-slate-400 hover:bg-white/[0.06] hover:text-white'
-                    }`}
-                  >
-                    {roleLabels[role]}
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-
-            {error && (
-              <motion.div 
+            {/* Error Message & 5-Min Lockout Alert */}
+            {(localError || error || lockCountdown > 0) && (
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-sm font-semibold backdrop-blur-sm"
+                className={`p-4 rounded-2xl flex items-start gap-3.5 text-xs sm:text-sm font-semibold border shadow-sm transition-all ${
+                  lockCountdown > 0 || isLockedAccount
+                    ? 'bg-[#7B1E3A]/10 border-[#7B1E3A]/30 text-[#2B2022]'
+                    : 'bg-[#7B1E3A]/10 border-[#7B1E3A]/25 text-[#7B1E3A]'
+                }`}
               >
-                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-                <span>{error}</span>
+                {lockCountdown > 0 ? (
+                  <div className="w-8 h-8 rounded-xl bg-[#7B1E3A] flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                    <Clock className="w-4 h-4 text-[#C9A24D] animate-pulse" />
+                  </div>
+                ) : isLockedAccount ? (
+                  <div className="w-8 h-8 rounded-xl bg-[#7B1E3A] flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                    <ShieldAlert className="w-4 h-4 text-[#C9A24D]" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-xl bg-[#7B1E3A]/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <AlertTriangle className="w-4 h-4 text-[#7B1E3A]" />
+                  </div>
+                )}
+                <div className="leading-relaxed flex-1">
+                  {lockCountdown > 0 ? (
+                    <div className="space-y-1.5">
+                      <p className="font-bold text-[#7B1E3A] text-sm">
+                        تم تجميد إمكانية تسجيل الدخول مؤقتاً لمدة 5 دقائق بعد تجاوز 4 محاولات خاطئة.
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-[#2B2022] font-semibold">
+                        <span>الوقت المتبقي لفتح الدخول:</span>
+                        <span className="px-2.5 py-0.5 rounded-md bg-[#7B1E3A] text-[#F3E9DC] font-bold font-mono text-xs tracking-wider border border-[#C9A24D]/40">
+                          {Math.floor(lockCountdown / 60)}:
+                          {String(lockCountdown % 60).padStart(2, '0')} دقيقة
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="font-bold text-[#7B1E3A]">{localError || error}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(true)}
+                    className="mt-2.5 text-xs font-bold text-[#7B1E3A] hover:text-[#551125] underline flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>مراسلة واتساب المدرسة لاسترجاع الحساب أو رفع القفل ←</span>
+                  </button>
+                </div>
               </motion.div>
             )}
 
-            <motion.form 
+            {/* Pure Two-Field Form */}
+            <motion.form
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-              onSubmit={handleSubmit} 
-              className="space-y-5"
+              transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+              onSubmit={handleSubmit}
+              className="space-y-6"
             >
+              {/* Field 1: Identifier */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 block ps-1">
-                  اسم المستخدم أو البريد الإلكتروني
+                <label className="text-xs font-black text-[#2B2022] block ps-1">
+                  اسم المستخدم أو رقم الهاتف أو البريد الإلكتروني أو رقم الرقمنة
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 start-0 flex items-center ps-4 pointer-events-none">
-                    <Mail className="w-5 h-5 text-slate-500 group-focus-within:text-brand-500 transition-colors duration-300" />
+                    <UserIcon className="w-5 h-5 text-[#C9A24D] group-focus-within:text-[#7B1E3A] transition-colors duration-300" />
                   </div>
                   <input
                     type="text"
                     required
+                    disabled={lockCountdown > 0}
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="username / email@ecole-zitouni.dz"
-                    className="w-full ps-12 pe-4 py-3.5 bg-white/[0.03] border border-white/10 hover:border-white/20 focus:border-brand-500/50 focus:bg-white/[0.05] rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all duration-300 text-white placeholder-slate-600 text-start text-sm font-medium shadow-inner"
+                    placeholder="مثال: 0550112233 أو username أو البريد"
+                    className="w-full ps-12 pe-4 py-3.5 bg-white border-2 border-[#C9A24D]/40 hover:border-[#C9A24D] focus:border-[#7B1E3A] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#7B1E3A]/15 shadow-sm hover:shadow transition-all duration-300 text-[#2B2022] placeholder-[#2B2022]/40 text-start text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
 
+              {/* Field 2: Password */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center ps-1">
-                  <label className="text-xs font-bold text-slate-400 block">
+                  <label className="text-xs font-black text-[#2B2022] block">
                     كلمة المرور
                   </label>
-                  <a href="#" className="text-[11px] font-bold text-brand-500 hover:text-brand-400 transition-colors">
-                    نسيت كلمة المرور؟
-                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-[11px] font-black transition-colors hover:underline flex items-center gap-1 text-[#7B1E3A] hover:text-[#551125] cursor-pointer"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>نسيت كلمة المرور؟ (واتساب)</span>
+                  </button>
                 </div>
                 <div className="relative group">
                   <div className="absolute inset-y-0 start-0 flex items-center ps-4 pointer-events-none">
-                    <Lock className="w-5 h-5 text-slate-500 group-focus-within:text-brand-500 transition-colors duration-300" />
+                    <Lock className="w-5 h-5 text-[#C9A24D] group-focus-within:text-[#7B1E3A] transition-colors duration-300" />
                   </div>
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
+                    disabled={lockCountdown > 0}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full ps-12 pe-4 py-3.5 bg-white/[0.03] border border-white/10 hover:border-white/20 focus:border-brand-500/50 focus:bg-white/[0.05] rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all duration-300 text-white placeholder-slate-600 text-start text-sm font-medium shadow-inner"
+                    className="w-full ps-12 pe-12 py-3.5 bg-white border-2 border-[#C9A24D]/40 hover:border-[#C9A24D] focus:border-[#7B1E3A] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#7B1E3A]/15 shadow-sm hover:shadow transition-all duration-300 text-[#2B2022] placeholder-[#2B2022]/40 text-start text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 end-0 flex items-center pe-4 text-[#C9A24D] hover:text-[#7B1E3A] transition-colors cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
 
+              {/* Submit Button */}
               <motion.button
                 type="submit"
-                disabled={isLoading}
-                whileHover={{ scale: 1.01, translateY: -1 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-4 mt-2 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-bold transition-all duration-300 shadow-[0_8px_25px_rgba(244,180,0,0.25)] hover:shadow-[0_12px_35px_rgba(244,180,0,0.35)] disabled:opacity-50 text-sm flex items-center justify-center gap-3 relative overflow-hidden group"
+                disabled={isLoading || lockCountdown > 0}
+                whileHover={{ scale: lockCountdown > 0 ? 1 : 1.01, translateY: lockCountdown > 0 ? 0 : -1 }}
+                whileTap={{ scale: lockCountdown > 0 ? 1 : 0.98 }}
+                className="w-full py-4 mt-2 rounded-2xl text-white font-extrabold transition-all duration-300 disabled:opacity-50 text-sm flex items-center justify-center gap-3 relative overflow-hidden shadow-lg shadow-[#7B1E3A]/25 hover:shadow-xl hover:shadow-[#7B1E3A]/35 cursor-pointer disabled:cursor-not-allowed border border-[#C9A24D]/40"
+                style={{
+                  background:
+                    lockCountdown > 0
+                      ? '#475569'
+                      : `linear-gradient(135deg, ${primaryColor || '#7B1E3A'}, #551125)`,
+                }}
               >
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                 {isLoading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin relative z-10" />
-                    <span className="relative z-10">جاري تسجيل الدخول...</span>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>جاري التحقق من الحساب...</span>
                   </>
+                ) : lockCountdown > 0 ? (
+                  <span className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#F3E9DC] animate-spin" />
+                    <span>
+                      مجمّد مؤقتاً ({Math.floor(lockCountdown / 60)}:
+                      {String(lockCountdown % 60).padStart(2, '0')})
+                    </span>
+                  </span>
                 ) : (
-                  <span className="relative z-10 tracking-wide text-[15px]">تسجيل الدخول</span>
+                  <span className="tracking-wide text-[15px] font-bold">تسجيل الدخول</span>
                 )}
               </motion.button>
+
+              {/* Quick Login Helper for Testing All 8 Roles */}
+              <div className="pt-4 border-t border-[#C9A24D]/25 text-right">
+                <span className="text-[11px] font-black text-[#2B2022] block mb-2">
+                  حسابات التجربة السريعة للأدوار الثمانية (انقر للملء الفوري):
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
+                  {[
+                    { label: 'المدير العام', id: 'admin', p: 'Admin123!', role: 'admin' },
+                    { label: 'المدرسة', id: 'school', p: 'School123!', role: 'school' },
+                    { label: 'مراقب عام', id: 'superviseur.gen', p: '0550112233', role: 'general_supervisor' },
+                    { label: 'مراقب تربوي', id: 'superviseur.ped', p: '0550445566', role: 'pedagogical_supervisor' },
+                    { label: 'استقبال', id: 'receptionniste', p: '0550778899', role: 'receptionist' },
+                    { label: 'أستاذ', id: 'teacher.math', p: '0550111111', role: 'teacher' },
+                    { label: 'ولي أمر', id: 'parent.meziane', p: '0550110011', role: 'parent' },
+                    { label: 'تلميذ', id: 'student.yanis', p: '2014-03-20', role: 'student' },
+                  ].map((acc) => (
+                    <button
+                      key={acc.id}
+                      type="button"
+                      onClick={() => {
+                        setIdentifier(acc.id);
+                        setPassword(acc.p);
+                        setLocalError('');
+                      }}
+                      className="p-2 rounded-xl bg-white hover:bg-[#F3E9DC] border border-[#C9A24D]/40 hover:border-[#C9A24D] text-[#2B2022] hover:text-[#7B1E3A] font-bold transition-all text-center truncate shadow-2xs cursor-pointer active:scale-95"
+                      title={`${acc.id} | ${acc.p}`}
+                    >
+                      {acc.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </motion.form>
           </div>
         </div>
 
-        {/* Right Side - Interactive 3D Canvas Scene (FULL in section!) */}
-        <div className="hidden md:block md:w-[55%] lg:w-[60%] h-full min-h-[600px] relative overflow-hidden bg-slate-950">
-          {/* Cinematic Lighting overlays */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-transparent to-transparent z-10 pointer-events-none opacity-80" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-brand-500/10 via-transparent to-transparent z-10 pointer-events-none opacity-60 mix-blend-screen" />
-          
-          {/* R3F canvas wrapper */}
-          <div className="w-full h-full absolute inset-0 z-0">
-            <ThreeDScene type="login" />
+        {/* Right Side: School Facility Image Carousel */}
+        <div className="hidden md:block md:w-[50%] lg:w-[56%] h-full min-h-[580px] relative overflow-hidden bg-slate-950 p-6 lg:p-8 flex items-center justify-center">
+          <div className="w-full h-full max-h-[620px] rounded-3xl overflow-hidden shadow-2xl border border-luxury-border/60">
+            <SchoolImageCarousel height="h-full min-h-[540px]" className="rounded-none border-none shadow-none" />
           </div>
         </div>
       </div>
 
+      {/* ===== FORGOT PASSWORD ASSISTANCE MODAL ===== */}
+      <AnimatePresence>
+        {showForgotModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-slate-900 border border-luxury-border rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-right"
+            >
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                className="absolute top-5 left-5 p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center border"
+                  style={{
+                    backgroundColor: `${primaryColor}15`,
+                    borderColor: `${primaryColor}30`,
+                    color: primaryColor,
+                  }}
+                >
+                  <Phone className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">استرجاع كلمة المرور</h3>
+                  <p className="text-xs text-slate-400">إجراءات الأمان الإدارية المعتمدة</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-luxury-border/30 pt-4">
+                <p>
+                  وفقاً لنظام الأمان المدرسي، يتم إرسال طلب استرجاع كلمة المرور مباشرة إلى الرقم الرسمي لأمانة وإدارة المؤسسة عبر تطبيق واتساب (WhatsApp):
+                </p>
+                <div className="p-4 rounded-2xl bg-slate-950/60 border border-luxury-border space-y-2">
+                  <span className="text-slate-400 text-xs block">رقم واتساب المؤسسة المعتمد:</span>
+                  <p className="font-bold text-emerald-400 text-base flex items-center gap-2" dir="ltr">
+                    <MessageCircle className="w-4 h-4 text-emerald-400" />
+                    <span>+213 554 07 57 01</span>
+                  </p>
+                  <span className="text-[11px] text-slate-500 block">
+                    أمانة وسكرتارية {settings?.institutionName || 'مؤسسة التربية والتعليم حبر وألوان الخاصة'}
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#2B2022] dark:text-slate-300 block">المعرف أو رقم الهاتف الخاص بحسابك:</label>
+                  <input
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="مثال: 0550112233 أو username أو رقم الرقمنة"
+                    className="w-full px-4 py-3 bg-white border-2 border-[#C9A24D]/40 hover:border-[#C9A24D] rounded-xl text-[#2B2022] placeholder-[#2B2022]/40 text-xs font-bold focus:outline-none focus:border-[#7B1E3A] focus:ring-4 focus:ring-[#7B1E3A]/15 shadow-xs transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2.5 mt-6">
+                <button
+                  type="button"
+                  onClick={() => handleOpenWhatsApp()}
+                  className="flex-1 py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30 cursor-pointer"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>إرسال طلب كلمة المرور إلى واتساب المدرسة</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  إغلاق
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* ===== FOOTER ===== */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        className="relative z-30 flex flex-col sm:flex-row items-center justify-between gap-3 px-6 md:px-10 lg:px-14 py-4 border-t border-luxury-border/30 bg-slate-900/70 backdrop-blur-2xl text-center"
-      >
-        <p className="text-slate-500 text-xs font-medium">
-          © {new Date().getFullYear()} مدرسة الزيتوني الخاصة. جميع الحقوق محفوظة.
+      <footer className="relative z-30 flex flex-col sm:flex-row items-center justify-between gap-3 px-6 md:px-10 lg:px-14 py-4 border-t border-luxury-border/30 bg-slate-900/70 backdrop-blur-2xl text-center text-xs">
+        <p className="text-slate-500 font-medium">
+          © {new Date().getFullYear()} {settings?.institutionName || 'مؤسسة التربية والتعليم حبر وألوان الخاصة'}. جميع الحقوق محفوظة.
         </p>
-        <div className="flex items-center gap-5 text-xs font-bold text-slate-400">
-          <a href="#" className="hover:text-brand-500 transition-colors">سياسة الخصوصية</a>
-          <span className="w-1 h-1 rounded-full bg-slate-600" />
-          <a href="#" className="hover:text-brand-500 transition-colors">شروط الاستخدام</a>
-          <span className="w-1 h-1 rounded-full bg-slate-600" />
-          <a href="#" className="hover:text-brand-500 transition-colors">الدعم الفني</a>
-        </div>
-      </motion.footer>
+        <p className="text-slate-400 font-semibold font-outfit" dir="ltr">
+          {settings?.schoolNameFrench || 'Groupe scolaire Encre & Pastel'}
+        </p>
+      </footer>
     </div>
   );
 }

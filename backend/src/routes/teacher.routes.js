@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   uploadCourse,
+  updateCourse,
   deleteCourse,
   markAttendance,
   postAnnouncement,
@@ -22,6 +23,7 @@ router.use(authorize('teacher'));
 
 router.post('/courses', upload.single('file'), uploadCourse);
 router.get('/courses', getCourses);
+router.put('/courses/:courseId', upload.single('file'), updateCourse);
 router.delete('/courses/:courseId', deleteCourse);
 router.post('/attendance', markAttendance);
 router.post('/attendance/import', upload.single('file'), importAttendanceExcel);

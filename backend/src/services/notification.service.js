@@ -169,10 +169,60 @@ const notifyForSchedule = async (schedule) => {
   }
 };
 
+// Notify for student absence or tardiness (Articles 25, 26)
+const notifyForAbsenceOrLate = async (attendanceRecord, studentDoc, parentUserId) => {
+  try {
+    if (!parentUserId) return;
+    const studentName = studentDoc.firstNameArabic && studentDoc.lastNameArabic
+      ? `${studentDoc.firstNameArabic} ${studentDoc.lastNameArabic}`
+      : `${studentDoc.user?.firstName || ''} ${studentDoc.user?.lastName || ''}`.trim() || 'التلميذ';
+
+    const dateFormatted = new Date(attendanceRecord.date).toLocaleDateString('fr-FR');
+    let title = 'إشعار حضور وغياب';
+    let content = '';
+
+    if (attendanceRecord.status === 'Absent' || attendanceRecord.status === 'Unexcused') {
+      title = 'إشعار غياب / Notification d\'absence';
+      content = `نحيطكم علماً بأنه تم تسجيل غياب ابنكم/ابنتكم (${studentName}) بتاريخ ${dateFormatted} (الحصة: ${attendanceRecord.session}). يرجى تقديم التبرير في أقرب وقت.`;
+    } else if (attendanceRecord.status === 'Late') {
+      title = 'إشعار تأخر / Notification de retard';
+      content = `تم تسجيل تأخر ابنكم/ابنتكم (${studentName}) بتاريخ ${dateFormatted} بـ ${attendanceRecord.lateMinutes || 15} دقيقة.`;
+    } else if (attendanceRecord.status === 'ExitPass') {
+      title = 'إذن خروج مرخص / Autorisation de sortie';
+      content = `تم إصدار إذن خروج مرخص لابنكم/ابنتكم (${studentName}) بتاريخ ${dateFormatted}.`;
+    } else {
+      return;
+    }
+
+    await createAndSendNotification(parentUserId, title, content, 'attendance');
+  } catch (err) {
+    console.error('Failed to notify parent for attendance:', err);
+  }
+};
+
+// Notify for 3-Absence Warning (Article 26 - Page 18: استدعاء وإنذار)
+const notifyForAbsenceWarning = async (warningRecord, studentDoc, parentUserId) => {
+  try {
+    if (!parentUserId) return;
+    const studentName = studentDoc.firstNameArabic && studentDoc.lastNameArabic
+      ? `${studentDoc.firstNameArabic} ${studentDoc.lastNameArabic}`
+      : `${studentDoc.user?.firstName || ''} ${studentDoc.user?.lastName || ''}`.trim() || 'التلميذ';
+
+    const title = '⚠️ إنذار واستدعاء ولي الأمر (تجاوز 3 غيابات)';
+    const content = `نلفت انتباهكم إلى أن التلميذ (${studentName}) قد استنفد 3 غيابات غير مبررة. يرجى الحضور إلى إدارة مؤسسة حبر وألوان لتسوية الوضعية وتفادي الإجراءات التأديبية.`;
+
+    await createAndSendNotification(parentUserId, title, content, 'warning');
+  } catch (err) {
+    console.error('Failed to notify for absence warning:', err);
+  }
+};
+
 module.exports = {
   createAndSendNotification,
   notifyForMessage,
   notifyForAnnouncement,
   notifyForCourse,
   notifyForSchedule,
+  notifyForAbsenceOrLate,
+  notifyForAbsenceWarning,
 };

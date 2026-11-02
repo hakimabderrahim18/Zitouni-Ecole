@@ -1,10 +1,27 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
+const sanitizeToken = (token) => {
+  if (!token || token === 'null' || token === 'undefined' || token === 'Bearer null' || token.trim() === '') {
+    return null;
+  }
+  return token;
+};
+
+// Ensure backward compatibility between token and zitouni_access_token
+let initialToken = sanitizeToken(localStorage.getItem('zitouni_access_token')) || sanitizeToken(localStorage.getItem('token'));
+if (initialToken) {
+  localStorage.setItem('zitouni_access_token', initialToken);
+  localStorage.setItem('token', initialToken);
+} else {
+  localStorage.removeItem('token');
+  localStorage.removeItem('zitouni_access_token');
+}
+
 export const useAuthStore = create((set, get) => ({
   user: JSON.parse(localStorage.getItem('zitouni_user')) || null,
   profile: JSON.parse(localStorage.getItem('zitouni_profile')) || null,
-  accessToken: localStorage.getItem('zitouni_access_token') || null,
+  accessToken: initialToken,
   refreshToken: localStorage.getItem('zitouni_refresh_token') || null,
   isLoading: false,
   error: null,
@@ -14,6 +31,7 @@ export const useAuthStore = create((set, get) => ({
     localStorage.setItem('zitouni_profile', JSON.stringify(profile));
     localStorage.setItem('zitouni_access_token', accessToken);
     localStorage.setItem('zitouni_refresh_token', refreshToken);
+    localStorage.setItem('token', accessToken);
 
     set({ user, profile, accessToken, refreshToken, error: null });
   },
@@ -23,6 +41,7 @@ export const useAuthStore = create((set, get) => ({
     localStorage.removeItem('zitouni_profile');
     localStorage.removeItem('zitouni_access_token');
     localStorage.removeItem('zitouni_refresh_token');
+    localStorage.removeItem('token');
 
     set({ user: null, profile: null, accessToken: null, refreshToken: null, error: null });
   },
@@ -42,9 +61,15 @@ export const useAuthStore = create((set, get) => ({
       set({ isLoading: false });
       return { user, role: user.role };
     } catch (err) {
-      const errMsg = err.response?.data?.message || 'Login failed';
+      const data = err.response?.data || {};
+      const errMsg = data.message || 'Login failed';
       set({ error: errMsg, isLoading: false });
-      throw new Error(errMsg);
+      const errorObj = new Error(errMsg);
+      errorObj.response = err.response;
+      errorObj.isLocked5Min = data.isLocked5Min;
+      errorObj.lockUntil = data.lockUntil;
+      errorObj.secondsLeft = data.secondsLeft;
+      throw errorObj;
     }
   },
 
@@ -57,6 +82,7 @@ export const useAuthStore = create((set, get) => ({
       const { accessToken, refreshToken } = response.data;
 
       localStorage.setItem('zitouni_access_token', accessToken);
+      localStorage.setItem('token', accessToken);
       localStorage.setItem('zitouni_refresh_token', refreshToken);
 
       set({ accessToken, refreshToken });
@@ -64,12 +90,25 @@ export const useAuthStore = create((set, get) => ({
       get().logout();
     }
   },
+
+  updateUser: (updatedUser) => {
+    const current = get().user || {};
+    const merged = { ...current, ...updatedUser };
+    localStorage.setItem('zitouni_user', JSON.stringify(merged));
+    set({ user: merged });
+  },
 }));
 
 // Set up Axios request interceptors to append Bearer JWT automatically
 axios.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().accessToken;
+    const rawToken =
+      useAuthStore.getState().accessToken ||
+      localStorage.getItem('zitouni_access_token') ||
+      localStorage.getItem('token');
+
+    const token = sanitizeToken(rawToken);
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

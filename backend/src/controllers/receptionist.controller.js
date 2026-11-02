@@ -18,13 +18,20 @@ const getReceptionistDashboardStats = async (req, res, next) => {
 
     const exitPassesToday = await ExitPass.find({
       date: { $gte: todayStart, $lte: todayEnd },
+      status: { $in: ['Approved', 'Used'] },
     })
       .populate({
         path: 'student',
-        populate: { path: 'user', select: 'firstName lastName profilePic phoneNumber' },
+        populate: [
+          { path: 'user', select: 'firstName lastName profilePic phoneNumber username' },
+          { path: 'parent', populate: { path: 'user', select: 'firstName lastName phoneNumber' } },
+        ],
       })
       .populate('class', 'name level')
       .populate('issuedBy', 'firstName lastName role')
+      .populate('approvedBy', 'firstName lastName role')
+      .populate('requestedByParent', 'firstName lastName phoneNumber')
+      .populate('verifiedByReceptionist', 'firstName lastName')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -43,22 +50,22 @@ const recordVisitorCheckIn = async (req, res, next) => {
 
   try {
     if (!visitorName || !visitorPhone || !purpose) {
-      return res.status(400).json({ message: 'Nom du visiteur, téléphone et motif requis' });
+      return res.status(400).json({ message: 'يرجى إدخال اسم الزائر، رقم الهاتف، وسبب الزيارة.' });
     }
 
     const visitorLog = await VisitorLog.create({
-      visitorName,
-      visitorPhone,
-      visitorIdCard: visitorIdCard || '',
-      visitType: visitType || 'Parent',
-      purpose,
-      personToVisit: personToVisit || 'Administration',
+      visitorName: String(visitorName).trim(),
+      visitorPhone: String(visitorPhone).trim(),
+      visitorIdCard: visitorIdCard ? String(visitorIdCard).trim() : '',
+      visitType: visitType || 'Parent / ولي أمر',
+      purpose: String(purpose).trim(),
+      personToVisit: personToVisit ? String(personToVisit).trim() : 'الإدارة العامة',
       checkInTime: new Date(),
       status: 'In School',
       recordedBy: req.user.id,
     });
 
-    res.status(201).json({ message: 'Visiteur enregistré avec succès', visitorLog });
+    res.status(201).json({ message: 'تم تسجيل دخول الزائر بنجاح وتوثيق الزيارة في السجل اليومي.', visitorLog });
   } catch (error) {
     next(error);
   }

@@ -26,12 +26,26 @@ const exitPassSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['Pending', 'Approved', 'Used', 'Rejected'],
-      default: 'Approved',
+      default: 'Pending',
+    },
+    requestedByParent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
     },
     issuedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', // pedagogical_supervisor or admin
-      required: true,
+      ref: 'User', // pedagogical_supervisor or general_supervisor or admin
+      required: false,
+    },
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    approvedAt: {
+      type: Date,
+    },
+    rejectionReason: {
+      type: String,
     },
     verifiedByReceptionist: {
       type: mongoose.Schema.Types.ObjectId,
@@ -51,6 +65,8 @@ const exitPassSchema = new mongoose.Schema(
 );
 
 exitPassSchema.index({ date: -1, status: 1 });
-exitPassSchema.index({ student: 1 });
+exitPassSchema.index({ student: 1, date: -1 });
+exitPassSchema.index({ requestedByParent: 1 });
 
 module.exports = mongoose.model('ExitPass', exitPassSchema);
+

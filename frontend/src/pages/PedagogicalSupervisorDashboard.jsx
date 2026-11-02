@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
+import AttendanceManager from '../components/AttendanceManager';
+import TimetableGrid from '../components/TimetableGrid';
+import LessonNotebook from '../components/LessonNotebook';
 import {
   Users,
   Calendar,
@@ -16,11 +20,23 @@ import {
   LogOut,
   X,
   Check,
-  BookOpen
+  BookOpen,
+  CheckSquare
 } from 'lucide-react';
 
 export default function PedagogicalSupervisorDashboard() {
-  const [activeTab, setActiveTab] = useState('attendance');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState('student_attendance');
+
+  useEffect(() => {
+    if (location.pathname.endsWith('/student-attendance')) setActiveTab('student_attendance');
+    else if (location.pathname.endsWith('/timetable')) setActiveTab('timetable');
+    else if (location.pathname.endsWith('/lessons')) setActiveTab('lessons');
+    else if (location.pathname.endsWith('/exit-pass')) setActiveTab('exit_pass');
+    else if (location.pathname.endsWith('/damages')) setActiveTab('damages');
+    else if (location.pathname.endsWith('/canteen')) setActiveTab('canteen');
+    else if (location.pathname.endsWith('/attendance')) setActiveTab('attendance');
+  }, [location.pathname]);
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     supervisor: null,
@@ -233,6 +249,9 @@ export default function PedagogicalSupervisorDashboard() {
         {/* Navigation Tabs */}
         <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-slate-900 border border-luxury-border/50">
           {[
+            { id: 'student_attendance', label: 'تسجيل حضور وغياب التلاميذ (6 حالات والإنذارات)', icon: CheckSquare },
+            { id: 'timetable', label: 'جداول توقيت الأقسام والأساتذة', icon: Calendar },
+            { id: 'lessons', label: 'معاينة وتأشير كراس الدروس (Page 20)', icon: BookOpen },
             { id: 'attendance', label: 'تفقد حضور الأساتذة والخصم التلقائي', icon: Users },
             { id: 'exit_pass', label: 'إصدار بطاقة ترخيص خروج تلميذ', icon: LogOut },
             { id: 'damages', label: 'التبليغ عن إتلاف التجهيزات بالقسم', icon: ShieldAlert },
@@ -256,6 +275,15 @@ export default function PedagogicalSupervisorDashboard() {
             );
           })}
         </div>
+
+        {/* TAB: STUDENT ATTENDANCE (6 STATES & WARNINGS) */}
+        {activeTab === 'student_attendance' && <AttendanceManager />}
+
+        {/* TAB: TIMETABLE VIEW (RAN09) */}
+        {activeTab === 'timetable' && <TimetableGrid canImport={false} />}
+
+        {/* TAB: LESSON NOTEBOOK & VISA (Page 20) */}
+        {activeTab === 'lessons' && <LessonNotebook />}
 
         {/* TAB 1: TEACHER / STAFF ATTENDANCE */}
         {activeTab === 'attendance' && (

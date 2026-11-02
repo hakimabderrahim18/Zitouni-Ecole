@@ -142,12 +142,12 @@ const ensureCoreAccounts = async () => {
       } else if (u.role === 'general_supervisor') {
         const gDoc = await Supervisor.findOne({ user: userDoc._id });
         if (!gDoc) {
-          await Supervisor.create({ user: userDoc._id, supervisorType: 'General', assignedClasses: [c1._id] });
+          await Supervisor.create({ user: userDoc._id, supervisorType: 'general_supervisor', assignedClasses: [c1._id] });
         }
       } else if (u.role === 'pedagogical_supervisor') {
         const pDoc = await Supervisor.findOne({ user: userDoc._id });
         if (!pDoc) {
-          await Supervisor.create({ user: userDoc._id, supervisorType: 'Pedagogical', assignedClasses: [c1._id] });
+          await Supervisor.create({ user: userDoc._id, supervisorType: 'pedagogical_supervisor', assignedClasses: [c1._id] });
         }
       } else if (u.role === 'receptionist') {
         const rDoc = await Receptionist.findOne({ user: userDoc._id });

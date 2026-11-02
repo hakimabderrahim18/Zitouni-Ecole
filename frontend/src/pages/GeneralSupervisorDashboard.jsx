@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
+import DigitalExitPassModal from '../components/DigitalExitPassModal';
 import {
   Users,
   Calendar,
@@ -21,10 +23,14 @@ import {
   Clock,
   Briefcase,
   Layers,
-  Utensils
+  Utensils,
+  LogOut,
+  Printer,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function GeneralSupervisorDashboard() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('attendance');
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
@@ -51,6 +57,24 @@ export default function GeneralSupervisorDashboard() {
 
   // Assign classes state
   const [assignForm, setAssignForm] = useState({ supervisorId: '', classIds: [] });
+
+  // Exit pass state
+  const [exitPassFilter, setExitPassFilter] = useState('all');
+  const [selectedPassForPrint, setSelectedPassForPrint] = useState(null);
+  const [exitPassForm, setExitPassForm] = useState({
+    studentId: '',
+    reason: 'موعد طبي طارئ',
+    exitTime: '11:30',
+    accompaniedBy: 'ولي الأمر / Parent',
+  });
+
+  useEffect(() => {
+    if (location.pathname.endsWith('/attendance')) setActiveTab('attendance');
+    else if (location.pathname.endsWith('/assignment') || location.pathname.endsWith('/classes-assignment')) setActiveTab('assignment');
+    else if (location.pathname.endsWith('/damages')) setActiveTab('damages');
+    else if (location.pathname.endsWith('/canteen')) setActiveTab('canteen');
+    else if (location.pathname.endsWith('/exit-passes') || location.pathname.endsWith('/exit-pass')) setActiveTab('exit_passes');
+  }, [location.pathname]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -156,6 +180,55 @@ export default function GeneralSupervisorDashboard() {
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
       setError(err.response?.data?.message || 'خطأ أثناء توزيع الأقسام.');
+      setTimeout(() => setError(null), 4000);
+    }
+  };
+
+  const handleApproveExitPass = async (passId) => {
+    try {
+      await axios.put(`/api/supervisors/exit-pass/${passId}/approve`);
+      setSuccessMsg('تمت الموافقة والمصادقة على ترخيص الخروج بنجاح. أصبحت البطاقة مفعلة لدى موظف الاستقبال.');
+      fetchDashboardData();
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'خطأ أثناء المصادقة على ترخيص الخروج.');
+      setTimeout(() => setError(null), 4000);
+    }
+  };
+
+  const handleRejectExitPass = async (passId) => {
+    const reason = window.prompt('يرجى تدوين سبب رفض ترخيص الخروج:');
+    if (reason === null) return;
+    try {
+      await axios.put(`/api/supervisors/exit-pass/${passId}/reject`, { rejectionReason: reason });
+      setSuccessMsg('تم رفض طلب ترخيص الخروج.');
+      fetchDashboardData();
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'خطأ أثناء رفض ترخيص الخروج.');
+      setTimeout(() => setError(null), 4000);
+    }
+  };
+
+  const handleCreateExitPass = async (e) => {
+    e.preventDefault();
+    if (!exitPassForm.studentId || !exitPassForm.reason || !exitPassForm.exitTime) {
+      setError('يرجى تحديد التلميذ وسبب وساعة الخروج.');
+      return;
+    }
+    try {
+      await axios.post('/api/supervisors/exit-pass', exitPassForm);
+      setSuccessMsg('تم إصدار واعتماد بطاقة ترخيص الخروج بنجاح وتوجيهها لموظف الاستقبال عند البوابة.');
+      setExitPassForm({
+        studentId: '',
+        reason: 'موعد طبي طارئ',
+        exitTime: '11:30',
+        accompaniedBy: 'ولي الأمر / Parent',
+      });
+      fetchDashboardData();
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'خطأ أثناء إصدار ترخيص الخروج.');
       setTimeout(() => setError(null), 4000);
     }
   };
@@ -739,6 +812,303 @@ export default function GeneralSupervisorDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: STUDENT EXIT PASSES (TRAVAUX & SORTIES - ARTICLE 28) */}
+        {activeTab === 'exit_passes' && (
+          <div className="space-y-6">
+            {/* Modal for Printing Digital Exit Pass Voucher */}
+            {selectedPassForPrint && (
+              <DigitalExitPassModal
+                isOpen={true}
+                onClose={() => setSelectedPassForPrint(null)}
+                pass={selectedPassForPrint}
+                student={selectedPassForPrint.student}
+              />
+            )}
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-white border-2 border-[#C9A24D]/40 text-center shadow-xs">
+                <span className="text-xs font-bold text-[#7B1E3A] block">إجمالي تراخيص اليوم</span>
+                <span className="text-2xl font-black text-[#2B2022] font-mono mt-1 block">
+                  {dashboardData.exitPassesToday.length}
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-center shadow-xs">
+                <span className="text-xs font-bold text-amber-900 block">بانتظار مصادقة الإدارة</span>
+                <span className="text-2xl font-black text-amber-800 font-mono mt-1 block">
+                  {dashboardData.exitPassesToday.filter((p) => p.status === 'Pending').length}
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-center shadow-xs">
+                <span className="text-xs font-bold text-emerald-900 block">معتمدة ومفعلة لدى الاستقبال</span>
+                <span className="text-2xl font-black text-emerald-800 font-mono mt-1 block">
+                  {dashboardData.exitPassesToday.filter((p) => p.status === 'Approved').length}
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border-2 border-slate-300 text-center shadow-xs">
+                <span className="text-xs font-bold text-slate-700 block">غادروا المدرسة عبر البوابة</span>
+                <span className="text-2xl font-black text-slate-800 font-mono mt-1 block">
+                  {dashboardData.exitPassesToday.filter((p) => p.status === 'Used').length}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Issuance Form */}
+              <div className="p-6 rounded-3xl bg-white border-2 border-[#C9A24D]/40 space-y-4 shadow-sm h-fit">
+                <div className="flex items-center gap-2 text-[#7B1E3A] border-b border-[#C9A24D]/25 pb-3">
+                  <Plus className="w-5 h-5 text-[#C9A24D]" />
+                  <h3 className="font-serif font-black text-base">إصدار ترخيص خروج استثنائي مباشر</h3>
+                </div>
+                <p className="text-xs text-[#2B2022]/70 leading-relaxed font-medium">
+                  إصدار بطاقة خروج مباشرة لتلميذ داخل المؤسسة، يتم اعتمادها فوراً وتفعيلها لدى موظف الاستقبال عند البوابة.
+                </p>
+
+                <form onSubmit={handleCreateExitPass} className="space-y-4 text-xs font-medium">
+                  <div className="space-y-1">
+                    <label className="text-[#7B1E3A] font-bold block">التلميذ المعني بالخروج *</label>
+                    <select
+                      required
+                      value={exitPassForm.studentId}
+                      onChange={(e) => setExitPassForm({ ...exitPassForm, studentId: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-white border-2 border-[#C9A24D]/45 text-[#2B2022] font-bold focus:outline-none focus:border-[#7B1E3A]"
+                    >
+                      <option value="">-- اختر التلميذ --</option>
+                      {(dashboardData.students || []).map((s) => (
+                        <option key={s._id} value={s._id}>
+                          {s.user?.firstName} {s.user?.lastName} ({s.class?.name || 'بدون قسم'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[#7B1E3A] font-bold block">ساعة الخروج المرخصة *</label>
+                      <input
+                        type="time"
+                        required
+                        value={exitPassForm.exitTime}
+                        onChange={(e) => setExitPassForm({ ...exitPassForm, exitTime: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-white border-2 border-[#C9A24D]/45 text-[#2B2022] font-mono font-bold focus:outline-none focus:border-[#7B1E3A]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[#7B1E3A] font-bold block">المرافق المعتمد *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="ولي الأمر / شخص مفوض"
+                        value={exitPassForm.accompaniedBy}
+                        onChange={(e) => setExitPassForm({ ...exitPassForm, accompaniedBy: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-white border-2 border-[#C9A24D]/45 text-[#2B2022] font-bold focus:outline-none focus:border-[#7B1E3A]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[#7B1E3A] font-bold block">سبب أو مبرر الخروج *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="مثال: موعد طبي طارئ / استدعاء عائلي..."
+                      value={exitPassForm.reason}
+                      onChange={(e) => setExitPassForm({ ...exitPassForm, reason: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-white border-2 border-[#C9A24D]/45 text-[#2B2022] font-semibold focus:outline-none focus:border-[#7B1E3A]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 rounded-xl bg-[#7B1E3A] hover:bg-[#5E142A] text-white font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer border border-[#C9A24D]/40"
+                  >
+                    <CheckCircle className="w-4 h-4 text-[#C9A24D]" />
+                    <span>إصدار واعتماد ترخيص الخروج فوراً</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Passes List & Parent Requests */}
+              <div className="lg:col-span-2 p-6 rounded-3xl bg-white border-2 border-[#C9A24D]/40 space-y-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#C9A24D]/25 pb-3">
+                  <div>
+                    <h3 className="font-serif font-black text-base text-[#7B1E3A]">
+                      طلبات وبطاقات تراخيص الخروج لليوم ({dashboardData.exitPassesToday.length})
+                    </h3>
+                    <p className="text-xs text-[#2B2022]/70 font-medium">
+                      المصادقة على طلبات أولياء الأمور وتوثيق التراخيص المفعلة لموظف الاستقبال
+                    </p>
+                  </div>
+
+                  {/* Filter Tabs */}
+                  <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#FDFBF7] border border-[#C9A24D]/30 text-xs">
+                    <button
+                      onClick={() => setExitPassFilter('all')}
+                      className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                        exitPassFilter === 'all'
+                          ? 'bg-[#7B1E3A] text-white'
+                          : 'text-[#2B2022]/70 hover:text-[#7B1E3A]'
+                      }`}
+                    >
+                      الكل ({dashboardData.exitPassesToday.length})
+                    </button>
+                    <button
+                      onClick={() => setExitPassFilter('Pending')}
+                      className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                        exitPassFilter === 'Pending'
+                          ? 'bg-amber-600 text-white'
+                          : 'text-amber-800 hover:text-amber-900'
+                      }`}
+                    >
+                      بانتظار المصادقة ({dashboardData.exitPassesToday.filter((p) => p.status === 'Pending').length})
+                    </button>
+                    <button
+                      onClick={() => setExitPassFilter('Approved')}
+                      className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                        exitPassFilter === 'Approved'
+                          ? 'bg-emerald-600 text-white'
+                          : 'text-emerald-800 hover:text-emerald-900'
+                      }`}
+                    >
+                      معتمدة ({dashboardData.exitPassesToday.filter((p) => p.status === 'Approved').length})
+                    </button>
+                    <button
+                      onClick={() => setExitPassFilter('Used')}
+                      className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                        exitPassFilter === 'Used'
+                          ? 'bg-slate-700 text-white'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      غادروا ({dashboardData.exitPassesToday.filter((p) => p.status === 'Used').length})
+                    </button>
+                  </div>
+                </div>
+
+                {dashboardData.exitPassesToday.filter((p) => exitPassFilter === 'all' || p.status === exitPassFilter).length === 0 ? (
+                  <div className="py-14 text-center text-[#2B2022]/60 text-xs italic bg-[#FDFBF7] rounded-2xl border border-dashed border-[#C9A24D]/30 space-y-2">
+                    <LogOut className="w-10 h-10 text-[#C9A24D]/40 mx-auto" />
+                    <p className="font-bold text-sm text-[#7B1E3A]">لا توجد بطاقات خروج تطابق هذا الفلتر حالياً.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {dashboardData.exitPassesToday
+                      .filter((p) => exitPassFilter === 'all' || p.status === exitPassFilter)
+                      .map((pass) => {
+                        const studentName = pass.student?.user?.firstName
+                          ? `${pass.student.user.firstName} ${pass.student.user.lastName}`
+                          : pass.student?.firstName
+                          ? `${pass.student.firstName} ${pass.student.lastName}`
+                          : 'التلميذ';
+
+                        const isPending = pass.status === 'Pending';
+                        const isApproved = pass.status === 'Approved';
+                        const isUsed = pass.status === 'Used';
+
+                        return (
+                          <div
+                            key={pass._id}
+                            className={`p-4 rounded-2xl border-2 transition-all space-y-3.5 flex flex-col justify-between ${
+                              isPending
+                                ? 'bg-amber-50/60 border-amber-300 shadow-xs'
+                                : isApproved
+                                ? 'bg-white border-emerald-300 shadow-xs'
+                                : 'bg-[#FDFBF7] border-slate-300 opacity-80'
+                            }`}
+                          >
+                            <div className="space-y-2.5">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-9 h-9 rounded-xl bg-[#7B1E3A] flex items-center justify-center text-[#C9A24D] font-bold text-xs shrink-0">
+                                    {studentName[0] || 'T'}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-bold text-sm text-[#7B1E3A]">{studentName}</h4>
+                                    <span className="text-[11px] font-bold text-[#C9A24D] block font-mono">
+                                      القسم: {pass.class?.name || '—'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                  isPending
+                                    ? 'bg-amber-100 text-amber-900 border-amber-400 animate-pulse'
+                                    : isApproved
+                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                                    : isUsed
+                                    ? 'bg-slate-100 text-slate-800 border-slate-300'
+                                    : 'bg-red-100 text-red-800 border-red-300'
+                                }`}>
+                                  {isPending ? 'طلب ولي أمر (ينتظر المصادقة)' : isApproved ? 'معتمد (بانتظار البوابة)' : isUsed ? 'تم الخروج' : 'مرفوض'}
+                                </span>
+                              </div>
+
+                              <div className="space-y-1.5 text-xs bg-white/80 p-2.5 rounded-xl border border-[#C9A24D]/25">
+                                <div className="flex justify-between items-center text-[#2B2022]">
+                                  <span className="text-[#2B2022]/60 font-medium">ساعة الخروج:</span>
+                                  <span className="font-mono font-bold text-sm text-[#7B1E3A] bg-[#FDFBF7] px-2 py-0.5 rounded border border-[#C9A24D]/30" dir="ltr">
+                                    {pass.exitTime}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center text-[#2B2022]">
+                                  <span className="text-[#2B2022]/60 font-medium">المرافق:</span>
+                                  <span className="font-bold text-[#7B1E3A]">{pass.accompaniedBy || 'ولي الأمر'}</span>
+                                </div>
+                                <div className="text-[#2B2022] pt-1 border-t border-slate-100">
+                                  <span className="text-[#2B2022]/60 font-medium block text-[11px]">السبب:</span>
+                                  <p className="font-semibold text-xs text-[#2B2022] mt-0.5">{pass.reason}</p>
+                                </div>
+
+                                {pass.student?.parent?.user && (
+                                  <div className="text-[10px] text-[#2B2022]/70 pt-1 border-t border-slate-100 flex justify-between">
+                                    <span>الولي: {pass.student.parent.user.firstName} {pass.student.parent.user.lastName}</span>
+                                    <span className="font-mono">{pass.student.parent.user.phoneNumber}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#C9A24D]/20">
+                              {isPending && (
+                                <>
+                                  <button
+                                    onClick={() => handleApproveExitPass(pass._id)}
+                                    className="flex-1 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>قبول ومصادقة الإدارة</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleRejectExitPass(pass._id)}
+                                    className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                  >
+                                    رفض
+                                  </button>
+                                </>
+                              )}
+
+                              {(isApproved || isUsed) && (
+                                <button
+                                  onClick={() => setSelectedPassForPrint(pass)}
+                                  className="w-full py-2 bg-[#7B1E3A] hover:bg-[#5E142A] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer border border-[#C9A24D]/30"
+                                >
+                                  <Printer className="w-3.5 h-3.5 text-[#C9A24D]" />
+                                  <span>طباعة بطاقة الترخيص الرسمية</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

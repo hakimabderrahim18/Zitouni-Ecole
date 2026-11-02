@@ -3,18 +3,25 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuthStore } from '../store/useAuthStore';
-import { BookOpen, Upload, Clipboard, Send, User, Check, X, AlertCircle, Download, Trash2, FileText, Eye, Search } from 'lucide-react';
+import { BookOpen, Upload, Clipboard, Send, User, Check, X, AlertCircle, Download, Trash2, FileText, Eye, Search, Edit2 } from 'lucide-react';
 import TeacherClasses from '../components/TeacherClasses';
+import AttendanceManager from '../components/AttendanceManager';
+import TimetableGrid from '../components/TimetableGrid';
+import LessonNotebook from '../components/LessonNotebook';
+import AdministrativeRequestsManager from '../components/AdministrativeRequestsManager';
 import axios from 'axios';
 
 export default function TeacherDashboard() {
-  const { profile } = useAuthStore();
+  const { profile, user } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
 
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.endsWith('/attendance')) return 'attendance';
+    if (path.endsWith('/timetable')) return 'timetable';
+    if (path.endsWith('/lessons')) return 'lessons';
+    if (path.endsWith('/requests')) return 'requests';
     if (path.endsWith('/classes')) return 'classes';
     return 'courses'; // default tab
   };
@@ -61,6 +68,60 @@ export default function TeacherDashboard() {
   // Published courses state
   const [coursesList, setCoursesList] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
+
+  // Edit course state
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [editCourseData, setEditCourseData] = useState({
+    title: '',
+    subject: '',
+    description: '',
+    classId: '',
+    groupId: '',
+  });
+  const [editCourseFile, setEditCourseFile] = useState(null);
+  const [updatingCourse, setUpdatingCourse] = useState(false);
+
+  const handleOpenEditCourse = (courseItem) => {
+    setEditingCourse(courseItem);
+    setEditCourseData({
+      title: courseItem.title || '',
+      subject: courseItem.subject || '',
+      description: courseItem.description || '',
+      classId: courseItem.class?._id || courseItem.class || '',
+      groupId: courseItem.group?._id || courseItem.group || '',
+    });
+    setEditCourseFile(null);
+  };
+
+  const handleSaveEditCourse = async (e) => {
+    e.preventDefault();
+    if (!editingCourse) return;
+    setUpdatingCourse(true);
+
+    const formData = new FormData();
+    formData.append('title', editCourseData.title);
+    formData.append('subject', editCourseData.subject);
+    formData.append('description', editCourseData.description);
+    formData.append('classId', editCourseData.classId);
+    formData.append('groupId', editCourseData.groupId || '');
+    if (editCourseFile) {
+      formData.append('file', editCourseFile);
+    }
+
+    try {
+      await axios.put(`/api/teachers/courses/${editingCourse._id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      alert('تم تعديل الدرس وتحديثه بنجاح!');
+      setEditingCourse(null);
+      setEditCourseFile(null);
+      fetchCourses();
+    } catch (err) {
+      alert(err.response?.data?.message || 'فشل تعديل الدرس');
+    } finally {
+      setUpdatingCourse(false);
+    }
+  };
 
   const fetchCourses = async () => {
     setLoadingCourses(true);
@@ -266,29 +327,35 @@ export default function TeacherDashboard() {
 
   const handleUploadCourse = async (e) => {
     e.preventDefault();
-    if (!courseFile) {
-      alert('Veuillez joindre un fichier support de cours.');
+    if (!course.title?.trim() || !course.subject?.trim() || !course.classId) {
+      alert('يرجى ملء جميع الحقول المطلوبة (عنوان الدرس، المادة، والقسم).');
       return;
     }
 
     const formData = new FormData();
-    formData.append('file', courseFile);
-    formData.append('title', course.title);
-    formData.append('description', course.description);
-    formData.append('subject', course.subject);
+    if (courseFile) {
+      formData.append('file', courseFile);
+    }
+    formData.append('title', course.title.trim());
+    formData.append('description', course.description ? course.description.trim() : '');
+    formData.append('subject', course.subject.trim());
     formData.append('classId', course.classId);
-    formData.append('groupId', course.groupId);
+    if (course.groupId) {
+      formData.append('groupId', course.groupId);
+    }
 
     try {
       await axios.post('/api/teachers/courses', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      alert('Cours mis en ligne avec succès !');
-      setCourse(prev => ({ ...prev, title: '', description: '', subject: '' }));
+      alert('تم نشر الدرس بنجاح!');
+      setCourse({ title: '', description: '', subject: '', classId: '', groupId: '' });
       setCourseFile(null);
+      const input = document.getElementById('course-file-input');
+      if (input) input.value = '';
       fetchCourses();
     } catch (err) {
-      alert(err.response?.data?.message || 'Upload failed');
+      alert(err.response?.data?.message || 'فشل نشر الدرس');
     }
   };
 
@@ -300,6 +367,8 @@ export default function TeacherDashboard() {
         className="space-y-8 text-right"
       >
         {activeTab === 'classes' && <TeacherClasses profile={profile} />}
+        {activeTab === 'lessons' && <LessonNotebook />}
+        {activeTab === 'requests' && <AdministrativeRequestsManager />}
 
         {activeTab === 'courses' && (
           <div className="space-y-8 max-w-6xl mx-auto">
@@ -376,15 +445,34 @@ export default function TeacherDashboard() {
                     </select>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="file"
-                      required
-                      onChange={(e) => setCourseFile(e.target.files[0])}
-                      className="text-sm text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-brand-400 hover:file:bg-slate-850"
-                    />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-300 block">الملف المرفق (اختياري)</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="file"
+                        id="course-file-input"
+                        onChange={(e) => setCourseFile(e.target.files[0] || null)}
+                        className="text-sm text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-brand-400 hover:file:bg-slate-850 cursor-pointer"
+                      />
+                      {courseFile && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCourseFile(null);
+                            const input = document.getElementById('course-file-input');
+                            if (input) input.value = '';
+                          }}
+                          className="px-2.5 py-1 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-955/20 border border-rose-900/30 rounded-lg transition-all cursor-pointer whitespace-nowrap"
+                        >
+                          إلغاء الملف
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-450">
+                      ملاحظة: إرفاق الملف اختياري — يمكنك نشر الدرس بمحتوى توجيهي نصي فقط.
+                    </p>
                   </div>
-                  <button type="submit" className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition-all">
+                  <button type="submit" className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition-all cursor-pointer">
                     نشر الدرس
                   </button>
                 </form>
@@ -417,19 +505,32 @@ export default function TeacherDashboard() {
                             </p>
                             {c.description && <p className="text-xs text-slate-500 mt-1.5">{c.description}</p>}
                           </div>
-                          <div className="flex gap-2">
-                            <a
-                              href={c.fileUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-2.5 bg-slate-800 hover:bg-slate-750 text-brand-400 border border-luxury-border rounded-xl transition-all"
-                              title="Télécharger"
+                          <div className="flex items-center gap-2">
+                            {c.fileUrl ? (
+                              <a
+                                href={c.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-2.5 bg-slate-800 hover:bg-slate-750 text-brand-400 border border-luxury-border rounded-xl transition-all"
+                                title="تحميل الملف المرفق"
+                              >
+                                <Download className="w-4 h-4" />
+                              </a>
+                            ) : (
+                              <span className="px-2.5 py-1 text-[11px] font-medium bg-slate-800/60 text-slate-400 border border-luxury-border/40 rounded-lg whitespace-nowrap" title="درس نصي بدون ملف">
+                                بدون ملف
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleOpenEditCourse(c)}
+                              className="p-2.5 bg-brand-500/10 hover:bg-brand-500/25 text-brand-400 border border-brand-500/30 rounded-xl transition-all cursor-pointer"
+                              title="تعديل الدرس المنشور"
                             >
-                              <Download className="w-4 h-4" />
-                            </a>
+                              <Edit2 className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => handleDeleteCourse(c._id)}
-                              className="p-2.5 bg-red-955/20 hover:bg-red-955/40 text-red-400 border border-red-900/40 rounded-xl transition-all"
+                              className="p-2.5 bg-red-955/20 hover:bg-red-955/40 text-red-400 border border-red-900/40 rounded-xl transition-all cursor-pointer"
                               title="Supprimer"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -445,11 +546,17 @@ export default function TeacherDashboard() {
           </div>
         )}
 
-          {activeTab === 'attendance' && (
+        {activeTab === 'timetable' && (
+          <div className="space-y-6">
+            <TimetableGrid canImport={false} fixedTeacher={user?.lastName} />
+          </div>
+        )}
+
+        {activeTab === 'attendance' && (
           <div className="glass-panel p-6 md:p-8 rounded-2xl border border-luxury-border space-y-6">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Clipboard className="w-5 h-5 text-brand-400" />
-              <span>تسجيل حضور وغياب التلاميذ</span>
+              <span>تسجيل ومتابعة حضور وغياب التلاميذ</span>
             </h3>
 
             {/* Attendance Sub-tabs Selection */}
@@ -463,7 +570,7 @@ export default function TeacherDashboard() {
                     : 'border-transparent text-slate-450 hover:text-slate-200'
                 }`}
               >
-                تسجيل الحضور اليومي
+                تسجيل الحضور اليومي المباشر (6 حالات)
               </button>
               <button
                 type="button"
@@ -479,6 +586,9 @@ export default function TeacherDashboard() {
             </div>
 
             {attendanceSubTab === 'mark' && (
+              <AttendanceManager />
+            )}
+            {false && (
               <div className="space-y-6">
                 {/* Attendance Filter selection */}
                 <form onSubmit={handleFetchRoster} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end bg-slate-900/20 p-4 rounded-xl border border-luxury-border">
@@ -852,6 +962,167 @@ export default function TeacherDashboard() {
               </div>
 
             </div>
+          </div>
+        )}
+
+        {/* Edit Course Modal */}
+        {editingCourse && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+            dir="rtl"
+            onClick={() => !updatingCourse && setEditingCourse(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg glass-panel border border-luxury-border rounded-3xl p-6 md:p-8 space-y-6 text-right"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-luxury-border/50 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-300">
+                    <Edit2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">تعديل الدرس المنشور</h3>
+                    <p className="text-xs text-slate-400">تحديث تفاصيل الدرس أو استبدال الملف المرفق</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => !updatingCourse && setEditingCourse(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSaveEditCourse} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1.5">عنوان الدرس *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editCourseData.title}
+                    onChange={(e) => setEditCourseData({ ...editCourseData, title: e.target.value })}
+                    placeholder="عنوان الدرس"
+                    className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1.5">المادة الدراسية *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editCourseData.subject}
+                    onChange={(e) => setEditCourseData({ ...editCourseData, subject: e.target.value })}
+                    placeholder="مثال: رياضيات، علوم، لغة عربية"
+                    className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1.5">الوصف والتوجيهات (اختياري)</label>
+                  <textarea
+                    value={editCourseData.description}
+                    onChange={(e) => setEditCourseData({ ...editCourseData, description: e.target.value })}
+                    placeholder="توجيهات للدرس، إرشادات للحل..."
+                    rows={3}
+                    className="w-full bg-slate-900/90 border border-luxury-border rounded-xl p-3.5 text-sm text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                  />
+                </div>
+
+                {/* Class and Group */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1.5">القسم الموجه إليه *</label>
+                    <select
+                      value={editCourseData.classId}
+                      required
+                      onChange={(e) => setEditCourseData({ ...editCourseData, classId: e.target.value })}
+                      className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none"
+                    >
+                      <option value="">اختر القسم</option>
+                      {profile?.classes?.map((c) => (
+                        <option key={c._id} value={c._id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1.5">الفوج (اختياري)</label>
+                    <select
+                      value={editCourseData.groupId}
+                      onChange={(e) => setEditCourseData({ ...editCourseData, groupId: e.target.value })}
+                      className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none"
+                    >
+                      <option value="">القسم كاملاً (بدون تخصيص فوج)</option>
+                      {profile?.groups?.map((g) => (
+                        <option key={g._id} value={g._id}>{g.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Current File and Optional Replacement */}
+                <div className="p-4 rounded-xl bg-slate-950/40 border border-luxury-border/60 space-y-2 text-xs">
+                  <span className="text-slate-400 block font-medium">الملف المرفق:</span>
+                  {editingCourse.fileUrl ? (
+                    <div className="flex items-center justify-between bg-slate-900/70 p-2.5 rounded-lg border border-luxury-border">
+                      <span className="truncate max-w-[200px] text-brand-300 font-mono text-[11px]" dir="ltr">
+                        {editingCourse.fileName || editingCourse.fileUrl?.split('/').pop() || 'document.pdf'}
+                      </span>
+                      <a
+                        href={editingCourse.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-brand-400 hover:text-white font-bold flex items-center gap-1"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>معاينة</span>
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-900/50 p-2.5 rounded-lg border border-luxury-border/40 text-slate-450 italic text-[11px]">
+                      لا يوجد ملف مرفق بهذا الدرس حالياً (درس نصي).
+                    </div>
+                  )}
+
+                  <div className="pt-2">
+                    <label className="text-slate-400 block font-medium mb-1.5">
+                      {editingCourse.fileUrl ? 'استبدال الملف بملف جديد (اختياري):' : 'إرفاق ملف جديد للدرس (اختياري):'}
+                    </label>
+                    <input
+                      type="file"
+                      onChange={(e) => setEditCourseFile(e.target.files[0] || null)}
+                      className="text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex items-center gap-3 pt-3">
+                  <button
+                    type="button"
+                    disabled={updatingCourse}
+                    onClick={() => setEditingCourse(null)}
+                    className="flex-1 py-3 bg-slate-900 border border-luxury-border text-slate-300 hover:text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updatingCourse}
+                    className="flex-1 py-3 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    {updatingCourse ? 'جاري حفظ التعديلات...' : 'حفظ التعديلات'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
         )}
 

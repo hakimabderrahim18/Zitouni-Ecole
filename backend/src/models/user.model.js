@@ -32,6 +32,26 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    firstNameArabic: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    lastNameArabic: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    firstNameFrench: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    lastNameFrench: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     role: {
       type: String,
       enum: [
@@ -58,9 +78,61 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 2000,
     },
+    // Article 23 fields for Staff and Employees
+    hiringDate: {
+      type: Date,
+      default: null,
+    },
+    contractType: {
+      type: String,
+      default: 'CDI',
+      trim: true,
+    },
+    contractDuration: {
+      type: String,
+      default: '1 سنة',
+      trim: true,
+    },
+    contractStartDate: {
+      type: Date,
+      default: null,
+    },
+    contractEndDate: {
+      type: Date,
+      default: null,
+    },
+    jobTitle: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    professionalStatus: {
+      type: String,
+      enum: ['active', 'suspended', 'resigned', 'terminated'],
+      default: 'active',
+    },
     isActive: {
       type: Boolean,
       default: true,
+    },
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    isLocked: {
+      type: Boolean,
+      default: false,
+    },
+    lockUntil: {
+      type: Date,
+      default: null,
+    },
+    isPermanentlyLocked: {
+      type: Boolean,
+      default: false,
+    },
+    lastLoginAt: {
+      type: Date,
     },
     refreshToken: {
       type: String,
