@@ -12,6 +12,9 @@ import {
 import { Send, User, CheckCheck, Clock, Search } from 'lucide-react-native';
 import { theme } from '../../src/theme/tokens';
 import { useAuthStore } from '../../src/store/useAuthStore';
+import { DashboardHeader } from '../../src/components/DashboardHeader';
+import { NavigationDrawer } from '../../src/components/NavigationDrawer';
+import { useRouter } from 'expo-router';
 
 interface Message {
   id: string;
@@ -22,7 +25,9 @@ interface Message {
 }
 
 export default function MessagesScreen() {
+  const router = useRouter();
   const { user } = useAuthStore();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -67,6 +72,20 @@ export default function MessagesScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       style={styles.container}
     >
+      {/* 1. Web Parity Dashboard Header */}
+      <DashboardHeader onOpenDrawer={() => setIsDrawerOpen(true)} />
+
+      {/* 2. Side Navigation Drawer */}
+      <NavigationDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        activeId="messages"
+        onSelect={(id) => {
+          setIsDrawerOpen(false);
+          router.push('/(tabs)');
+        }}
+      />
+
       {/* Contact Header Card */}
       <View style={styles.contactBar}>
         <View style={styles.contactInfo}>

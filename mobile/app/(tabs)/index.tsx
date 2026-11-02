@@ -59,6 +59,7 @@ import { SchoolLogo } from '../../src/components/SchoolLogo';
 import { Button } from '../../src/components/common/Button';
 import { theme } from '../../src/theme/tokens';
 import { NavigationDrawer, ADMIN_NAV_ITEMS } from '../../src/components/NavigationDrawer';
+import { DashboardHeader } from '../../src/components/DashboardHeader';
 
 /* ==================================================================== */
 /*  Main Component: Unified Admin Dashboard & All 21 Modules            */
@@ -605,36 +606,22 @@ export default function AdminScreen() {
   return (
     <View style={styles.container}>
       {/* ---------------------------------------------------------------- */}
-      {/* 1. Header with Hamburger Menu (opens Side Drawer)                */}
+      {/* 1. Header with Web Parity (Hamburger + Logo + Title + Year | Bell + Avatar) */}
       {/* ---------------------------------------------------------------- */}
-      <View style={styles.header}>
-        {/* Left: User badge */}
-        <View style={styles.headerLeft}>
-          <View style={styles.adminBadge}>
-            <ShieldCheck size={14} color={theme.colors.gold[500]} />
-            <Text style={styles.adminBadgeText}>
-              {user?.role === 'admin' ? 'مدير المنصة' : 'الإدارة العامة'}
-            </Text>
-          </View>
-        </View>
+      <DashboardHeader onOpenDrawer={() => setIsDrawerOpen(true)} />
 
-        {/* Center: Active Title */}
-        <View style={styles.headerCenter}>
-          <Text style={styles.activePageTitle} numberOfLines={1}>
-            {getActiveRouteTitle()}
-          </Text>
-          <Text style={styles.schoolHeaderSubtitle}>مدرسة حبر • 2026-2027</Text>
+      {/* Active Route Indicator (when navigating from side drawer) */}
+      {currentRoute !== 'overview' && currentRoute !== 'feed' && (
+        <View style={styles.activeRouteSubHeader}>
+          <Text style={styles.activeRouteSubText}>{getActiveRouteTitle()}</Text>
+          <TouchableOpacity
+            onPress={() => setCurrentRoute('overview')}
+            style={styles.backToOverviewBtn}
+          >
+            <Text style={styles.backToOverviewText}>العودة للرئيسية</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Right: Hamburger Menu Button */}
-        <TouchableOpacity
-          style={styles.hamburgerBtn}
-          onPress={() => setIsDrawerOpen(true)}
-          activeOpacity={0.7}
-        >
-          <Menu size={24} color={theme.colors.brand[500]} />
-        </TouchableOpacity>
-      </View>
+      )}
 
       {/* ---------------------------------------------------------------- */}
       {/* 2. Side Navigation Drawer                                        */}
@@ -3168,5 +3155,33 @@ const styles = StyleSheet.create({
     color: theme.colors.text.muted,
     textAlign: 'center',
     marginVertical: 16,
+  },
+  activeRouteSubHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(123, 30, 58, 0.05)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(201, 162, 77, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  activeRouteSubText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.brand[500],
+  },
+  backToOverviewBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: theme.colors.surface.card,
+    borderWidth: 1,
+    borderColor: theme.colors.surface.border,
+  },
+  backToOverviewText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.colors.text.secondary,
   },
 });

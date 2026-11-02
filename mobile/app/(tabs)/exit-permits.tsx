@@ -13,6 +13,9 @@ import { ShieldCheck, CheckCircle2, XCircle, Plus, Clock, User, X } from 'lucide
 import { theme } from '../../src/theme/tokens';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { Button } from '../../src/components/common/Button';
+import { DashboardHeader } from '../../src/components/DashboardHeader';
+import { NavigationDrawer } from '../../src/components/NavigationDrawer';
+import { useRouter } from 'expo-router';
 
 interface Permit {
   id: string;
@@ -25,7 +28,9 @@ interface Permit {
 }
 
 export default function ExitPermitsScreen() {
+  const router = useRouter();
   const { user } = useAuthStore();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [newStudentName, setNewStudentName] = useState('');
   const [newReason, setNewReason] = useState('');
@@ -98,6 +103,20 @@ export default function ExitPermitsScreen() {
 
   return (
     <View style={styles.container}>
+      {/* 1. Web Parity Dashboard Header */}
+      <DashboardHeader onOpenDrawer={() => setIsDrawerOpen(true)} />
+
+      {/* 2. Side Navigation Drawer */}
+      <NavigationDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        activeId="exit-permits"
+        onSelect={(id) => {
+          setIsDrawerOpen(false);
+          router.push('/(tabs)');
+        }}
+      />
+
       {/* Action Header */}
       <View style={styles.topBar}>
         <TouchableOpacity

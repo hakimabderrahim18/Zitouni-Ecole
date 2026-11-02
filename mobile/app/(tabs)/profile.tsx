@@ -31,6 +31,8 @@ import { apiClient, API_BASE_URL } from '../../src/api/client';
 import { Input } from '../../src/components/common/Input';
 import { Button } from '../../src/components/common/Button';
 import { theme } from '../../src/theme/tokens';
+import { DashboardHeader } from '../../src/components/DashboardHeader';
+import { NavigationDrawer } from '../../src/components/NavigationDrawer';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'الاسم الأول مطلوب'),
@@ -44,6 +46,7 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, updateUser, logout } = useAuthStore();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isDeletingPic, setIsDeletingPic] = useState(false);
@@ -186,8 +189,26 @@ export default function ProfileScreen() {
     : null;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Profile Card Header */}
+    <View style={styles.container}>
+      {/* 1. Web Parity Dashboard Header */}
+      <DashboardHeader
+        onOpenDrawer={() => setIsDrawerOpen(true)}
+        onOpenProfile={() => {}}
+      />
+
+      {/* 2. Side Navigation Drawer */}
+      <NavigationDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        activeId="profile"
+        onSelect={(id) => {
+          setIsDrawerOpen(false);
+          router.push('/(tabs)');
+        }}
+      />
+
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Profile Card Header */}
       <View style={styles.profileHeaderCard}>
         <View style={styles.avatarSection}>
           <TouchableOpacity
@@ -390,7 +411,8 @@ export default function ProfileScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

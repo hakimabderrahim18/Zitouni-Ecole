@@ -23,6 +23,9 @@ import {
 } from 'lucide-react-native';
 import { apiClient } from '../../src/api/client';
 import { theme } from '../../src/theme/tokens';
+import { DashboardHeader } from '../../src/components/DashboardHeader';
+import { NavigationDrawer } from '../../src/components/NavigationDrawer';
+import { useRouter } from 'expo-router';
 
 interface StudentDoc {
   _id: string;
@@ -56,6 +59,8 @@ interface StudentDoc {
 }
 
 export default function StudentsScreen() {
+  const router = useRouter();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [students, setStudents] = useState<StudentDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -119,6 +124,21 @@ export default function StudentsScreen() {
 
   return (
     <View style={styles.container}>
+      {/* 1. Web Parity Dashboard Header */}
+      <DashboardHeader onOpenDrawer={() => setIsDrawerOpen(true)} />
+
+      {/* 2. Side Navigation Drawer */}
+      <NavigationDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        activeId="students"
+        onSelect={(id) => {
+          setIsDrawerOpen(false);
+          if (id === 'students') return;
+          router.push('/(tabs)');
+        }}
+      />
+
       {/* Search Header */}
       <View style={styles.searchHeader}>
         <View style={styles.searchBox}>

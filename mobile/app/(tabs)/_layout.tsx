@@ -7,6 +7,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
         tabBarStyle: {
           backgroundColor: theme.colors.surface.card, // #FCF8F2
           borderTopColor: theme.colors.surface.border, // #DFD3C2
@@ -21,18 +22,6 @@ export default function TabLayout() {
           fontSize: 11,
           fontWeight: '700',
         },
-        headerStyle: {
-          backgroundColor: theme.colors.surface.card,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.surface.border,
-        },
-        headerTitleStyle: {
-          color: theme.colors.brand[500],
-          fontWeight: '800',
-          fontSize: 18,
-        },
-        headerTintColor: theme.colors.brand[500],
-        headerShadowVisible: false,
       }}
     >
       <Tabs.Screen
