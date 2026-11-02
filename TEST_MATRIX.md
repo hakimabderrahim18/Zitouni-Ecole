@@ -1,6 +1,6 @@
 # Comprehensive Functional Test Matrix (TEST_MATRIX.md)
 
-Execution Date: 2026-11-02T20:22:04.564Z
+Execution Date: 2026-11-02T20:51:08.986Z
 Target: MERN Backend + React Native Expo Mobile Twin
 
 | Category | Test Case Description | Result | Details / Metrics |
@@ -8,7 +8,7 @@ Target: MERN Backend + React Native Expo Mobile Twin
 | Auth Form | Reject invalid credentials | ✅ PASSED | — |
 | Auth Form | Admin login authentication | ✅ PASSED | User: admin |
 | Dashboard | Admin KPIs & Stats fetch | ✅ PASSED | Students: 454, Teachers: 10, Classes: 41 |
-| Announcements | Create announcement post | ✅ PASSED | Post ID: 6ae8f0ec9ffcf4341d11ff7c |
+| Announcements | Create announcement post | ✅ PASSED | Post ID: 6ae8f7bc9ffcf4341d1233db |
 | Announcements | Toggle like on announcement | ✅ PASSED | — |
 | Announcements | Add comment to announcement | ✅ PASSED | — |
 | Announcements | Pin announcement to top | ✅ PASSED | — |
@@ -18,7 +18,7 @@ Target: MERN Backend + React Native Expo Mobile Twin
 | User Management | Toggle user active/frozen status | ✅ PASSED | User: ana |
 | Academic Structure | Fetch classes and groups directory | ✅ PASSED | Count: 41 |
 | Security & Audit | Retrieve login security audit logs | ✅ PASSED | — |
-| Security & Backup | Fetch encrypted database backups | ✅ PASSED | Backups count: 6 |
+| Security & Backup | Fetch encrypted database backups | ✅ PASSED | Backups count: 7 |
 | Admin Requests | Fetch administrative requests | ✅ PASSED | Requests count: 13 |
 | Moderation & Discipline | Fetch reported chat messages | ✅ PASSED | — |
 

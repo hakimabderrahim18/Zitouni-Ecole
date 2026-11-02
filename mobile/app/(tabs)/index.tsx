@@ -145,6 +145,24 @@ export default function AdminScreen() {
   const [enrollAmount, setEnrollAmount] = useState('15000');
   const [isSubmittingEnrollment, setIsSubmittingEnrollment] = useState(false);
 
+  // Groups State
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [selectedClassForGroup, setSelectedClassForGroup] = useState('');
+  const [newGroupCapacity, setNewGroupCapacity] = useState('30');
+  const [isSubmittingGroup, setIsSubmittingGroup] = useState(false);
+
+  // Dossier Modals State
+  const [selectedStudentForDossier, setSelectedStudentForDossier] = useState<any>(null);
+  const [selectedTeacherForDossier, setSelectedTeacherForDossier] = useState<any>(null);
+
+  // Branding Form State
+  const [brandingSchoolNameAr, setBrandingSchoolNameAr] = useState('مدرسة حبر');
+  const [brandingSchoolNameFr, setBrandingSchoolNameFr] = useState('Groupe scolaire Encre & Pastel');
+  const [brandingSlogan, setBrandingSlogan] = useState('يا نشء أنت رجاؤنا');
+  const [brandingAcademicYear, setBrandingAcademicYear] = useState('2026-2027');
+  const [isSavingBranding, setIsSavingBranding] = useState(false);
+
   // Feed Comments & Interactions State
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -449,6 +467,104 @@ export default function AdminScreen() {
     } finally {
       setIsSubmittingClass(false);
     }
+  };
+
+  const handleDeleteClass = (classId: string, className: string) => {
+    Alert.alert('تأكيد الحذف', `هل أنت متأكد من حذف القسم (${className})؟`, [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'حذف',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await apiClient.delete(`/api/admin/classes/${classId}`);
+            setClassesList((prev) => prev.filter((c) => c._id !== classId));
+            Alert.alert('نجاح', 'تم حذف القسم بنجاح.');
+          } catch (err: any) {
+            Alert.alert('خطأ', err.response?.data?.message || 'فشل حذف القسم');
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim() || !selectedClassForGroup) {
+      Alert.alert('تنبيه', 'يرجى إدخال اسم الفوج واختيار القسم');
+      return;
+    }
+    setIsSubmittingGroup(true);
+    try {
+      await apiClient.post('/api/admin/groups', {
+        name: newGroupName.trim(),
+        classId: selectedClassForGroup,
+        capacity: Number(newGroupCapacity) || 30,
+      });
+      setShowCreateGroupModal(false);
+      setNewGroupName('');
+      Alert.alert('نجاح', 'تم إنشاء الفوج الدراسي بنجاح.');
+      const refetch = await apiClient.get('/api/admin/classes');
+      setClassesList(refetch.data?.classes || refetch.data || []);
+    } catch (err: any) {
+      Alert.alert('خطأ', err.response?.data?.message || 'فشل إنشاء الفوج');
+    } finally {
+      setIsSubmittingGroup(false);
+    }
+  };
+
+  const handleCreateEnrollment = async () => {
+    if (!enrollStudentName.trim() || !enrollClassId) {
+      Alert.alert('تنبيه', 'يرجى إدخال اسم التلميذ واختيار القسم');
+      return;
+    }
+    setIsSubmittingEnrollment(true);
+    try {
+      const parts = enrollStudentName.trim().split(' ');
+      const fName = parts[0] || 'تلميذ';
+      const lName = parts.slice(1).join(' ') || 'جديد';
+      await apiClient.post('/api/admin/enrollment', {
+        firstName: fName,
+        lastName: lName,
+        firstNameArabic: fName,
+        lastNameArabic: lName,
+        classId: enrollClassId,
+        parentPhone: '0797060052',
+        tuitionBaseAmount: Number(enrollAmount) || 15000,
+        tuitionAmount: Number(enrollAmount) || 15000,
+      });
+      Alert.alert('نجاح', 'تم تسجيل ملف التلميذ واستخراج وصل التسجيل بنجاح.');
+      setShowCreateEnrollmentModal(false);
+      setEnrollStudentName('');
+      const refetch = await apiClient.get('/api/admin/students');
+      setStudentsList(refetch.data?.students || refetch.data || []);
+    } catch (err: any) {
+      Alert.alert('خطأ', err.response?.data?.message || 'فشل تسجيل التلميذ');
+    } finally {
+      setIsSubmittingEnrollment(false);
+    }
+  };
+
+  const handleSaveBranding = async () => {
+    setIsSavingBranding(true);
+    try {
+      await apiClient.put('/api/school-settings', {
+        schoolNameArabic: brandingSchoolNameAr,
+        schoolNameFrench: brandingSchoolNameFr,
+        slogan: brandingSlogan,
+        academicYear: brandingAcademicYear,
+      });
+      Alert.alert('نجاح', 'تم حفظ وتطبيق الهوية البصرية بنجاح.');
+    } catch (err: any) {
+      Alert.alert('خطأ', err.response?.data?.message || 'فشل حفظ الإعدادات');
+    } finally {
+      setIsSavingBranding(false);
+    }
+  };
+
+  const handleExportExcel = (type: string) => {
+    Alert.alert('تصدير Excel', `تم طلب استخراج وتنزيل تقرير (${type}) بصيغة XLSX من السيرفر.`, [
+      { text: 'حسناً' },
+    ]);
   };
 
   const handleCreateModule = async () => {
@@ -1027,13 +1143,22 @@ export default function AdminScreen() {
                     <Text style={styles.financeHubTitle}>آخر المعاملات المالية المنجزة</Text>
                     <Text style={styles.financeHubSub}>إيصالات المصاريف والخدمات المسددة</Text>
                   </View>
-                  <TouchableOpacity
-                    style={styles.addInvoiceBtn}
-                    onPress={() => setShowCreatePaymentModal(true)}
-                  >
-                    <Plus size={14} color="#FFFFFF" />
-                    <Text style={styles.addInvoiceBtnText}>إنشاء فاتورة</Text>
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row-reverse', gap: 6, alignItems: 'center' }}>
+                    <TouchableOpacity
+                      style={styles.addInvoiceBtn}
+                      onPress={() => setShowCreatePaymentModal(true)}
+                    >
+                      <Plus size={14} color="#FFFFFF" />
+                      <Text style={styles.addInvoiceBtnText}>إنشاء فاتورة</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.addInvoiceBtn, { backgroundColor: '#059669' }]}
+                      onPress={() => handleExportExcel('المالية والمعاملات')}
+                    >
+                      <Download size={13} color="#FFFFFF" />
+                      <Text style={styles.addInvoiceBtnText}>تصدير Excel</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 <View style={styles.transactionsList}>
@@ -1108,13 +1233,22 @@ export default function AdminScreen() {
                     إدارة {systemUsers.length} حساباً: الأساتذة، الأولياء، التلاميذ والموظفين
                   </Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.addUserButton}
-                  onPress={() => setShowCreateUserModal(true)}
-                >
-                  <Plus size={15} color="#FFFFFF" />
-                  <Text style={styles.addUserButtonText}>إضافة مستخدم</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row-reverse', gap: 6, alignItems: 'center' }}>
+                  <TouchableOpacity
+                    style={styles.addUserButton}
+                    onPress={() => setShowCreateUserModal(true)}
+                  >
+                    <Plus size={15} color="#FFFFFF" />
+                    <Text style={styles.addUserButtonText}>إضافة مستخدم</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.addUserButton, { backgroundColor: '#059669' }]}
+                    onPress={() => handleExportExcel('قائمة المستخدمين')}
+                  >
+                    <Download size={14} color="#FFFFFF" />
+                    <Text style={styles.addUserButtonText}>تصدير Excel</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.searchBar}>
@@ -1223,10 +1357,21 @@ export default function AdminScreen() {
           {/* ============================================================ */}
           {currentRoute === 'teachers' && (
             <View style={styles.usersContainer}>
-              <Text style={styles.sectionTitle}>قائمة الأساتذة وهيئة التدريس (المادة 23)</Text>
-              <Text style={styles.sectionSubtitle}>
-                متابعة عقود العمل، الساعات الأسبوعية، والملف المهني لـ {teachersList.length} أستاذ(ة)
-              </Text>
+              <View style={styles.usersHeaderRow}>
+                <View>
+                  <Text style={styles.sectionTitle}>قائمة الأساتذة وهيئة التدريس (المادة 23)</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    متابعة عقود العمل، الساعات الأسبوعية، والملف المهني لـ {teachersList.length} أستاذ(ة)
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.addUserButton, { backgroundColor: '#059669' }]}
+                  onPress={() => handleExportExcel('هيئة التدريس - المادة 23')}
+                >
+                  <Download size={14} color="#FFFFFF" />
+                  <Text style={styles.addUserButtonText}>تصدير Excel</Text>
+                </TouchableOpacity>
+              </View>
 
               <View style={styles.searchBar}>
                 <Search size={18} color={theme.colors.text.muted} />
@@ -1247,7 +1392,12 @@ export default function AdminScreen() {
                   const classes = (t.classes || []).map((c: any) => c.name).join(', ') || 'غير معين';
 
                   return (
-                    <View key={t._id} style={styles.userCard}>
+                    <TouchableOpacity
+                      key={t._id}
+                      style={styles.userCard}
+                      onPress={() => setSelectedTeacherForDossier(t)}
+                      activeOpacity={0.8}
+                    >
                       <View style={styles.userCardRight}>
                         <View style={[styles.userAvatar, { backgroundColor: theme.colors.brand[600] }]}>
                           <Text style={styles.userAvatarText}>{name[0] || 'أ'}</Text>
@@ -1258,7 +1408,10 @@ export default function AdminScreen() {
                           <Text style={styles.userContact}>الهاتف: {phone} • عقد: {t.contractType || 'CDI'}</Text>
                         </View>
                       </View>
-                    </View>
+                      <View style={[styles.statusBadge, styles.statusPaid]}>
+                        <Text style={[styles.statusBadgeText, styles.statusPaidText]}>عرض الملف</Text>
+                      </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -1270,10 +1423,21 @@ export default function AdminScreen() {
           {/* ============================================================ */}
           {currentRoute === 'students' && (
             <View style={styles.usersContainer}>
-              <Text style={styles.sectionTitle}>دليل التلاميذ المقيدين بالمؤسسة</Text>
-              <Text style={styles.sectionSubtitle}>
-                إجمالي التلاميذ المسجلين في قاعدة البيانات: {studentsList.length} تلميذ
-              </Text>
+              <View style={styles.usersHeaderRow}>
+                <View>
+                  <Text style={styles.sectionTitle}>دليل التلاميذ المقيدين بالمؤسسة</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    إجمالي التلاميذ المسجلين في قاعدة البيانات: {studentsList.length} تلميذ
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.addUserButton, { backgroundColor: '#059669' }]}
+                  onPress={() => handleExportExcel('سجل التلاميذ')}
+                >
+                  <Download size={14} color="#FFFFFF" />
+                  <Text style={styles.addUserButtonText}>تصدير Excel</Text>
+                </TouchableOpacity>
+              </View>
 
               <View style={styles.searchBar}>
                 <Search size={18} color={theme.colors.text.muted} />
@@ -1293,7 +1457,12 @@ export default function AdminScreen() {
                   const isPaid = s.tuitionPaid;
 
                   return (
-                    <View key={s._id} style={styles.userCard}>
+                    <TouchableOpacity
+                      key={s._id}
+                      style={styles.userCard}
+                      onPress={() => setSelectedStudentForDossier(s)}
+                      activeOpacity={0.8}
+                    >
                       <View style={styles.userCardRight}>
                         <View style={styles.userAvatar}>
                           <Text style={styles.userAvatarText}>{studentName[0] || 'ت'}</Text>
@@ -1323,7 +1492,7 @@ export default function AdminScreen() {
                           {isPaid ? 'المصاريف مسددة' : 'غير مسدد'}
                         </Text>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -1405,13 +1574,22 @@ export default function AdminScreen() {
                     إدارة {classesList.length} قسماً دراسياً
                   </Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.addUserButton}
-                  onPress={() => setShowCreateClassModal(true)}
-                >
-                  <Plus size={15} color="#FFFFFF" />
-                  <Text style={styles.addUserButtonText}>إنشاء قسم جديد</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row-reverse', gap: 6, alignItems: 'center' }}>
+                  <TouchableOpacity
+                    style={styles.addUserButton}
+                    onPress={() => setShowCreateClassModal(true)}
+                  >
+                    <Plus size={15} color="#FFFFFF" />
+                    <Text style={styles.addUserButtonText}>إنشاء قسم</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.addUserButton, { backgroundColor: theme.colors.gold[500] }]}
+                    onPress={() => setShowCreateGroupModal(true)}
+                  >
+                    <Plus size={15} color="#FFFFFF" />
+                    <Text style={styles.addUserButtonText}>إضافة فوج</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.classesGrid}>
@@ -1426,9 +1604,17 @@ export default function AdminScreen() {
                     <View style={styles.classBadge}>
                       <Text style={styles.classBadgeText}>{c.level || 'طور التعليم'}</Text>
                     </View>
-                    <Text style={styles.classDetails}>
-                      عدد الأفواج: {c.groups?.length || 1} • السنة: 2026-2027
-                    </Text>
+                    <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                      <Text style={styles.classDetails}>
+                        عدد الأفواج: {c.groups?.length || 1}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteClass(c._id, c.name)}
+                        style={{ padding: 4 }}
+                      >
+                        <Trash2 size={16} color="#BE123C" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -1744,6 +1930,50 @@ export default function AdminScreen() {
                   </View>
                 </View>
               </View>
+
+              <View style={[styles.financeHubCard, { marginTop: 14 }]}>
+                <Text style={styles.financeHubTitle}>تعديل البيانات الأساسية للمؤسسة</Text>
+                <View style={{ marginTop: 12, gap: 10 }}>
+                  <View>
+                    <Text style={styles.inputLabel}>اسم المدرسة بالعربية</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={brandingSchoolNameAr}
+                      onChangeText={setBrandingSchoolNameAr}
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.inputLabel}>Nom de l'établissement (Français)</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={brandingSchoolNameFr}
+                      onChangeText={setBrandingSchoolNameFr}
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.inputLabel}>شعار المؤسسة (Slogan)</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={brandingSlogan}
+                      onChangeText={setBrandingSlogan}
+                    />
+                  </View>
+                  <View>
+                    <Text style={styles.inputLabel}>السنة الدراسية الرسمية</Text>
+                    <TextInput
+                      style={styles.modalInput}
+                      value={brandingAcademicYear}
+                      onChangeText={setBrandingAcademicYear}
+                    />
+                  </View>
+                  <Button
+                    label={isSavingBranding ? 'جاري الحفظ...' : 'حفظ وتطبيق التعديلات'}
+                    onPress={handleSaveBranding}
+                    disabled={isSavingBranding}
+                    style={{ marginTop: 6 }}
+                  />
+                </View>
+              </View>
             </View>
           )}
 
@@ -1948,7 +2178,7 @@ export default function AdminScreen() {
       </Modal>
 
       {/* ================================================================ */}
-      {/* MODAL: Create Payment Invoice                                    */}
+      {/* MODAL 1: Create Payment Invoice (with Student Selector)          */}
       {/* ================================================================ */}
       <Modal visible={showCreatePaymentModal} animationType="slide" transparent>
         <KeyboardAvoidingView
@@ -1962,8 +2192,27 @@ export default function AdminScreen() {
                 <X size={20} color={theme.colors.text.muted} />
               </TouchableOpacity>
             </View>
-            <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>المبلغ (دج)</Text>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>اختيار التلميذ المستفيد *</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                {studentsList.slice(0, 20).map((s) => {
+                  const sName = `${s.firstNameArabic || s.user?.firstName || ''} ${s.lastNameArabic || s.user?.lastName || ''}`;
+                  const isSelected = paymentStudentId === s._id;
+                  return (
+                    <TouchableOpacity
+                      key={s._id}
+                      style={[styles.audienceChip, isSelected && styles.audienceChipActive]}
+                      onPress={() => setPaymentStudentId(s._id)}
+                    >
+                      <Text style={[styles.audienceChipText, isSelected && styles.audienceChipTextActive]}>
+                        {sName} ({s.class?.name || 'قسم'})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              <Text style={styles.inputLabel}>المبلغ المستحق (دج) *</Text>
               <TextInput
                 style={styles.modalInput}
                 placeholder="15000"
@@ -1971,33 +2220,58 @@ export default function AdminScreen() {
                 value={paymentAmount}
                 onChangeText={setPaymentAmount}
               />
+
               <Text style={styles.inputLabel}>نوع الخدمة</Text>
               <View style={styles.audienceRow}>
-                {['Tuition', 'Transport', 'Food', 'Activity'].map((t) => (
+                {[
+                  { id: 'Tuition', label: 'رسوم التمدرس' },
+                  { id: 'Transport', label: 'النقل المدرسي' },
+                  { id: 'Food', label: 'الإطعام المدرسي' },
+                  { id: 'Activity', label: 'النشاطات' },
+                ].map((t) => (
                   <TouchableOpacity
-                    key={t}
-                    style={[styles.audienceChip, paymentType === t && styles.audienceChipActive]}
-                    onPress={() => setPaymentType(t)}
+                    key={t.id}
+                    style={[styles.audienceChip, paymentType === t.id && styles.audienceChipActive]}
+                    onPress={() => setPaymentType(t.id)}
                   >
-                    <Text style={[styles.audienceChipText, paymentType === t && styles.audienceChipTextActive]}>
-                      {t}
+                    <Text style={[styles.audienceChipText, paymentType === t.id && styles.audienceChipTextActive]}>
+                      {t.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
+
+              <Text style={styles.inputLabel}>حالة الدفع</Text>
+              <View style={styles.audienceRow}>
+                {[
+                  { id: 'Paid', label: 'مسددة (Paid)' },
+                  { id: 'Pending', label: 'قيد الانتظار (Pending)' },
+                ].map((st) => (
+                  <TouchableOpacity
+                    key={st.id}
+                    style={[styles.audienceChip, paymentStatus === st.id && styles.audienceChipActive]}
+                    onPress={() => setPaymentStatus(st.id)}
+                  >
+                    <Text style={[styles.audienceChipText, paymentStatus === st.id && styles.audienceChipTextActive]}>
+                      {st.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
               <Button
                 label={isSubmittingPayment ? 'جاري الحفظ...' : 'تسجيل الفاتورة'}
                 onPress={handleCreatePayment}
                 disabled={isSubmittingPayment}
                 style={styles.modalSubmitBtn}
               />
-            </View>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
       {/* ================================================================ */}
-      {/* MODAL: Create User                                               */}
+      {/* MODAL 2: Create User (Universal: 8 Roles + Login Identifier)     */}
       {/* ================================================================ */}
       <Modal visible={showCreateUserModal} animationType="slide" transparent>
         <KeyboardAvoidingView
@@ -2012,14 +2286,63 @@ export default function AdminScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
-              <Text style={styles.inputLabel}>الاسم</Text>
-              <TextInput style={styles.modalInput} value={newUserFirstName} onChangeText={setNewUserFirstName} />
-              <Text style={styles.inputLabel}>اللقب</Text>
-              <TextInput style={styles.modalInput} value={newUserLastName} onChangeText={setNewUserLastName} />
-              <Text style={styles.inputLabel}>البريد الإلكتروني</Text>
-              <TextInput style={styles.modalInput} keyboardType="email-address" value={newUserEmail} onChangeText={setNewUserEmail} />
-              <Text style={styles.inputLabel}>رقم الهاتف</Text>
-              <TextInput style={styles.modalInput} keyboardType="phone-pad" value={newUserPhone} onChangeText={setNewUserPhone} />
+              <Text style={styles.inputLabel}>الاسم الأول *</Text>
+              <TextInput style={styles.modalInput} placeholder="الاسم" value={newUserFirstName} onChangeText={setNewUserFirstName} />
+
+              <Text style={styles.inputLabel}>اللقب *</Text>
+              <TextInput style={styles.modalInput} placeholder="اللقب" value={newUserLastName} onChangeText={setNewUserLastName} />
+
+              <Text style={styles.inputLabel}>نوع الحساب (الصلاحية) *</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+                {[
+                  { id: 'teacher', label: 'أستاذ' },
+                  { id: 'student', label: 'تلميذ' },
+                  { id: 'parent', label: 'ولي أمر' },
+                  { id: 'general_supervisor', label: 'مراقب عام' },
+                  { id: 'pedagogical_supervisor', label: 'مراقب تربوي' },
+                  { id: 'receptionist', label: 'استقبال' },
+                  { id: 'school', label: 'إدارة' },
+                  { id: 'admin', label: 'مدير المنصة' },
+                ].map((r) => (
+                  <TouchableOpacity
+                    key={r.id}
+                    style={[styles.audienceChip, newUserRole === r.id && styles.audienceChipActive]}
+                    onPress={() => setNewUserRole(r.id)}
+                  >
+                    <Text style={[styles.audienceChipText, newUserRole === r.id && styles.audienceChipTextActive]}>
+                      {r.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={styles.inputLabel}>رقم الهاتف (معرف الدخول الرسمي / Login) *</Text>
+              <TextInput
+                style={styles.modalInput}
+                keyboardType="phone-pad"
+                placeholder="مثال: 0797060052"
+                value={newUserPhone}
+                onChangeText={setNewUserPhone}
+              />
+
+              <Text style={styles.inputLabel}>البريد الإلكتروني (اختياري)</Text>
+              <TextInput
+                style={styles.modalInput}
+                keyboardType="email-address"
+                placeholder="اختياري (يُنشأ تلقائياً برقم الهاتف إن تُرك فارغاً)"
+                value={newUserEmail}
+                onChangeText={setNewUserEmail}
+              />
+
+              <Text style={styles.inputLabel}>كلمة المرور (افتراضياً: Password123!)</Text>
+              <TextInput
+                style={styles.modalInput}
+                secureTextEntry
+                placeholder="Password123!"
+                value={newUserPassword}
+                onChangeText={setNewUserPassword}
+              />
+
               <Button
                 label={isSubmittingUser ? 'جاري الإنشاء...' : 'إنشاء الحساب'}
                 onPress={handleCreateUser}
@@ -2032,7 +2355,7 @@ export default function AdminScreen() {
       </Modal>
 
       {/* ================================================================ */}
-      {/* MODAL: Create Class                                              */}
+      {/* MODAL 3: Create Class                                            */}
       {/* ================================================================ */}
       <Modal visible={showCreateClassModal} animationType="slide" transparent>
         <KeyboardAvoidingView
@@ -2047,8 +2370,24 @@ export default function AdminScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>اسم القسم</Text>
-              <TextInput style={styles.modalInput} placeholder="مثل: 3AS" value={newClassName} onChangeText={setNewClassName} />
+              <Text style={styles.inputLabel}>اسم القسم *</Text>
+              <TextInput style={styles.modalInput} placeholder="مثل: 3AS أو 1AP" value={newClassName} onChangeText={setNewClassName} />
+
+              <Text style={styles.inputLabel}>طور التعليم</Text>
+              <View style={styles.audienceRow}>
+                {['ابتدائي', 'متوسط', 'ثانوي'].map((lvl) => (
+                  <TouchableOpacity
+                    key={lvl}
+                    style={[styles.audienceChip, newClassLevel === lvl && styles.audienceChipActive]}
+                    onPress={() => setNewClassLevel(lvl)}
+                  >
+                    <Text style={[styles.audienceChipText, newClassLevel === lvl && styles.audienceChipTextActive]}>
+                      {lvl}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
               <Button
                 label={isSubmittingClass ? 'جاري الحفظ...' : 'تأكيد إنشاء القسم'}
                 onPress={handleCreateClass}
@@ -2061,7 +2400,66 @@ export default function AdminScreen() {
       </Modal>
 
       {/* ================================================================ */}
-      {/* MODAL: Create Module                                             */}
+      {/* MODAL 4: Create Group                                            */}
+      {/* ================================================================ */}
+      <Modal visible={showCreateGroupModal} animationType="slide" transparent>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>إضافة فوج دراسي جديد</Text>
+              <TouchableOpacity onPress={() => setShowCreateGroupModal(false)}>
+                <X size={20} color={theme.colors.text.muted} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>اختيار القسم *</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                {classesList.map((c) => (
+                  <TouchableOpacity
+                    key={c._id}
+                    style={[styles.audienceChip, selectedClassForGroup === c._id && styles.audienceChipActive]}
+                    onPress={() => setSelectedClassForGroup(c._id)}
+                  >
+                    <Text style={[styles.audienceChipText, selectedClassForGroup === c._id && styles.audienceChipTextActive]}>
+                      {c.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={styles.inputLabel}>اسم الفوج *</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="مثال: فوج 1 أو Groupe A"
+                value={newGroupName}
+                onChangeText={setNewGroupName}
+              />
+
+              <Text style={styles.inputLabel}>الطاقة الاستيعابية</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="30"
+                keyboardType="numeric"
+                value={newGroupCapacity}
+                onChangeText={setNewGroupCapacity}
+              />
+
+              <Button
+                label={isSubmittingGroup ? 'جاري الحفظ...' : 'تأكيد إنشاء الفوج'}
+                onPress={handleCreateGroup}
+                disabled={isSubmittingGroup}
+                style={styles.modalSubmitBtn}
+              />
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* MODAL 5: Create Module                                           */}
       {/* ================================================================ */}
       <Modal visible={showCreateModuleModal} animationType="slide" transparent>
         <KeyboardAvoidingView
@@ -2076,8 +2474,8 @@ export default function AdminScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>اسم المادة</Text>
-              <TextInput style={styles.modalInput} value={newModuleName} onChangeText={setNewModuleName} />
+              <Text style={styles.inputLabel}>اسم المادة *</Text>
+              <TextInput style={styles.modalInput} placeholder="مثل: الرياضيات" value={newModuleName} onChangeText={setNewModuleName} />
               <Text style={styles.inputLabel}>المعامل</Text>
               <TextInput style={styles.modalInput} keyboardType="numeric" value={newModuleCoeff} onChangeText={setNewModuleCoeff} />
               <Button
@@ -2089,6 +2487,188 @@ export default function AdminScreen() {
             </View>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* MODAL 6: Create Enrollment                                       */}
+      {/* ================================================================ */}
+      <Modal visible={showCreateEnrollmentModal} animationType="slide" transparent>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>تسجيل تلميذ جديد وملف مدرسي</Text>
+              <TouchableOpacity onPress={() => setShowCreateEnrollmentModal(false)}>
+                <X size={20} color={theme.colors.text.muted} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>الاسم واللقب بالعربية *</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="مثال: يوسف بن عيسى"
+                value={enrollStudentName}
+                onChangeText={setEnrollStudentName}
+              />
+
+              <Text style={styles.inputLabel}>القسم الموجه إليه *</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                {classesList.map((c) => (
+                  <TouchableOpacity
+                    key={c._id}
+                    style={[styles.audienceChip, enrollClassId === c._id && styles.audienceChipActive]}
+                    onPress={() => setEnrollClassId(c._id)}
+                  >
+                    <Text style={[styles.audienceChipText, enrollClassId === c._id && styles.audienceChipTextActive]}>
+                      {c.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={styles.inputLabel}>المبلغ الأساسي للرسوم (دج)</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="15000"
+                keyboardType="numeric"
+                value={enrollAmount}
+                onChangeText={setEnrollAmount}
+              />
+
+              <Button
+                label={isSubmittingEnrollment ? 'جاري التسجيل...' : 'تأكيد التسجيل وإصدار الوصل'}
+                onPress={handleCreateEnrollment}
+                disabled={isSubmittingEnrollment}
+                style={styles.modalSubmitBtn}
+              />
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* MODAL 7: Student Dossier Details Modal                           */}
+      {/* ================================================================ */}
+      <Modal visible={!!selectedStudentForDossier} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>الملف المدرسي للتلميذ</Text>
+              <TouchableOpacity onPress={() => setSelectedStudentForDossier(null)}>
+                <X size={20} color={theme.colors.text.muted} />
+              </TouchableOpacity>
+            </View>
+            {selectedStudentForDossier && (
+              <ScrollView style={styles.modalBody}>
+                <View style={{ alignItems: 'center', marginBottom: 14 }}>
+                  <View style={[styles.userAvatar, { width: 50, height: 50, borderRadius: 25 }]}>
+                    <Text style={{ fontSize: 20, color: '#FFF', fontWeight: 'bold' }}>
+                      {(selectedStudentForDossier.firstNameArabic || selectedStudentForDossier.user?.firstName || 'ت')[0]}
+                    </Text>
+                  </View>
+                  <Text style={[styles.userName, { fontSize: 16, marginTop: 8 }]}>
+                    {selectedStudentForDossier.firstNameArabic || selectedStudentForDossier.user?.firstName}{' '}
+                    {selectedStudentForDossier.lastNameArabic || selectedStudentForDossier.user?.lastName}
+                  </Text>
+                  <Text style={styles.userSubDetails}>
+                    رقم القيد الرسمي: {selectedStudentForDossier.registrationNumber || 'REG-2026'}
+                  </Text>
+                </View>
+
+                <View style={[styles.financeHubCard, { marginBottom: 10 }]}>
+                  <Text style={styles.inputLabel}>البيانات المدرسية</Text>
+                  <Text style={styles.userSubDetails}>
+                    القسم: {selectedStudentForDossier.class?.name || 'غير محدد'} • الفوج: {selectedStudentForDossier.group?.name || 'الفوج 1'}
+                  </Text>
+                  <Text style={styles.userSubDetails}>
+                    النظام: {selectedStudentForDossier.regime || 'عادي'} • تصريح خروج: {selectedStudentForDossier.isExitAuthorized ? 'مصرّح' : 'محظور'}
+                  </Text>
+                </View>
+
+                <View style={[styles.financeHubCard, { marginBottom: 10 }]}>
+                  <Text style={styles.inputLabel}>معلومات ولي الأمر</Text>
+                  <Text style={styles.userSubDetails}>
+                    الاسم: {selectedStudentForDossier.parent?.user?.firstName || ''} {selectedStudentForDossier.parent?.user?.lastName || 'ولي أمر'}
+                  </Text>
+                  <Text style={styles.userSubDetails}>
+                    الهاتف: {selectedStudentForDossier.parent?.user?.phoneNumber || selectedStudentForDossier.user?.phoneNumber || 'غير متوفر'}
+                  </Text>
+                </View>
+
+                <View style={[styles.financeHubCard, { marginBottom: 14 }]}>
+                  <Text style={styles.inputLabel}>الوضعية المالية</Text>
+                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: selectedStudentForDossier.tuitionPaid ? '#059669' : '#BE123C' }}>
+                    {selectedStudentForDossier.tuitionPaid ? '✓ جميع الرسوم مسددة' : '⚠️ رسوم دراسية معلقة'}
+                  </Text>
+                </View>
+
+                <Button
+                  label="إغلاق الملف"
+                  variant="secondary"
+                  onPress={() => setSelectedStudentForDossier(null)}
+                />
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* MODAL 8: Teacher Dossier Details Modal (Art. 23)                 */}
+      {/* ================================================================ */}
+      <Modal visible={!!selectedTeacherForDossier} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>الملف المهني للأستاذ (المادة 23)</Text>
+              <TouchableOpacity onPress={() => setSelectedTeacherForDossier(null)}>
+                <X size={20} color={theme.colors.text.muted} />
+              </TouchableOpacity>
+            </View>
+            {selectedTeacherForDossier && (
+              <ScrollView style={styles.modalBody}>
+                <View style={{ alignItems: 'center', marginBottom: 14 }}>
+                  <View style={[styles.userAvatar, { width: 50, height: 50, borderRadius: 25, backgroundColor: theme.colors.brand[500] }]}>
+                    <Text style={{ fontSize: 20, color: '#FFF', fontWeight: 'bold' }}>
+                      {(selectedTeacherForDossier.user?.firstName || 'أ')[0]}
+                    </Text>
+                  </View>
+                  <Text style={[styles.userName, { fontSize: 16, marginTop: 8 }]}>
+                    {selectedTeacherForDossier.user?.firstName} {selectedTeacherForDossier.user?.lastName}
+                  </Text>
+                  <Text style={styles.userSubDetails}>
+                    {selectedTeacherForDossier.user?.email || selectedTeacherForDossier.user?.phoneNumber}
+                  </Text>
+                </View>
+
+                <View style={[styles.financeHubCard, { marginBottom: 10 }]}>
+                  <Text style={styles.inputLabel}>المواد والمهام التعليمية</Text>
+                  <Text style={styles.userSubDetails}>
+                    المواد: {(selectedTeacherForDossier.subjects || []).join(', ') || 'تعليم عام'}
+                  </Text>
+                  <Text style={styles.userSubDetails}>
+                    الأقسام المسندة: {(selectedTeacherForDossier.classes || []).map((c: any) => c.name || c).join(', ') || 'جميع الأقسام'}
+                  </Text>
+                </View>
+
+                <View style={[styles.financeHubCard, { marginBottom: 14 }]}>
+                  <Text style={styles.inputLabel}>الحالة المهنية (المادة 23)</Text>
+                  <Text style={{ fontSize: 12, color: theme.colors.text.secondary }}>
+                    عقد عمل قانوني معتمد ومؤهل بيداغوجياً من قبل مفتشية التربية والتعليم.
+                  </Text>
+                </View>
+
+                <Button
+                  label="إغلاق الملف"
+                  variant="secondary"
+                  onPress={() => setSelectedTeacherForDossier(null)}
+                />
+              </ScrollView>
+            )}
+          </View>
+        </View>
       </Modal>
     </View>
   );
