@@ -353,7 +353,11 @@ export default function DashboardLayout({ children }) {
       >
         <div className="flex-1 min-h-0 flex flex-col gap-8">
           <div className="flex justify-between items-center gap-2 shrink-0">
-            <Link to="/" className="text-xl font-bold flex items-center gap-2.5 overflow-hidden shrink-0 group">
+            <Link
+              to="/"
+              onClick={() => setSidebarOpen(false)}
+              className="text-xl font-bold flex items-center gap-2.5 overflow-hidden shrink-0 group"
+            >
               <SchoolLogo size={36} />
               {!sidebarCollapsed && (
                 <div className="flex flex-col min-w-0">
@@ -388,6 +392,7 @@ export default function DashboardLayout({ children }) {
             {/* News feed is the primary entry point for every role */}
             <Link
               to="/feed"
+              onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
                 location.pathname === '/feed' ? 'bg-brand-500/10 border-brand-500/20 text-brand-600 font-semibold' : ''
               } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
@@ -408,6 +413,7 @@ export default function DashboardLayout({ children }) {
                 <Link
                   key={link.to}
                   to={link.to}
+                  onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
                     isActive ? 'bg-brand-500/10 border-brand-500/20 text-brand-600 font-semibold' : ''
                   } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
@@ -425,6 +431,7 @@ export default function DashboardLayout({ children }) {
             })}
             <Link
               to="/chat"
+              onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
                 location.pathname === '/chat' ? 'bg-brand-500/10 border-brand-500/20 text-brand-600 font-semibold' : ''
               } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}

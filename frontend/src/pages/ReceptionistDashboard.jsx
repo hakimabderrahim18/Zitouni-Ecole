@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +25,16 @@ import {
 } from 'lucide-react';
 
 export default function ReceptionistDashboard() {
-  const [activeTab, setActiveTab] = useState('visitors');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.endsWith('/exit-passes') || path.endsWith('/exit-pass')) return 'exit_passes';
+    return 'visitors';
+  };
+
+  const activeTab = getActiveTab();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     receptionist: null,
@@ -222,7 +232,7 @@ export default function ReceptionistDashboard() {
         {/* Navigation Tabs */}
         <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-[#FDFBF7] border-2 border-[#C9A24D]/35">
           <button
-            onClick={() => setActiveTab('visitors')}
+            onClick={() => navigate('/dashboard/receptionist/visitors')}
             className={`flex items-center gap-2.5 px-6 py-3 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer ${
               activeTab === 'visitors'
                 ? 'bg-[#7B1E3A] text-white shadow-md border border-[#C9A24D]'
@@ -234,7 +244,7 @@ export default function ReceptionistDashboard() {
           </button>
 
           <button
-            onClick={() => setActiveTab('exit_passes')}
+            onClick={() => navigate('/dashboard/receptionist/exit-passes')}
             className={`flex items-center gap-2.5 px-6 py-3 rounded-xl font-bold text-xs md:text-sm transition-all cursor-pointer ${
               activeTab === 'exit_passes'
                 ? 'bg-[#7B1E3A] text-white shadow-md border border-[#C9A24D]'

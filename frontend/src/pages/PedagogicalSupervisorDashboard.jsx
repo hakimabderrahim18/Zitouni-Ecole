@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,17 +26,21 @@ import {
 
 export default function PedagogicalSupervisorDashboard() {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('student_attendance');
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (location.pathname.endsWith('/student-attendance')) setActiveTab('student_attendance');
-    else if (location.pathname.endsWith('/timetable')) setActiveTab('timetable');
-    else if (location.pathname.endsWith('/lessons')) setActiveTab('lessons');
-    else if (location.pathname.endsWith('/exit-pass')) setActiveTab('exit_pass');
-    else if (location.pathname.endsWith('/damages')) setActiveTab('damages');
-    else if (location.pathname.endsWith('/canteen')) setActiveTab('canteen');
-    else if (location.pathname.endsWith('/attendance')) setActiveTab('attendance');
-  }, [location.pathname]);
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.endsWith('/student-attendance')) return 'student_attendance';
+    if (path.endsWith('/timetable')) return 'timetable';
+    if (path.endsWith('/lessons')) return 'lessons';
+    if (path.endsWith('/exit-pass') || path.endsWith('/exit-passes')) return 'exit_pass';
+    if (path.endsWith('/damages')) return 'damages';
+    if (path.endsWith('/canteen')) return 'canteen';
+    if (path.endsWith('/attendance')) return 'attendance';
+    return 'student_attendance';
+  };
+
+  const activeTab = getActiveTab();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     supervisor: null,
@@ -249,22 +253,22 @@ export default function PedagogicalSupervisorDashboard() {
         {/* Navigation Tabs */}
         <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-slate-900 border border-luxury-border/50">
           {[
-            { id: 'student_attendance', label: 'تسجيل حضور وغياب التلاميذ (6 حالات والإنذارات)', icon: CheckSquare },
-            { id: 'timetable', label: 'جداول توقيت الأقسام والأساتذة', icon: Calendar },
-            { id: 'lessons', label: 'معاينة وتأشير كراس الدروس (Page 20)', icon: BookOpen },
-            { id: 'attendance', label: 'تفقد حضور الأساتذة والخصم التلقائي', icon: Users },
-            { id: 'exit_pass', label: 'إصدار بطاقة ترخيص خروج تلميذ', icon: LogOut },
-            { id: 'damages', label: 'التبليغ عن إتلاف التجهيزات بالقسم', icon: ShieldAlert },
-            { id: 'canteen', label: 'حجز المطعم المدرسي اليومي', icon: Utensils }
+            { id: 'student_attendance', label: 'تسجيل حضور وغياب التلاميذ (6 حالات والإنذارات)', icon: CheckSquare, to: '/dashboard/pedagogical-supervisor/student-attendance' },
+            { id: 'timetable', label: 'جداول توقيت الأقسام والأساتذة', icon: Calendar, to: '/dashboard/pedagogical-supervisor/timetable' },
+            { id: 'lessons', label: 'معاينة وتأشير كراس الدروس (Page 20)', icon: BookOpen, to: '/dashboard/pedagogical-supervisor/lessons' },
+            { id: 'attendance', label: 'تفقد حضور الأساتذة والخصم التلقائي', icon: Users, to: '/dashboard/pedagogical-supervisor/attendance' },
+            { id: 'exit_pass', label: 'إصدار بطاقة ترخيص خروج تلميذ', icon: LogOut, to: '/dashboard/pedagogical-supervisor/exit-pass' },
+            { id: 'damages', label: 'التبليغ عن إتلاف التجهيزات بالقسم', icon: ShieldAlert, to: '/dashboard/pedagogical-supervisor/damages' },
+            { id: 'canteen', label: 'حجز المطعم المدرسي اليومي', icon: Utensils, to: '/dashboard/pedagogical-supervisor/canteen' }
           ].map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+            const isTabActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs md:text-sm transition-all duration-300 ${
-                  isActive
+                onClick={() => navigate(tab.to)}
+                className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs md:text-sm transition-all duration-300 cursor-pointer ${
+                  isTabActive
                     ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-slate-950 shadow-[0_5px_15px_rgba(244,180,0,0.25)]'
                     : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
                 }`}

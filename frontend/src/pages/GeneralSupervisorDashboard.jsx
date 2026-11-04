@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import DigitalExitPassModal from '../components/DigitalExitPassModal';
+import AttendanceManager from '../components/AttendanceManager';
+import TimetableGrid from '../components/TimetableGrid';
+import LessonNotebook from '../components/LessonNotebook';
+import LoginAuditView from '../components/LoginAuditView';
+import EnrollmentManager from '../components/EnrollmentManager';
+import ReportedMessagesManager from '../components/ReportedMessagesManager';
 import {
   Users,
   Calendar,
@@ -31,7 +37,25 @@ import {
 
 export default function GeneralSupervisorDashboard() {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('attendance');
+  const navigate = useNavigate();
+
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.endsWith('/student-attendance')) return 'student_attendance';
+    if (path.endsWith('/inscriptions')) return 'inscriptions';
+    if (path.endsWith('/login-audit')) return 'login_audit';
+    if (path.endsWith('/reported-messages')) return 'reported_messages';
+    if (path.endsWith('/timetable')) return 'timetable';
+    if (path.endsWith('/lessons')) return 'lessons';
+    if (path.endsWith('/attendance')) return 'attendance';
+    if (path.endsWith('/assignment') || path.endsWith('/classes-assignment')) return 'assignment';
+    if (path.endsWith('/damages')) return 'damages';
+    if (path.endsWith('/canteen')) return 'canteen';
+    if (path.endsWith('/exit-passes') || path.endsWith('/exit-pass')) return 'exit_passes';
+    return 'attendance';
+  };
+
+  const activeTab = getActiveTab();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     supervisor: null,
@@ -67,14 +91,6 @@ export default function GeneralSupervisorDashboard() {
     exitTime: '11:30',
     accompaniedBy: 'ولي الأمر / Parent',
   });
-
-  useEffect(() => {
-    if (location.pathname.endsWith('/attendance')) setActiveTab('attendance');
-    else if (location.pathname.endsWith('/assignment') || location.pathname.endsWith('/classes-assignment')) setActiveTab('assignment');
-    else if (location.pathname.endsWith('/damages')) setActiveTab('damages');
-    else if (location.pathname.endsWith('/canteen')) setActiveTab('canteen');
-    else if (location.pathname.endsWith('/exit-passes') || location.pathname.endsWith('/exit-pass')) setActiveTab('exit_passes');
-  }, [location.pathname]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -243,91 +259,103 @@ export default function GeneralSupervisorDashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-8 font-cairo text-right" dir="rtl">
-        {/* Header Banner */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-l from-slate-900 via-brand-950/40 to-slate-900 border border-luxury-border/60 p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/15 border border-brand-500/30 text-brand-400 text-xs font-bold">
-                <Briefcase className="w-4 h-4" />
-                <span>لوحة الرقابة العامة والمتابعة اليومية</span>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-                المراقب العام (Superviseur Général)
-              </h1>
-              <p className="text-slate-400 text-sm max-w-2xl leading-relaxed font-medium">
-                التفقد اليومي لحضور الأساتذة والطاقم وتفعيل الخصم التلقائي للغيابات، متابعة إتلافات التجهيزات اليومية، الإشراف على حجوزات المطعم، وتوزيع الأقسام على المراقبين التربويين.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="px-4 py-3 rounded-2xl bg-slate-950/80 border border-luxury-border text-center">
-                <span className="text-[10px] text-slate-400 block font-bold">تاريخ اليوم</span>
-                <span className="text-sm font-black text-brand-400 font-mono">
-                  {new Date().toLocaleDateString('ar-DZ')}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Subroutes triggered from the Sidebar */}
+        {activeTab === 'student_attendance' && <AttendanceManager />}
+        {activeTab === 'inscriptions' && <EnrollmentManager />}
+        {activeTab === 'login_audit' && <LoginAuditView />}
+        {activeTab === 'reported_messages' && <ReportedMessagesManager />}
+        {activeTab === 'timetable' && <TimetableGrid canImport={false} />}
+        {activeTab === 'lessons' && <LessonNotebook />}
 
-        {/* Alerts */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-300 flex items-center justify-between text-sm font-bold"
-            >
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
-                <span>{error}</span>
+        {/* General Supervisor Dedicated Management Views */}
+        {!['student_attendance', 'inscriptions', 'login_audit', 'reported_messages', 'timetable', 'lessons'].includes(activeTab) && (
+          <>
+            {/* Header Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-l from-slate-900 via-brand-950/40 to-slate-900 border border-luxury-border/60 p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/15 border border-brand-500/30 text-brand-400 text-xs font-bold">
+                    <Briefcase className="w-4 h-4" />
+                    <span>لوحة الرقابة العامة والمتابعة اليومية</span>
+                  </div>
+                  <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+                    المراقب العام (Superviseur Général)
+                  </h1>
+                  <p className="text-slate-400 text-sm max-w-2xl leading-relaxed font-medium">
+                    التفقد اليومي لحضور الأساتذة والطاقم وتفعيل الخصم التلقائي للغيابات، متابعة إتلافات التجهيزات اليومية، الإشراف على حجوزات المطعم، وتوزيع الأقسام على المراقبين التربويين.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="px-4 py-3 rounded-2xl bg-slate-950/80 border border-luxury-border text-center">
+                    <span className="text-[10px] text-slate-400 block font-bold">تاريخ اليوم</span>
+                    <span className="text-sm font-black text-brand-400 font-mono">
+                      {new Date().toLocaleDateString('ar-DZ')}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <button onClick={() => setError(null)}><X className="w-4 h-4" /></button>
-            </motion.div>
-          )}
-          {successMsg && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center justify-between text-sm font-bold"
-            >
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
-                <span>{successMsg}</span>
-              </div>
-              <button onClick={() => setSuccessMsg(null)}><X className="w-4 h-4" /></button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-slate-900 border border-luxury-border/50">
-          {[
-            { id: 'attendance', label: 'حضور الأساتذة والموظفين والخصم التلقائي', icon: Users },
-            { id: 'assignment', label: 'توزيع المراقبين التربويين على الأقسام', icon: Layers },
-            { id: 'damages', label: 'رقابة التجهيزات وسجل الإتلافات اليومي', icon: ShieldAlert },
-            { id: 'canteen', label: 'حجوزات المطعم المدرسي (الكانتين)', icon: Utensils }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs md:text-sm transition-all duration-300 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-slate-950 shadow-[0_5px_15px_rgba(244,180,0,0.25)]'
-                    : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
-                }`}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+            {/* Alerts */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-300 flex items-center justify-between text-sm font-bold"
+                >
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                  <button onClick={() => setError(null)}><X className="w-4 h-4" /></button>
+                </motion.div>
+              )}
+              {successMsg && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center justify-between text-sm font-bold"
+                >
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <span>{successMsg}</span>
+                  </div>
+                  <button onClick={() => setSuccessMsg(null)}><X className="w-4 h-4" /></button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Navigation Tabs */}
+            <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-slate-900 border border-luxury-border/50">
+              {[
+                { id: 'attendance', label: 'حضور الأساتذة والموظفين والخصم التلقائي', icon: Users, to: '/dashboard/general-supervisor/attendance' },
+                { id: 'assignment', label: 'توزيع المراقبين التربويين على الأقسام', icon: Layers, to: '/dashboard/general-supervisor/classes-assignment' },
+                { id: 'damages', label: 'رقابة التجهيزات وسجل الإتلافات اليومي', icon: ShieldAlert, to: '/dashboard/general-supervisor/damages' },
+                { id: 'canteen', label: 'حجوزات المطعم المدرسي (الكانتين)', icon: Utensils, to: '/dashboard/general-supervisor/canteen' },
+                { id: 'exit_passes', label: 'تراخيص خروج التلاميذ ومصادقة الإدارة', icon: LogOut, to: '/dashboard/general-supervisor/exit-passes' }
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isTabSelected = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => navigate(tab.to)}
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl font-bold text-xs md:text-sm transition-all duration-300 cursor-pointer ${
+                      isTabSelected
+                        ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-slate-950 shadow-[0_5px_15px_rgba(244,180,0,0.25)]'
+                        : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
 
         {/* TAB 1: STAFF ATTENDANCE & AUTOMATED DEDUCTIONS */}
         {activeTab === 'attendance' && (
@@ -1111,6 +1139,8 @@ export default function GeneralSupervisorDashboard() {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     </DashboardLayout>
