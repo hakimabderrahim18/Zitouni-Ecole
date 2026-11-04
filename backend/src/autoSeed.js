@@ -34,6 +34,7 @@ const ensureCoreAccounts = async () => {
         role: 'admin',
         phoneNumber: '0550000000',
         baseSalary: 120000,
+        profilePic: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
         username: 'school',
@@ -44,6 +45,7 @@ const ensureCoreAccounts = async () => {
         role: 'school',
         phoneNumber: '0550000001',
         baseSalary: 100000,
+        profilePic: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
         username: 'teacher.math',
@@ -54,6 +56,7 @@ const ensureCoreAccounts = async () => {
         role: 'teacher',
         phoneNumber: '0550111111',
         baseSalary: 65000,
+        profilePic: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
         username: 'superviseur.gen',
@@ -64,6 +67,7 @@ const ensureCoreAccounts = async () => {
         role: 'general_supervisor',
         phoneNumber: '0550112233',
         baseSalary: 85000,
+        profilePic: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
         username: 'superviseur.ped',
@@ -74,6 +78,7 @@ const ensureCoreAccounts = async () => {
         role: 'pedagogical_supervisor',
         phoneNumber: '0550445566',
         baseSalary: 75000,
+        profilePic: 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
         username: 'receptionniste',
@@ -84,6 +89,7 @@ const ensureCoreAccounts = async () => {
         role: 'receptionist',
         phoneNumber: '0550778899',
         baseSalary: 55000,
+        profilePic: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
         username: 'student.yanis',
@@ -93,6 +99,7 @@ const ensureCoreAccounts = async () => {
         lastName: 'مزيان',
         role: 'student',
         phoneNumber: '0550110022',
+        profilePic: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
         username: 'parent.meziane',
@@ -102,6 +109,7 @@ const ensureCoreAccounts = async () => {
         lastName: 'مزيان',
         role: 'parent',
         phoneNumber: '0550110011',
+        profilePic: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&h=400&q=80',
       }
     ];
 
@@ -120,6 +128,7 @@ const ensureCoreAccounts = async () => {
           role: u.role,
           phoneNumber: u.phoneNumber,
           baseSalary: u.baseSalary || 0,
+          profilePic: u.profilePic || '',
           isActive: true,
         });
       } else {
@@ -128,6 +137,7 @@ const ensureCoreAccounts = async () => {
         userDoc.email = u.email;
         userDoc.role = u.role;
         userDoc.phoneNumber = u.phoneNumber;
+        if (u.profilePic) userDoc.profilePic = u.profilePic;
         userDoc.isActive = true;
         userDoc.password = u.password; // Trigger bcrypt hash in pre('save')
         await userDoc.save();

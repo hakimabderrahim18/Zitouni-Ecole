@@ -85,7 +85,6 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
   const [metadata, setMetadata] = useState(null);
   const [selectedDivision, setSelectedDivision] = useState(fixedDivision || '1AM1');
   const [selectedTeacher, setSelectedTeacher] = useState(fixedTeacher || '');
-  const [selectedGroupFilter, setSelectedGroupFilter] = useState(fixedGroup || 'all');
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -94,10 +93,6 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
   useEffect(() => {
     if (fixedDivision) setSelectedDivision(fixedDivision);
   }, [fixedDivision]);
-
-  useEffect(() => {
-    if (fixedGroup) setSelectedGroupFilter(fixedGroup);
-  }, [fixedGroup]);
 
   // Fetch metadata on mount
   useEffect(() => {
@@ -288,12 +283,12 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
     }
   };
 
-  // Find slots matching day, hour, and group filter
+  // Find slots matching day and hour
   const getSlotEntries = (dayCode, hourCode) => {
     const matched = entries.filter(e => e.day === dayCode && e.hour === hourCode);
-    if (selectedGroupFilter && selectedGroupFilter !== 'all') {
+    if (fixedGroup) {
       const filtered = matched.filter(
-        e => !e.group || e.group === selectedGroupFilter || e.group === 'الكل' || e.group === 'CG'
+        e => !e.group || e.group === fixedGroup || e.group === 'الكل' || e.group === 'CG'
       );
       if (filtered.length > 0) return filtered;
     }
@@ -471,53 +466,6 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
                 }`}
               >
                 {d.nameArabic} ({d.code})
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Group Filter Pills Toolbar (User Request - every class and group) */}
-        <div className="pt-2.5 border-t border-[#C9A24D]/20 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#7B1E3A] font-serif flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-[#C9A24D]" />
-              <span>تصفية الفوج الدراسي:</span>
-            </span>
-            {selectedGroupFilter !== 'all' && (
-              <button
-                type="button"
-                onClick={() => setSelectedGroupFilter('all')}
-                className="text-[11px] text-[#7B1E3A] hover:underline font-bold cursor-pointer"
-              >
-                عرض جميع الأفواج
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-none -mx-1 px-1 flex-nowrap">
-            <button
-              type="button"
-              onClick={() => setSelectedGroupFilter('all')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs whitespace-nowrap ${
-                selectedGroupFilter === 'all'
-                  ? 'bg-[#7B1E3A] text-white shadow-xs'
-                  : 'bg-white hover:bg-[#F3E9DC] text-[#2B2022] border border-[#C9A24D]/35'
-              }`}
-            >
-              جميع الأفواج (الفوج أ + الفوج ب)
-            </button>
-            {['الفوج أ', 'الفوج ب'].map((grp) => (
-              <button
-                key={grp}
-                type="button"
-                onClick={() => setSelectedGroupFilter(grp)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs whitespace-nowrap ${
-                  selectedGroupFilter === grp
-                    ? 'bg-[#7B1E3A] text-white shadow-xs'
-                    : 'bg-white hover:bg-[#F3E9DC] text-[#2B2022] border border-[#C9A24D]/35'
-                }`}
-              >
-                {grp}
               </button>
             ))}
           </div>

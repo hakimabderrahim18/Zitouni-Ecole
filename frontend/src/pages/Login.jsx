@@ -311,8 +311,9 @@ export default function Login() {
                 disabled={isLoading || lockCountdown > 0}
                 whileHover={{ scale: lockCountdown > 0 ? 1 : 1.01, translateY: lockCountdown > 0 ? 0 : -1 }}
                 whileTap={{ scale: lockCountdown > 0 ? 1 : 0.98 }}
-                className="w-full py-4 mt-2 rounded-2xl text-white font-extrabold transition-all duration-300 disabled:opacity-50 text-sm flex items-center justify-center gap-3 relative overflow-hidden shadow-lg shadow-[#7B1E3A]/25 hover:shadow-xl hover:shadow-[#7B1E3A]/35 cursor-pointer disabled:cursor-not-allowed border border-[#C9A24D]/40"
+                className="w-full py-4 mt-2 rounded-2xl !text-white text-white font-extrabold transition-all duration-300 disabled:opacity-50 text-sm flex items-center justify-center gap-3 relative overflow-hidden shadow-lg shadow-[#7B1E3A]/25 hover:shadow-xl hover:shadow-[#7B1E3A]/35 cursor-pointer disabled:cursor-not-allowed border border-[#C9A24D]/40"
                 style={{
+                  color: '#FFFFFF',
                   background:
                     lockCountdown > 0
                       ? '#475569'
@@ -322,18 +323,18 @@ export default function Login() {
                 {isLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>جاري التحقق من الحساب...</span>
+                    <span className="!text-white text-white font-bold">جاري التحقق من الحساب...</span>
                   </>
                 ) : lockCountdown > 0 ? (
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 !text-white text-white font-bold">
                     <Clock className="w-4 h-4 text-[#F3E9DC] animate-spin" />
-                    <span>
+                    <span className="!text-white text-white font-bold">
                       مجمّد مؤقتاً ({Math.floor(lockCountdown / 60)}:
                       {String(lockCountdown % 60).padStart(2, '0')})
                     </span>
                   </span>
                 ) : (
-                  <span className="tracking-wide text-[15px] font-bold">تسجيل الدخول</span>
+                  <span className="tracking-wide text-[16px] font-black !text-white text-white drop-shadow-xs">تسجيل الدخول</span>
                 )}
               </motion.button>
 

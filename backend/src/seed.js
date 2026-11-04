@@ -224,8 +224,60 @@ const seedDatabase = async (standalone = false) => {
     const [g1Sci_A, g1Sci_B] = groupsOf(c1Sci._id);
     const [g3S_A, g3S_B] = groupsOf(c3S._id);
 
+    // Profile photos map for real people pictures
+    const AVATAR_MAP = {
+      admin: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80',
+      school: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80',
+      'superviseur.gen': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80',
+      'superviseur.ped': 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?auto=format&fit=crop&w=400&h=400&q=80',
+      receptionniste: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80',
+      'teacher.math': 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&h=400&q=80',
+      'teacher.science': 'https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?auto=format&fit=crop&w=400&h=400&q=80',
+      'teacher.arabe': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&h=400&q=80',
+      'teacher.physique': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&h=400&q=80',
+      'teacher.francais': 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=400&h=400&q=80',
+      'teacher.histoire': 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=400&q=80',
+      'parent.meziane': 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&h=400&q=80',
+      'parent.belaid': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&h=400&q=80',
+      'parent.toumi': 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=400&h=400&q=80',
+      'parent.amrani': 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=400&h=400&q=80',
+      'parent.slimani': 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&h=400&q=80',
+      'parent.zerrouki': 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.yanis': 'https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.leila': 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.layla': 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.meriem': 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.amin': 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.amine': 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.samir': 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.lynda': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.riad': 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.feriel': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.anis': 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.kenza': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.bilal': 'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.yasmine': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.sarah': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.mehdi': 'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?auto=format&fit=crop&w=400&h=400&q=80',
+      'student.ines': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=400&h=400&q=80',
+    };
+
+    const ROLE_FALLBACKS = {
+      admin: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80',
+      school: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80',
+      general_supervisor: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80',
+      pedagogical_supervisor: 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?auto=format&fit=crop&w=400&h=400&q=80',
+      receptionist: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80',
+      teacher: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&h=400&q=80',
+      parent: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&h=400&q=80',
+      student: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&w=400&h=400&q=80',
+    };
+
     // Helper to safely upsert core users avoiding race conditions
     const upsertUser = async (uData) => {
+      if (!uData.profilePic) {
+        uData.profilePic = AVATAR_MAP[uData.username] || ROLE_FALLBACKS[uData.role] || ROLE_FALLBACKS.student;
+      }
       let existing = await User.findOne({
         $or: [{ username: uData.username }, { email: uData.email }]
       }).select('+password');
@@ -253,6 +305,7 @@ const seedDatabase = async (standalone = false) => {
       role: 'admin',
       phoneNumber: '0550000000',
       baseSalary: 130000,
+      profilePic: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80',
     });
 
     const schoolUser = await upsertUser({
@@ -268,6 +321,7 @@ const seedDatabase = async (standalone = false) => {
       role: 'school',
       phoneNumber: '0550000001',
       baseSalary: 110000,
+      profilePic: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80',
     });
 
     // 6. Supervisors (General & Pedagogical)
@@ -286,13 +340,17 @@ const seedDatabase = async (standalone = false) => {
       phoneNumber: '0550112233',
       baseSalary: 85000,
       salaryDeductionPerAbsence: 3000,
+      profilePic: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80',
     });
-    const genSupDoc = await Supervisor.create({
-      user: genSupUser._id,
-      supervisorType: 'general_supervisor',
-      assignedClasses: [c1AP._id, c4AP._id, c1AM._id, c2AM._id, c1Sci._id, c3S._id],
-      officeLocation: 'المكتب الرئيسي - الجناح الإداري',
-    });
+    let genSupDoc = await Supervisor.findOne({ user: genSupUser._id });
+    if (!genSupDoc) {
+      genSupDoc = await Supervisor.create({
+        user: genSupUser._id,
+        supervisorType: 'general_supervisor',
+        assignedClasses: [c1AP._id, c4AP._id, c1AM._id, c2AM._id, c1Sci._id, c3S._id],
+        officeLocation: 'المكتب الرئيسي - الجناح الإداري',
+      });
+    }
 
     const pedSupUser = await upsertUser({
       username: 'superviseur.ped',
@@ -308,13 +366,17 @@ const seedDatabase = async (standalone = false) => {
       phoneNumber: '0550445566',
       baseSalary: 78000,
       salaryDeductionPerAbsence: 2800,
+      profilePic: 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?auto=format&fit=crop&w=400&h=400&q=80',
     });
-    const pedSupDoc = await Supervisor.create({
-      user: pedSupUser._id,
-      supervisorType: 'pedagogical_supervisor',
-      assignedClasses: [c1AP._id, c4AP._id, c1AM._id, c2AM._id, c1Sci._id, c3S._id],
-      officeLocation: 'مكتب التوجيه والمتابعة البيداغوجية',
-    });
+    let pedSupDoc = await Supervisor.findOne({ user: pedSupUser._id });
+    if (!pedSupDoc) {
+      pedSupDoc = await Supervisor.create({
+        user: pedSupUser._id,
+        supervisorType: 'pedagogical_supervisor',
+        assignedClasses: [c1AP._id, c4AP._id, c1AM._id, c2AM._id, c1Sci._id, c3S._id],
+        officeLocation: 'مكتب التوجيه والمتابعة البيداغوجية',
+      });
+    }
 
     // 7. Receptionist
     console.log('[Seed] Seeding Receptionist...');
@@ -332,8 +394,12 @@ const seedDatabase = async (standalone = false) => {
       phoneNumber: '0550778899',
       baseSalary: 55000,
       salaryDeductionPerAbsence: 2000,
+      profilePic: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80',
     });
-    const recepDoc = await Receptionist.create({ user: recepUser._id });
+    let recepDoc = await Receptionist.findOne({ user: recepUser._id });
+    if (!recepDoc) {
+      recepDoc = await Receptionist.create({ user: recepUser._id });
+    }
 
     // 8. Teachers across subjects
     console.log('[Seed] Seeding Teachers...');
@@ -433,7 +499,7 @@ const seedDatabase = async (standalone = false) => {
     const teacherDocs = [];
     const teacherUsers = [];
     for (const t of teacherConfigs) {
-      const u = await User.create({
+      const u = await upsertUser({
         username: t.username,
         email: t.email,
         password: t.phone,
@@ -447,13 +513,22 @@ const seedDatabase = async (standalone = false) => {
         phoneNumber: t.phone,
         baseSalary: t.salary,
         salaryDeductionPerAbsence: 2500,
+        profilePic: AVATAR_MAP[t.username] || ROLE_FALLBACKS.teacher,
       });
-      const prof = await Teacher.create({
-        user: u._id,
-        subjects: t.subjects,
-        classes: t.classes,
-        groups: t.groups,
-      });
+      let prof = await Teacher.findOne({ user: u._id });
+      if (!prof) {
+        prof = await Teacher.create({
+          user: u._id,
+          subjects: t.subjects,
+          classes: t.classes,
+          groups: t.groups,
+        });
+      } else {
+        prof.subjects = t.subjects;
+        prof.classes = t.classes;
+        prof.groups = t.groups;
+        await prof.save();
+      }
       teacherDocs.push(prof);
       teacherUsers.push(u);
 
@@ -589,7 +664,7 @@ const seedDatabase = async (standalone = false) => {
     const parentDocs = [];
     const parentUsers = [];
     for (const p of parentConfigs) {
-      const u = await User.create({
+      const u = await upsertUser({
         username: p.username,
         email: p.email,
         password: p.phone,
@@ -601,18 +676,34 @@ const seedDatabase = async (standalone = false) => {
         lastNameFrench: p.lastNameFrench,
         role: 'parent',
         phoneNumber: p.phone,
+        profilePic: AVATAR_MAP[p.username] || ROLE_FALLBACKS.parent,
       });
-      const prof = await Parent.create({
-        user: u._id,
-        fatherNameArabic: p.fatherNameArabic,
-        fatherNameFrench: p.fatherNameFrench,
-        fatherPhone: p.fatherPhone,
-        motherNameArabic: p.motherNameArabic,
-        motherNameFrench: p.motherNameFrench,
-        motherPhone: p.motherPhone,
-        profession: p.profession,
-        address: p.address,
-      });
+      let prof = await Parent.findOne({ user: u._id });
+      if (!prof) {
+        prof = await Parent.create({
+          user: u._id,
+          fatherNameArabic: p.fatherNameArabic,
+          fatherNameFrench: p.fatherNameFrench,
+          fatherPhone: p.fatherPhone,
+          motherNameArabic: p.motherNameArabic,
+          motherNameFrench: p.motherNameFrench,
+          motherPhone: p.motherPhone,
+          profession: p.profession,
+          address: p.address,
+        });
+      } else {
+        Object.assign(prof, {
+          fatherNameArabic: p.fatherNameArabic,
+          fatherNameFrench: p.fatherNameFrench,
+          fatherPhone: p.fatherPhone,
+          motherNameArabic: p.motherNameArabic,
+          motherNameFrench: p.motherNameFrench,
+          motherPhone: p.motherPhone,
+          profession: p.profession,
+          address: p.address,
+        });
+        await prof.save();
+      }
       parentDocs.push(prof);
       parentUsers.push(u);
     }
@@ -844,7 +935,7 @@ const seedDatabase = async (standalone = false) => {
     for (const s of studentConfigs) {
       const birthDate = new Date(s.dob);
       const dobPassword = s.dob; // Exact YYYY-MM-DD
-      const u = await User.create({
+      const u = await upsertUser({
         username: s.username,
         email: s.email,
         password: dobPassword,
@@ -855,26 +946,48 @@ const seedDatabase = async (standalone = false) => {
         firstNameFrench: s.firstNameFrench,
         lastNameFrench: s.lastNameFrench,
         role: 'student',
+        profilePic: AVATAR_MAP[s.username] || ROLE_FALLBACKS.student,
       });
       const pDoc = parentDocs[s.parentIndex];
-      const stud = await Student.create({
-        user: u._id,
-        nationalIdDigitization: s.natId,
-        registrationNumber: s.reg,
-        firstNameArabic: s.firstNameArabic,
-        lastNameArabic: s.lastNameArabic,
-        firstNameFrench: s.firstNameFrench,
-        lastNameFrench: s.lastNameFrench,
-        gender: s.gender,
-        dateOfBirth: birthDate,
-        placeOfBirth: s.pob,
-        class: s.class._id,
-        group: s.group._id,
-        parent: pDoc._id,
-      });
+      let stud = await Student.findOne({ user: u._id });
+      if (!stud) {
+        stud = await Student.create({
+          user: u._id,
+          nationalIdDigitization: s.natId,
+          registrationNumber: s.reg,
+          firstNameArabic: s.firstNameArabic,
+          lastNameArabic: s.lastNameArabic,
+          firstNameFrench: s.firstNameFrench,
+          lastNameFrench: s.lastNameFrench,
+          gender: s.gender,
+          dateOfBirth: birthDate,
+          placeOfBirth: s.pob,
+          class: s.class._id,
+          group: s.group._id,
+          parent: pDoc._id,
+        });
+      } else {
+        Object.assign(stud, {
+          nationalIdDigitization: s.natId,
+          registrationNumber: s.reg,
+          firstNameArabic: s.firstNameArabic,
+          lastNameArabic: s.lastNameArabic,
+          firstNameFrench: s.firstNameFrench,
+          lastNameFrench: s.lastNameFrench,
+          gender: s.gender,
+          dateOfBirth: birthDate,
+          placeOfBirth: s.pob,
+          class: s.class._id,
+          group: s.group._id,
+          parent: pDoc._id,
+        });
+        await stud.save();
+      }
 
-      pDoc.children.push(stud._id);
-      await pDoc.save();
+      if (!pDoc.children.includes(stud._id)) {
+        pDoc.children.push(stud._id);
+        await pDoc.save();
+      }
 
       studentDocs.push(stud);
       studentUsers.push(u);

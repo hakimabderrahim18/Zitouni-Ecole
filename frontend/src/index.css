@@ -251,8 +251,14 @@
 /* Explicitly preserve white text on dark solid elements like burgundy buttons and own chat messages */
 .theme-prestige [class~="bg-[#7B1E3A]"],
 .theme-prestige [class~="bg-[#62162d]"],
-.theme-prestige .chat-own-bubble {
-  color: #FFFFFF;
+.theme-prestige .chat-own-bubble,
+.theme-prestige button[type="submit"],
+.theme-prestige button[type="submit"] span,
+.theme-sand button[type="submit"],
+.theme-sand button[type="submit"] span,
+button[type="submit"] .text-white,
+button[type="submit"] span {
+  color: #FFFFFF !important;
 }
 
 .theme-sand [class*="bg-brand-"].text-white,
