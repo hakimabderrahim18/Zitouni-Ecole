@@ -22,31 +22,56 @@ const SUBJECT_MAP = {
   'DROIT': { arabic: 'القانون', french: 'Droit' },
   'GMECA': { arabic: 'هندسة ميكانيكية', french: 'Génie Mécanique' },
   'GCIVL': { arabic: 'هندسة مدنية', french: 'Génie Civil' },
+  'CIVIQ': { arabic: 'التربية المدنية', french: 'Éducation Civique' },
   'ITA': { arabic: 'اللغة الإيطالية', french: 'Italien' },
   'ESP': { arabic: 'اللغة الإسبانية', french: 'Espagnol' },
   'DESIN': { arabic: 'الرسم والتربية التشكيلية', french: 'Arts Plastiques' },
 };
 
 const DIVISION_MAP = {
+  // Primary Classes
+  '1AP': 'السنة الأولى ابتدائي',
+  '2AP': 'السنة الثانية ابتدائي',
+  '3AP': 'السنة الثالثة ابتدائي',
+  '4AP': 'السنة الرابعة ابتدائي',
+  '5AP': 'السنة الخامسة ابتدائي',
+
+  // Middle School Classes
+  '1AM': 'السنة الأولى متوسط',
   '1AM1': '1 متوسط 1',
+  '2AM': 'السنة الثانية متوسط',
   '2AM1': '2 متوسط 1',
+  '3AM': 'السنة الثالثة متوسط',
   '3AM1': '3 متوسط 1',
   '3AM2': '3 متوسط 2',
+  '4AM': 'السنة الرابعة متوسط',
   '4AM1': '4 متوسط 1',
   '4AM2': '4 متوسط 2',
+
+  // Secondary School Classes
+  '1S': 'أولى ثانوي علمي',
+  '1 Scientifique': 'أولى ثانوي علمي',
   '1S1': '1 ثانوي علمي 1',
   '1S2': '1 ثانوي علمي 2',
   '1L': '1 ثانوي آداب',
+  '1 Lettres': 'أولى ثانوي أدبي',
+  '2S': '2 ثانوي علوم تجريبية',
   '2SE': '2 ثانوي علوم تجريبية',
+  '2M': '2 ثانوي رياضيات',
   '2MA': '2 ثانوي رياضيات',
+  '2MT': '2 ثانوي تقني رياضي',
   '2MTgm': '2 ثانوي تقني رياضي (ميكانيك)',
   '2LE': '2 ثانوي لغات أجنبية',
+  '2LV': '2 ثانوي لغات أجنبية',
   '2LP': '2 ثانوي آداب وفلسفة',
   '2GT': '2 ثانوي تسيير واقتصاد',
+  '3S': '3 ثانوي علوم تجريبية (بكالوريا)',
   '3SE': '3 ثانوي علوم تجريبية (بكالوريا)',
   '3M': '3 ثانوي رياضيات (بكالوريا)',
+  '3MT': '3 ثانوي تقني رياضي (مدني)',
   '3MTgc': '3 ثانوي تقني رياضي (مدني)',
   '3GE': '3 ثانوي تسيير واقتصاد (بكالوريا)',
+  '3GT': '3 ثانوي تسيير واقتصاد (بكالوريا)',
   '3LEs1': '3 ثانوي لغات أجنبية (إسباني 1)',
   '3LEs2': '3 ثانوي لغات أجنبية (إسباني 2)',
   '3LEit': '3 ثانوي لغات أجنبية (إيطالي)',
@@ -261,20 +286,68 @@ const importTimetableExcel = async (req, res, next) => {
   }
 };
 
+const ALIAS_MAP = {
+  '1AM': ['1AM1'],
+  '1AM1': ['1AM'],
+  '2AM': ['2AM1'],
+  '2AM1': ['2AM'],
+  '3AM': ['3AM1', '3AM2'],
+  '4AM': ['4AM1', '4AM2'],
+  '1S': ['1S1', '1S2', '1 Scientifique'],
+  '1 Scientifique': ['1S', '1S1', '1S2'],
+  '1L': ['1 Lettres'],
+  '1 Lettres': ['1L'],
+  '2S': ['2SE'],
+  '2SE': ['2S'],
+  '2M': ['2MA'],
+  '2MA': ['2M'],
+  '2MT': ['2MTgm'],
+  '2MTgm': ['2MT'],
+  '2LV': ['2LE'],
+  '2LE': ['2LV'],
+  '3S': ['3SE'],
+  '3SE': ['3S'],
+  '3MT': ['3MTgc'],
+  '3MTgc': ['3MT'],
+  '3GT': ['3GE'],
+  '3GE': ['3GT'],
+};
+
 // 2. Get Timetable for a specific Division (Class)
 const getTimetableByDivision = async (req, res, next) => {
   try {
     const { division } = req.params;
-    const { academicYear } = req.query;
+    const { academicYear, group } = req.query;
 
-    const query = { division: division.trim() };
+    const trimmed = (division || '').trim();
+    const query = { division: trimmed };
     if (academicYear) query.academicYear = academicYear;
+    if (group && group !== 'all') {
+      query.$or = [{ group }, { group: '' }, { group: null }, { group: 'الكل' }];
+    }
 
-    const entries = await TimetableEntry.find(query).sort({ day: 1, hour: 1 });
+    let entries = await TimetableEntry.find(query).sort({ day: 1, hour: 1 });
+
+    // Fallback aliases if no entries found for direct code
+    if (entries.length === 0) {
+      const aliases = ALIAS_MAP[trimmed] || [];
+      for (const alt of aliases) {
+        const altQuery = { division: alt };
+        if (academicYear) altQuery.academicYear = academicYear;
+        if (group && group !== 'all') {
+          altQuery.$or = [{ group }, { group: '' }, { group: null }, { group: 'الكل' }];
+        }
+        const found = await TimetableEntry.find(altQuery).sort({ day: 1, hour: 1 });
+        if (found.length > 0) {
+          entries = found;
+          break;
+        }
+      }
+    }
 
     res.status(200).json({
-      division,
-      divisionArabic: DIVISION_MAP[division] || division,
+      division: trimmed,
+      divisionArabic: DIVISION_MAP[trimmed] || trimmed,
       entriesCount: entries.length,
       entries,
     });
@@ -331,16 +404,26 @@ const getMyTimetable = async (req, res, next) => {
     const user = req.user;
 
     if (user.role === 'student') {
-      const student = await Student.findOne({ user: user.id }).populate('class');
+      const student = await Student.findOne({ user: user.id }).populate('class').populate('group');
       if (!student || !student.class) {
         return res.status(200).json({ entries: [], message: 'Classe non encore assignée.' });
       }
       const division = student.class.name;
-      const entries = await TimetableEntry.find({ division }).sort({ day: 1, hour: 1 });
+      let entries = await TimetableEntry.find({ division }).sort({ day: 1, hour: 1 });
+      if (entries.length === 0 && ALIAS_MAP[division]) {
+        for (const alt of ALIAS_MAP[division]) {
+          const found = await TimetableEntry.find({ division: alt }).sort({ day: 1, hour: 1 });
+          if (found.length > 0) {
+            entries = found;
+            break;
+          }
+        }
+      }
       return res.status(200).json({
         role: 'student',
         division,
         divisionArabic: DIVISION_MAP[division] || division,
+        group: student.group?.name || '',
         entries,
       });
     }
@@ -370,18 +453,28 @@ const getChildTimetable = async (req, res, next) => {
   try {
     const { studentId } = req.params;
 
-    const student = await Student.findById(studentId).populate('class');
+    const student = await Student.findById(studentId).populate('class').populate('group');
     if (!student || !student.class) {
       return res.status(200).json({ entries: [], message: 'Classe introuvable pour cet élève.' });
     }
 
     const division = student.class.name;
-    const entries = await TimetableEntry.find({ division }).sort({ day: 1, hour: 1 });
+    let entries = await TimetableEntry.find({ division }).sort({ day: 1, hour: 1 });
+    if (entries.length === 0 && ALIAS_MAP[division]) {
+      for (const alt of ALIAS_MAP[division]) {
+        const found = await TimetableEntry.find({ division: alt }).sort({ day: 1, hour: 1 });
+        if (found.length > 0) {
+          entries = found;
+          break;
+        }
+      }
+    }
 
     res.status(200).json({
       studentId,
       division,
       divisionArabic: DIVISION_MAP[division] || division,
+      group: student.group?.name || '',
       entries,
     });
   } catch (error) {
@@ -389,7 +482,7 @@ const getChildTimetable = async (req, res, next) => {
   }
 };
 
-// 7. Get Timetable Metadata & Filters (Divisions, Teachers, Subjects, Days, Hours)
+// 7. Get Timetable Metadata & Filters (Divisions, Teachers, Subjects, Days, Hours, Groups)
 const getTimetableMetadata = async (req, res, next) => {
   try {
     const academicYear = req.query.academicYear || '2025-2026';
@@ -398,6 +491,7 @@ const getTimetableMetadata = async (req, res, next) => {
     const teachers = await TimetableEntry.distinct('teacherName', { academicYear });
     const subjects = await TimetableEntry.distinct('subjectCode', { academicYear });
     const rooms = await TimetableEntry.distinct('room', { academicYear });
+    const groups = await TimetableEntry.distinct('group', { academicYear });
 
     const formattedDivisions = divisions.sort().map(d => ({
       code: d,
@@ -417,6 +511,7 @@ const getTimetableMetadata = async (req, res, next) => {
       teachers: teachers.sort(),
       subjects: formattedSubjects,
       rooms: rooms.filter(Boolean).sort(),
+      groups: groups.filter(Boolean).sort(),
       days: [
         { code: 'Dimanche', nameArabic: 'الأحد' },
         { code: 'Lundi', nameArabic: 'الإثنين' },

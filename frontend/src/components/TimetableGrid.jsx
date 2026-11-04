@@ -79,16 +79,25 @@ const DEFAULT_HOURS = [
   { code: '15H30', timeSlot: '15:30 - 16:30' },
 ];
 
-export default function TimetableGrid({ canImport = true, fixedDivision = null, fixedTeacher = null }) {
+export default function TimetableGrid({ canImport = true, fixedDivision = null, fixedTeacher = null, fixedGroup = null }) {
   const { settings } = useSchoolStore();
   const [viewMode, setViewMode] = useState(fixedTeacher ? 'teacher' : 'division'); // 'division' | 'teacher'
   const [metadata, setMetadata] = useState(null);
   const [selectedDivision, setSelectedDivision] = useState(fixedDivision || '1AM1');
   const [selectedTeacher, setSelectedTeacher] = useState(fixedTeacher || '');
+  const [selectedGroupFilter, setSelectedGroupFilter] = useState(fixedGroup || 'all');
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [selectedDayFilter, setSelectedDayFilter] = useState('all');
+
+  useEffect(() => {
+    if (fixedDivision) setSelectedDivision(fixedDivision);
+  }, [fixedDivision]);
+
+  useEffect(() => {
+    if (fixedGroup) setSelectedGroupFilter(fixedGroup);
+  }, [fixedGroup]);
 
   // Fetch metadata on mount
   useEffect(() => {
@@ -107,11 +116,25 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
   const fetchMetadata = async () => {
     try {
       const token = getToken();
+      const user = useAuthStore.getState().user;
+      if (user?.role === 'student' && !fixedDivision) {
+        try {
+          const myRes = await axios.get(`${API_URL}/timetable/my`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (myRes.data?.division) {
+            setSelectedDivision(myRes.data.division);
+            if (myRes.data.group) setSelectedGroupFilter(myRes.data.group);
+            setEntries(myRes.data.entries || []);
+          }
+        } catch (_) {}
+      }
+
       const res = await axios.get(`${API_URL}/timetable/metadata`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMetadata(res.data);
-      if (res.data.divisions && res.data.divisions.length > 0 && !fixedDivision) {
+      if (res.data.divisions && res.data.divisions.length > 0 && !fixedDivision && (!user || user.role !== 'student')) {
         if (!selectedDivision || !res.data.divisions.some(d => d.code === selectedDivision)) {
           setSelectedDivision(res.data.divisions[0].code);
         }
@@ -265,9 +288,16 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
     }
   };
 
-  // Find slot matching day and hour
-  const getSlotEntry = (dayCode, hourCode) => {
-    return entries.find(e => e.day === dayCode && e.hour === hourCode);
+  // Find slots matching day, hour, and group filter
+  const getSlotEntries = (dayCode, hourCode) => {
+    const matched = entries.filter(e => e.day === dayCode && e.hour === hourCode);
+    if (selectedGroupFilter && selectedGroupFilter !== 'all') {
+      const filtered = matched.filter(
+        e => !e.group || e.group === selectedGroupFilter || e.group === 'الكل' || e.group === 'CG'
+      );
+      if (filtered.length > 0) return filtered;
+    }
+    return matched;
   };
 
   const handlePrint = () => {
@@ -445,6 +475,53 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
             ))}
           </div>
         </div>
+
+        {/* Group Filter Pills Toolbar (User Request - every class and group) */}
+        <div className="pt-2.5 border-t border-[#C9A24D]/20 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#7B1E3A] font-serif flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-[#C9A24D]" />
+              <span>تصفية الفوج الدراسي:</span>
+            </span>
+            {selectedGroupFilter !== 'all' && (
+              <button
+                type="button"
+                onClick={() => setSelectedGroupFilter('all')}
+                className="text-[11px] text-[#7B1E3A] hover:underline font-bold cursor-pointer"
+              >
+                عرض جميع الأفواج
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-none -mx-1 px-1 flex-nowrap">
+            <button
+              type="button"
+              onClick={() => setSelectedGroupFilter('all')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs whitespace-nowrap ${
+                selectedGroupFilter === 'all'
+                  ? 'bg-[#7B1E3A] text-white shadow-xs'
+                  : 'bg-white hover:bg-[#F3E9DC] text-[#2B2022] border border-[#C9A24D]/35'
+              }`}
+            >
+              جميع الأفواج (الفوج أ + الفوج ب)
+            </button>
+            {['الفوج أ', 'الفوج ب'].map((grp) => (
+              <button
+                key={grp}
+                type="button"
+                onClick={() => setSelectedGroupFilter(grp)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-2xs whitespace-nowrap ${
+                  selectedGroupFilter === grp
+                    ? 'bg-[#7B1E3A] text-white shadow-xs'
+                    : 'bg-white hover:bg-[#F3E9DC] text-[#2B2022] border border-[#C9A24D]/35'
+                }`}
+              >
+                {grp}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Printable Schedule Card - Prestige Académique (Phone Mode Optimized) */}
@@ -532,8 +609,8 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
 
                           {/* Days slots */}
                           {visibleDays.map(d => {
-                            const slot = getSlotEntry(d.code, h.code);
-                            if (!slot) {
+                            const slots = getSlotEntries(d.code, h.code);
+                            if (!slots || slots.length === 0) {
                               return (
                                 <td
                                   key={`${d.code}_${h.code}`}
@@ -560,78 +637,86 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
                               );
                             }
 
-                            const colorClass = SUBJECT_COLORS[slot.subjectCode] || 'bg-white border-[#C9A24D]/30 text-[#2B2022]';
-
                             return (
                               <td
                                 key={`${d.code}_${h.code}`}
                                 className="border-l border-[#C9A24D]/25 p-1 sm:p-1.5 align-middle bg-white/60 relative group"
                               >
-                                <div className={`p-2 sm:p-2.5 rounded-xl border text-center transition-all ${colorClass} shadow-xs relative`}>
-                                  {/* Quick Action Buttons (Edit / Delete) for Admin */}
-                                  {canImport && (
-                                    <div className="absolute top-1 left-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-xs p-1 rounded-lg border border-[#C9A24D]/40 shadow-sm print:hidden z-10">
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          openEditEntryModal(slot);
-                                        }}
-                                        className="p-1 hover:bg-[#F3E9DC] text-[#7B1E3A] rounded transition-colors cursor-pointer"
-                                        title="تعديل الحصة الدراسية"
+                                <div className="space-y-1.5">
+                                  {slots.map(slot => {
+                                    const colorClass = SUBJECT_COLORS[slot.subjectCode] || 'bg-white border-[#C9A24D]/30 text-[#2B2022]';
+                                    return (
+                                      <div
+                                        key={slot._id || `${slot.day}_${slot.hour}_${slot.group || ''}_${slot.subjectCode}`}
+                                        className={`p-2 sm:p-2.5 rounded-xl border text-center transition-all ${colorClass} shadow-xs relative`}
                                       >
-                                        <Edit2 className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteEntry(slot._id);
-                                        }}
-                                        className="p-1 hover:bg-red-50 text-red-600 rounded transition-colors cursor-pointer"
-                                        title="حذف الحصة الدراسية"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-                                  )}
+                                        {/* Quick Action Buttons (Edit / Delete) for Admin */}
+                                        {canImport && (
+                                          <div className="absolute top-1 left-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-xs p-1 rounded-lg border border-[#C9A24D]/40 shadow-sm print:hidden z-10">
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openEditEntryModal(slot);
+                                              }}
+                                              className="p-1 hover:bg-[#F3E9DC] text-[#7B1E3A] rounded transition-colors cursor-pointer"
+                                              title="تعديل الحصة الدراسية"
+                                            >
+                                              <Edit2 className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteEntry(slot._id);
+                                              }}
+                                              className="p-1 hover:bg-red-50 text-red-600 rounded transition-colors cursor-pointer"
+                                              title="حذف الحصة الدراسية"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        )}
 
-                                  <p className="font-serif font-black text-xs sm:text-sm leading-snug">
-                                    {slot.subjectName || slot.subjectCode}
-                                  </p>
-                                  
-                                  {viewMode === 'division' ? (
-                                    <p className="text-[10px] sm:text-[11px] font-medium text-[#2B2022]/80 mt-0.5 truncate">
-                                      الأستاذ: {slot.teacherName}
-                                    </p>
-                                  ) : (
-                                    <p className="text-[10px] sm:text-[11px] font-medium text-[#2B2022]/80 mt-0.5 truncate">
-                                      القسم: {slot.divisionArabic || slot.division}
-                                    </p>
-                                  )}
+                                        <p className="font-serif font-black text-xs sm:text-sm leading-snug">
+                                          {slot.subjectName || slot.subjectCode}
+                                        </p>
+                                        
+                                        {viewMode === 'division' ? (
+                                          <p className="text-[10px] sm:text-[11px] font-medium text-[#2B2022]/80 mt-0.5 truncate">
+                                            الأستاذ: {slot.teacherName}
+                                          </p>
+                                        ) : (
+                                          <p className="text-[10px] sm:text-[11px] font-medium text-[#2B2022]/80 mt-0.5 truncate">
+                                            القسم: {slot.divisionArabic || slot.division}
+                                          </p>
+                                        )}
 
-                                  <div className="flex items-center justify-center gap-1 mt-1 text-[9px] flex-wrap">
-                                    {slot.modality && (
-                                      <span className="px-1.5 py-0.5 bg-[#F3E9DC] rounded text-[#7B1E3A] font-bold border border-[#C9A24D]/30">
-                                        {slot.modality}
-                                      </span>
-                                    )}
-                                    {slot.group && (
-                                      <span className="px-1.5 py-0.5 bg-blue-50 rounded text-blue-900 font-bold border border-blue-200">
-                                        {slot.group}
-                                      </span>
-                                    )}
-                                    {slot.room && (
-                                      <span className="px-1.5 py-0.5 bg-[#2B2022]/5 rounded text-[#2B2022] font-mono">
-                                        {slot.room}
-                                      </span>
-                                    )}
-                                    {slot.regr && (
-                                      <span className="px-1 py-0.5 bg-purple-50 rounded text-purple-900 text-[8px] border border-purple-200" title="فوج مشترك">
-                                        {slot.regr}
-                                      </span>
-                                    )}
-                                  </div>
+                                        <div className="flex items-center justify-center gap-1 mt-1 text-[9px] flex-wrap">
+                                          {slot.modality && (
+                                            <span className="px-1.5 py-0.5 bg-[#F3E9DC] rounded text-[#7B1E3A] font-bold border border-[#C9A24D]/30">
+                                              {slot.modality}
+                                            </span>
+                                          )}
+                                          {slot.group && (
+                                            <span className="px-1.5 py-0.5 bg-blue-50 rounded text-blue-900 font-bold border border-blue-200">
+                                              {slot.group}
+                                            </span>
+                                          )}
+                                          {slot.room && (
+                                            <span className="px-1.5 py-0.5 bg-[#2B2022]/5 rounded text-[#2B2022] font-mono">
+                                              {slot.room}
+                                            </span>
+                                          )}
+                                          {slot.regr && (
+                                            <span className="px-1 py-0.5 bg-purple-50 rounded text-purple-900 text-[8px] border border-purple-200" title="فوج مشترك">
+                                              {slot.regr}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </td>
                             );

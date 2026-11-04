@@ -200,6 +200,7 @@ export default function ParentDashboard() {
             key={selectedChild?._id}
             canImport={false}
             fixedDivision={selectedChild?.class?.name}
+            fixedGroup={selectedChild?.group?.name}
           />
         )}
         {activeTab === 'requests' && <AdministrativeRequestsManager />}

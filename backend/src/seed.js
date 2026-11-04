@@ -3289,86 +3289,26 @@ const seedDatabase = async (standalone = false) => {
     ]);
     console.log('[Seed] 12 Courses seeded.');
 
-    // 29. Timetable Entries from RAN09.DBF.xlsx
-    console.log('[Seed] Checking Timetable Entries (RAN09.DBF.xlsx)...');
-    const existingTimetableCount = await TimetableEntry.countDocuments();
-    if (existingTimetableCount === 0) {
-      const timetableFilePath = 'C:\\Users\\PC\\Downloads\\zitouniswaleh\\RAN09.DBF.xlsx';
-      if (fs.existsSync(timetableFilePath)) {
-        console.log(`[Seed] Loading Timetable entries from ${timetableFilePath}...`);
-        const workbook = xlsx.readFile(timetableFilePath);
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rawRows = xlsx.utils.sheet_to_json(sheet);
-
-        const DAY_MAP = {
-          Dimanche: 'الأحد',
-          Lundi: 'الإثنين',
-          Mardi: 'الثلاثاء',
-          Mercredi: 'الأربعاء',
-          Jeudi: 'الخميس',
-        };
-
-        const TIME_SLOT_MAP = {
-          '8H30': '08:30 - 09:30',
-          '9H30': '09:30 - 10:30',
-          '10H30': '10:30 - 11:30',
-          '11H30': '11:30 - 12:30',
-          '13H30': '13:30 - 14:30',
-          '14H30': '14:30 - 15:30',
-          '15H30': '15:30 - 16:30',
-        };
-
-        const entriesToInsert = [];
-        for (const row of rawRows) {
-          const day = (row['JOUR'] || '').trim();
-          const hour = (row['HEURE'] || '').trim().toUpperCase();
-          const division = (row['DIVISION'] || '').trim();
-          const subjectCode = (row['MAT'] || '').trim().toUpperCase();
-          const teacherName = (row['PROF'] || '').trim().toUpperCase();
-          const modality = (row['MODALITE'] || 'CG').trim();
-          const group = (row['GROUPE'] || '').trim();
-          const regr = (row['REGR'] || '').trim();
-          const room = (row['SALLE'] || '').trim();
-
-          if (!day || !hour || !division || !subjectCode || !teacherName) {
-            continue;
-          }
-
-          entriesToInsert.push({
-            academicYear: '2025-2026',
-            day,
-            dayArabic: DAY_MAP[day] || day,
-            hour,
-            timeSlot: TIME_SLOT_MAP[hour] || hour,
-            division,
-            divisionArabic: division,
-            subjectCode,
-            subjectName: subjectCode,
-            teacherName,
-            modality,
-            group,
-            regr,
-            room,
-          });
+    // 29. Timetable Entries from data/timetableEntries.json or RAN09.DBF.xlsx
+    console.log('[Seed] Checking Timetable Entries for all classes and groups...');
+    const localJsonPath = path.join(__dirname, 'data', 'timetableEntries.json');
+    if (fs.existsSync(localJsonPath)) {
+      const jsonEntries = JSON.parse(fs.readFileSync(localJsonPath, 'utf8'));
+      const existingTimetableCount = await TimetableEntry.countDocuments();
+      if (existingTimetableCount < jsonEntries.length) {
+        console.log(`[Seed] Syncing complete timetable (${jsonEntries.length} entries for all classes & groups) to database...`);
+        await TimetableEntry.deleteMany({});
+        const batchSize = 500;
+        for (let i = 0; i < jsonEntries.length; i += batchSize) {
+          const chunk = jsonEntries.slice(i, i + batchSize);
+          await TimetableEntry.insertMany(chunk);
         }
-        if (entriesToInsert.length > 0) {
-          await TimetableEntry.insertMany(entriesToInsert);
-          console.log(`[Seed] ${entriesToInsert.length} Timetable Entries inserted from RAN09.DBF.xlsx.`);
-        }
+        console.log(`[Seed] ${jsonEntries.length} Timetable Entries inserted covering all classes and groups.`);
       } else {
-        const localJsonPath = path.join(__dirname, 'data', 'timetableEntries.json');
-        if (fs.existsSync(localJsonPath)) {
-          const jsonEntries = JSON.parse(fs.readFileSync(localJsonPath, 'utf8'));
-          if (jsonEntries.length > 0) {
-            await TimetableEntry.insertMany(jsonEntries);
-            console.log(`[Seed] ${jsonEntries.length} Timetable Entries inserted from timetableEntries.json.`);
-          }
-        } else {
-          console.log('[Seed] RAN09.DBF.xlsx not found at path, skipping timetable import.');
-        }
+        console.log(`[Seed] TimetableEntry already contains ${existingTimetableCount} entries. Preserved.`);
       }
     } else {
-      console.log(`[Seed] TimetableEntry already contains ${existingTimetableCount} entries. Preserved.`);
+      console.log('[Seed] timetableEntries.json not found, skipping timetable import.');
     }
 
     console.log('[Seed] ========================================================');

@@ -34,7 +34,11 @@ const getChildAttendance = async (req, res, next) => {
       return res.status(403).json({ message: 'Unauthorized access to this student' });
     }
 
-    const attendanceRecords = await Attendance.find({ student: studentId }).sort({ date: -1 });
+    const attendanceRecords = await Attendance.find({ student: studentId })
+      .populate('recordedBy', 'firstName lastName role')
+      .populate('class', 'name')
+      .populate('group', 'name')
+      .sort({ date: -1 });
     res.status(200).json(attendanceRecords);
   } catch (error) {
     next(error);
