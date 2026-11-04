@@ -47,8 +47,8 @@ export default function AttendanceView({ attendance = [], loading = false, title
 
   return (
     <div className="glass-panel p-6 rounded-2xl border border-luxury-border space-y-6" dir="rtl">
-      <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-        <Calendar className="w-5 h-5 text-brand-400" />
+      <h3 className="text-lg font-bold text-[#7B1E3A] flex items-center gap-2">
+        <Calendar className="w-5 h-5 text-[#C9A24D]" />
         <span>{title}</span>
       </h3>
 
@@ -58,29 +58,29 @@ export default function AttendanceView({ attendance = [], loading = false, title
         <>
           {/* Statistics */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="bg-brand-950/20 border border-brand-500/20 rounded-2xl p-4 text-center">
-              <ShieldCheck className="w-4 h-4 text-brand-400 mx-auto mb-1" />
-              <span className="block text-[10px] text-slate-400 mb-0.5">نسبة الالتزام</span>
-              <span className="text-xl font-extrabold text-brand-400">{stats.rate}%</span>
+            <div className="bg-[#FDFBF7] border border-[#C9A24D]/35 rounded-2xl p-4 text-center">
+              <ShieldCheck className="w-4 h-4 text-[#7B1E3A] mx-auto mb-1" />
+              <span className="block text-[10px] text-[#2B2022]/70 font-semibold mb-0.5">نسبة الالتزام</span>
+              <span className="text-xl font-extrabold text-[#C9A24D]">{stats.rate}%</span>
             </div>
             <div className="bg-emerald-950/15 border border-emerald-900/30 rounded-2xl p-4 text-center">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
-              <span className="block text-[10px] text-slate-400 mb-0.5">حضور</span>
+              <span className="block text-[10px] text-[#2B2022]/70 font-semibold mb-0.5">حضور</span>
               <span className="text-lg font-extrabold text-emerald-400">{stats.present}</span>
             </div>
             <div className="bg-red-950/15 border border-red-900/30 rounded-2xl p-4 text-center">
               <XCircle className="w-4 h-4 text-red-400 mx-auto mb-1" />
-              <span className="block text-[10px] text-slate-400 mb-0.5">غياب</span>
+              <span className="block text-[10px] text-[#2B2022]/70 font-semibold mb-0.5">غياب</span>
               <span className="text-lg font-extrabold text-red-400">{stats.absent}</span>
             </div>
             <div className="bg-yellow-950/15 border border-yellow-900/30 rounded-2xl p-4 text-center">
               <Clock className="w-4 h-4 text-yellow-400 mx-auto mb-1" />
-              <span className="block text-[10px] text-slate-400 mb-0.5">تأخر</span>
+              <span className="block text-[10px] text-[#2B2022]/70 font-semibold mb-0.5">تأخر</span>
               <span className="text-lg font-extrabold text-yellow-400">{stats.late}</span>
             </div>
             <div className="bg-blue-950/15 border border-blue-900/30 rounded-2xl p-4 text-center">
               <ShieldCheck className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-              <span className="block text-[10px] text-slate-400 mb-0.5">غياب مبرر</span>
+              <span className="block text-[10px] text-[#2B2022]/70 font-semibold mb-0.5">غياب مبرر</span>
               <span className="text-lg font-extrabold text-blue-400">{stats.excused}</span>
             </div>
           </div>

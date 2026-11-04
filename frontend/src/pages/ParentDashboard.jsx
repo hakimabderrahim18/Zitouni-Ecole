@@ -139,8 +139,8 @@ export default function ParentDashboard() {
         {/* Child selector — shared across per-child sections */}
         {children.length > 0 && (activeTab === 'overview' || activeTab === 'schedules' || activeTab === 'attendance' || activeTab === 'lessons' || activeTab === 'timetable') && (
           <div className="glass-panel p-4 rounded-2xl border border-luxury-border space-y-3">
-            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <Baby className="w-4.5 h-4.5 text-brand-400" />
+            <h3 className="text-sm font-bold text-[#7B1E3A] flex items-center gap-2">
+              <Baby className="w-4.5 h-4.5 text-[#7B1E3A]" />
               <span>اختر الابن</span>
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -150,18 +150,36 @@ export default function ParentDashboard() {
                   <button
                     key={child._id}
                     onClick={() => handleSelectChild(child)}
-                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all ${
+                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-brand-950/40 border-brand-500 text-white shadow-[0_0_15px_rgba(123,30,58,0.20)]'
-                        : 'bg-slate-900/40 border-luxury-border text-slate-400 hover:text-white'
+                        ? 'bg-white border-2 border-[#7B1E3A] shadow-md shadow-[#7B1E3A]/15 ring-2 ring-[#7B1E3A]/15'
+                        : 'bg-[#FDFBF7] hover:bg-white border border-[#C9A24D]/35 hover:border-[#C9A24D]/70 shadow-xs'
                     }`}
                   >
-                    <span className="w-8 h-8 rounded-full bg-brand-900/50 flex items-center justify-center font-bold text-brand-300 text-xs shrink-0">
+                    <span
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${
+                        isSelected
+                          ? 'bg-[#7B1E3A] text-white shadow-xs'
+                          : 'bg-[#F3E9DC] text-[#7B1E3A] border border-[#C9A24D]/30'
+                      }`}
+                    >
                       {child.user?.firstName?.[0]}{child.user?.lastName?.[0]}
                     </span>
                     <span className="text-right leading-tight">
-                      <span className="block text-xs font-semibold">{child.user?.firstName} {child.user?.lastName}</span>
-                      <span className="block text-[10px] text-slate-500">{child.class?.name} • {child.group?.name}</span>
+                      <span
+                        className={`block text-xs font-bold transition-colors ${
+                          isSelected ? 'text-[#7B1E3A]' : 'text-[#2B2022]'
+                        }`}
+                      >
+                        {child.user?.firstName} {child.user?.lastName}
+                      </span>
+                      <span
+                        className={`block text-[10px] font-medium transition-colors ${
+                          isSelected ? 'text-[#7B1E3A]/80' : 'text-[#2B2022]/65'
+                        }`}
+                      >
+                        {child.class?.name} • {child.group?.name}
+                      </span>
                     </span>
                   </button>
                 );
@@ -191,27 +209,27 @@ export default function ParentDashboard() {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Re-enrollment Notification Banner */}
-            <div className="glass-panel p-5 rounded-2xl border border-brand-500/30 bg-gradient-to-r from-brand-950/40 via-brand-900/20 to-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-5 rounded-2xl border border-[#C9A24D]/35 bg-gradient-to-r from-[#F3E9DC] via-amber-50/70 to-[#FDFBF7] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-300 shrink-0">
-                  <RefreshCw className="w-5 h-5" />
+                <div className="w-11 h-11 rounded-xl bg-[#7B1E3A]/10 border border-[#7B1E3A]/25 flex items-center justify-center text-[#7B1E3A] shrink-0">
+                  <RefreshCw className="w-5 h-5 text-[#C9A24D]" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-100">فترة إعادة تسجيل الأبناء للموسم الدراسي الجديد 2026-2027</h4>
-                  <p className="text-xs text-slate-400">يمكنك تأكيد رغبة إعادة التسجيل لكل ابن، الاستفادة من تخفيض الإخوة (15%)، وطباعة عقد التمدرس واستمارة التسجيل.</p>
+                  <h4 className="text-sm font-bold text-[#7B1E3A]">فترة إعادة تسجيل الأبناء للموسم الدراسي الجديد 2026-2027</h4>
+                  <p className="text-xs text-[#2B2022]/75">يمكنك تأكيد رغبة إعادة التسجيل لكل ابن، الاستفادة من تخفيض الإخوة (15%)، وطباعة عقد التمدرس واستمارة التسجيل.</p>
                 </div>
               </div>
               <button
                 onClick={() => navigate('/dashboard/parent/re-enrollment')}
-                className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md transition-colors whitespace-nowrap shrink-0 flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-[#7B1E3A] hover:bg-[#68172F] text-white font-bold text-xs shadow-md shadow-[#7B1E3A]/20 transition-all whitespace-nowrap shrink-0 flex items-center gap-2 cursor-pointer"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-4 h-4 text-[#C9A24D]" />
                 <span>إعادة تسجيل الأبناء الآن</span>
               </button>
             </div>
 
-            <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-              <Baby className="w-5.5 h-5.5 text-brand-400" />
+            <h3 className="text-xl font-bold text-[#7B1E3A] flex items-center gap-2">
+              <Baby className="w-5.5 h-5.5 text-[#7B1E3A]" />
               <span>حسابات أبنائي / قائمة الأبناء</span>
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -223,47 +241,71 @@ export default function ParentDashboard() {
                     onClick={() => handleSelectChild(child)}
                     className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-4 ${
                       isSelected
-                        ? 'bg-brand-950/40 border-brand-500 shadow-[0_0_20px_rgba(123,30,58,0.2)]'
-                        : 'glass-panel border-luxury-border hover:border-luxury-border/80 hover:bg-slate-900/10'
+                        ? 'bg-white border-2 border-[#7B1E3A] shadow-md shadow-[#7B1E3A]/15 ring-2 ring-[#7B1E3A]/15'
+                        : 'bg-[#FDFBF7] border border-[#C9A24D]/35 hover:border-[#C9A24D]/70 hover:bg-white shadow-xs'
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-brand-900/50 flex items-center justify-center font-bold text-brand-400 uppercase text-lg">
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold uppercase text-lg transition-colors ${
+                          isSelected
+                            ? 'bg-[#7B1E3A] text-white shadow-xs'
+                            : 'bg-[#F3E9DC] text-[#7B1E3A] border border-[#C9A24D]/30'
+                        }`}
+                      >
                         {child.user?.firstName?.[0]}{child.user?.lastName?.[0]}
                       </div>
                       <div>
-                        <h4 className="font-bold text-white text-base">
+                        <h4
+                          className={`font-bold text-base transition-colors ${
+                            isSelected ? 'text-[#7B1E3A]' : 'text-[#2B2022]'
+                          }`}
+                        >
                           {child.user?.firstName} {child.user?.lastName}
                         </h4>
-                        <span className="text-[10px] text-slate-500 font-mono tracking-wide">
+                        <span
+                          className={`text-[10px] font-mono tracking-wide ${
+                            isSelected ? 'text-[#7B1E3A]/70' : 'text-[#2B2022]/60'
+                          }`}
+                        >
                           رقم التسجيل: {child.registrationNumber}
                         </span>
                       </div>
                     </div>
 
-                    <div className="space-y-1 text-xs text-slate-400">
-                      <p>القسم: <span className="text-white font-medium">{child.class?.name}</span></p>
-                      <p>الفوج: <span className="text-white font-medium">{child.group?.name}</span></p>
+                    <div className="space-y-1 text-xs">
+                      <p className={isSelected ? 'text-[#7B1E3A]/80' : 'text-[#2B2022]/70'}>
+                        القسم: <span className={`font-bold ${isSelected ? 'text-[#7B1E3A]' : 'text-[#2B2022]'}`}>{child.class?.name}</span>
+                      </p>
+                      <p className={isSelected ? 'text-[#7B1E3A]/80' : 'text-[#2B2022]/70'}>
+                        الفوج: <span className={`font-bold ${isSelected ? 'text-[#7B1E3A]' : 'text-[#2B2022]'}`}>{child.group?.name}</span>
+                      </p>
                       {child.dateOfBirth && (
-                        <p>تاريخ الميلاد: <span className="text-white font-medium">{new Date(child.dateOfBirth).toLocaleDateString('fr-FR')}</span></p>
+                        <p className={isSelected ? 'text-[#7B1E3A]/80' : 'text-[#2B2022]/70'}>
+                          تاريخ الميلاد: <span className={`font-bold ${isSelected ? 'text-[#7B1E3A]' : 'text-[#2B2022]'}`}>{new Date(child.dateOfBirth).toLocaleDateString('fr-FR')}</span>
+                        </p>
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-luxury-border/30">
+                    <div className="flex items-center justify-between pt-2 border-t border-[#C9A24D]/25">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate('/dashboard/parent/re-enrollment');
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white border border-brand-500/30 text-[11px] font-bold transition-all flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-lg bg-[#F3E9DC] hover:bg-[#ebdcc8] text-[#7B1E3A] border border-[#C9A24D]/35 text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-2xs"
                       >
-                        <RefreshCw className="w-3.5 h-3.5" />
+                        <RefreshCw className="w-3.5 h-3.5 text-[#C9A24D]" />
                         <span>إعادة التسجيل</span>
                       </button>
 
-                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
-                        isSelected ? 'bg-brand-600 text-white' : 'bg-slate-900 text-slate-400'
-                      }`}>
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase transition-colors ${
+                          isSelected
+                            ? 'bg-[#7B1E3A] text-white shadow-xs'
+                            : 'bg-[#F3E9DC] text-[#7B1E3A] border border-[#C9A24D]/30'
+                        }`}
+                      >
                         {isSelected ? 'محدد حالياً' : 'تحديد'}
                       </span>
                     </div>
@@ -277,13 +319,13 @@ export default function ParentDashboard() {
         {/* ===== SCHEDULES ===== */}
         {activeTab === 'schedules' && (
           <div className="space-y-8">
-            <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-brand-400" />
+            <h3 className="text-lg font-bold text-[#7B1E3A] flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-[#C9A24D]" />
               <span>جدول الحصص والتوقيت الأسبوعي — {selectedChild?.firstNameArabic || selectedChild?.user?.firstName || 'الابن'}</span>
             </h3>
             <TimetableGrid canImport={false} fixedDivision={selectedChild?.class?.name} />
-            <div className="border-t border-luxury-border/50 pt-6">
-              <h4 className="text-sm font-bold text-white mb-3">البرامج والمخططات المدرسية الإضافية</h4>
+            <div className="border-t border-[#C9A24D]/25 pt-6">
+              <h4 className="text-sm font-bold text-[#7B1E3A] mb-3">البرامج والمخططات المدرسية الإضافية</h4>
               <SchedulesView
                 schedules={schedules}
                 loading={loadingDetails}
@@ -305,8 +347,8 @@ export default function ParentDashboard() {
         {/* ===== PAYMENTS ===== */}
         {activeTab === 'payments' && (
           <div className="glass-panel p-6 rounded-2xl border border-luxury-border space-y-6">
-            <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2 border-b border-luxury-border/40 pb-4">
-              <CreditCard className="w-5 h-5 text-brand-400" />
+            <h3 className="text-lg font-bold text-[#7B1E3A] flex items-center gap-2 border-b border-[#C9A24D]/25 pb-4">
+              <CreditCard className="w-5 h-5 text-[#C9A24D]" />
               <span>الفواتير والمدفوعات</span>
             </h3>
 
@@ -317,17 +359,17 @@ export default function ParentDashboard() {
               const totalPaid = paid.reduce((sum, p) => sum + (p.amount || 0), 0);
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-slate-900/40 border border-luxury-border rounded-xl p-4 text-center">
-                    <span className="block text-[10px] text-slate-400 mb-1">إجمالي المستحقات</span>
-                    <span className="text-lg font-extrabold text-yellow-400">{totalDue.toLocaleString()} DZD</span>
+                  <div className="bg-[#FDFBF7] border border-[#C9A24D]/35 rounded-xl p-4 text-center shadow-xs">
+                    <span className="block text-[10px] text-[#2B2022]/70 mb-1 font-semibold">إجمالي المستحقات</span>
+                    <span className="text-lg font-extrabold text-amber-700">{totalDue.toLocaleString()} DZD</span>
                   </div>
-                  <div className="bg-slate-900/40 border border-luxury-border rounded-xl p-4 text-center">
-                    <span className="block text-[10px] text-slate-400 mb-1">إجمالي المدفوع</span>
-                    <span className="text-lg font-extrabold text-emerald-400">{totalPaid.toLocaleString()} DZD</span>
+                  <div className="bg-[#FDFBF7] border border-[#C9A24D]/35 rounded-xl p-4 text-center shadow-xs">
+                    <span className="block text-[10px] text-[#2B2022]/70 mb-1 font-semibold">إجمالي المدفوع</span>
+                    <span className="text-lg font-extrabold text-emerald-700">{totalPaid.toLocaleString()} DZD</span>
                   </div>
-                  <div className="bg-slate-900/40 border border-luxury-border rounded-xl p-4 text-center">
-                    <span className="block text-[10px] text-slate-400 mb-1">عدد الفواتير</span>
-                    <span className="text-lg font-extrabold text-brand-300">{payments.length}</span>
+                  <div className="bg-[#FDFBF7] border border-[#C9A24D]/35 rounded-xl p-4 text-center shadow-xs">
+                    <span className="block text-[10px] text-[#2B2022]/70 mb-1 font-semibold">عدد الفواتير</span>
+                    <span className="text-lg font-extrabold text-[#7B1E3A]">{payments.length}</span>
                   </div>
                 </div>
               );

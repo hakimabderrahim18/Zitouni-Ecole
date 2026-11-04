@@ -294,38 +294,58 @@ export default function ParentReEnrollmentView() {
                 onClick={() => handleSelectChild(child)}
                 className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
                   isSelected
-                    ? 'bg-brand-950/50 border-brand-500 shadow-[0_0_20px_rgba(123,30,58,0.25)]'
-                    : 'glass-panel border-luxury-border hover:border-luxury-border/80 hover:bg-slate-900/30'
+                    ? 'bg-white border-2 border-[#7B1E3A] shadow-md shadow-[#7B1E3A]/15 ring-2 ring-[#7B1E3A]/15'
+                    : 'bg-[#FDFBF7] border border-[#C9A24D]/35 hover:border-[#C9A24D]/70 hover:bg-white shadow-xs'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center font-bold text-white text-base shadow shrink-0">
+                  <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-base shadow shrink-0 transition-colors ${
+                      isSelected
+                        ? 'bg-[#7B1E3A] text-white shadow-xs'
+                        : 'bg-[#F3E9DC] text-[#7B1E3A] border border-[#C9A24D]/30'
+                    }`}
+                  >
                     {child.user?.firstName?.[0]}{child.user?.lastName?.[0]}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-white text-sm truncate">
+                    <h4
+                      className={`font-bold text-sm truncate transition-colors ${
+                        isSelected ? 'text-[#7B1E3A]' : 'text-[#2B2022]'
+                      }`}
+                    >
                       {child.user?.firstName} {child.user?.lastName}
                     </h4>
-                    <span className="text-[11px] text-slate-400 font-mono block">
+                    <span
+                      className={`text-[11px] font-mono block ${
+                        isSelected ? 'text-[#7B1E3A]/70' : 'text-[#2B2022]/60'
+                      }`}
+                    >
                       رقم التسجيل: {child.registrationNumber || '---'}
                     </span>
                   </div>
                 </div>
 
-                <div className="space-y-1 text-xs text-slate-350 border-t border-luxury-border/40 pt-2.5">
+                <div className="space-y-1 text-xs border-t border-[#C9A24D]/25 pt-2.5">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">القسم الحالي:</span>
-                    <span className="text-white font-medium">{child.class?.name || 'غير محدد'}</span>
+                    <span className={isSelected ? 'text-[#7B1E3A]/70' : 'text-[#2B2022]/60'}>القسم الحالي:</span>
+                    <span className={`font-bold ${isSelected ? 'text-[#7B1E3A]' : 'text-[#2B2022]'}`}>{child.class?.name || 'غير محدد'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">السنة الحالية:</span>
-                    <span className="text-slate-300 font-mono">{child.academicYear || '2025-2026'}</span>
+                    <span className={isSelected ? 'text-[#7B1E3A]/70' : 'text-[#2B2022]/60'}>السنة الحالية:</span>
+                    <span className={`font-mono font-medium ${isSelected ? 'text-[#7B1E3A]/80' : 'text-[#2B2022]/70'}`}>{child.academicYear || '2025-2026'}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-1">
                   {getStatusBadge(child.registrationStatus, child.isWaitlisted)}
-                  <span className={`text-[11px] font-bold ${isSelected ? 'text-brand-300' : 'text-slate-500'}`}>
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
+                      isSelected
+                        ? 'bg-[#7B1E3A] text-white shadow-xs'
+                        : 'bg-[#F3E9DC] text-[#7B1E3A] border border-[#C9A24D]/30'
+                    }`}
+                  >
                     {isSelected ? '● محدد' : 'اختيار'}
                   </span>
                 </div>
