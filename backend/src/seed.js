@@ -36,7 +36,15 @@ const AuditLog = require('./models/auditLog.model');
 const BackupLog = require('./models/backupLog.model');
 const TimetableEntry = require('./models/timetableEntry.model');
 
+let isSeeding = false;
+
 const seedDatabase = async (standalone = false) => {
+  if (isSeeding) {
+    console.log('[Seed] Seed is already in progress, skipping concurrent execution.');
+    return { success: true, message: 'Seed already in progress.' };
+  }
+  isSeeding = true;
+
   try {
     let shouldDisconnect = false;
     if (mongoose.connection.readyState === 0) {
@@ -216,9 +224,23 @@ const seedDatabase = async (standalone = false) => {
     const [g1Sci_A, g1Sci_B] = groupsOf(c1Sci._id);
     const [g3S_A, g3S_B] = groupsOf(c3S._id);
 
+    // Helper to safely upsert core users avoiding race conditions
+    const upsertUser = async (uData) => {
+      let existing = await User.findOne({
+        $or: [{ username: uData.username }, { email: uData.email }]
+      }).select('+password');
+      if (existing) {
+        Object.assign(existing, uData);
+        existing.password = uData.password;
+        await existing.save();
+        return existing;
+      }
+      return await User.create(uData);
+    };
+
     // 5. Core Platform Users: Admin & School Director
     console.log('[Seed] Seeding Admin & School Director accounts...');
-    const adminUser = await User.create({
+    const adminUser = await upsertUser({
       username: 'admin',
       email: 'admin@ecole-zitouni.dz',
       password: 'Admin123!',
@@ -233,7 +255,7 @@ const seedDatabase = async (standalone = false) => {
       baseSalary: 130000,
     });
 
-    const schoolUser = await User.create({
+    const schoolUser = await upsertUser({
       username: 'school',
       email: 'school@ecole-zitouni.dz',
       password: 'School123!',
@@ -250,7 +272,7 @@ const seedDatabase = async (standalone = false) => {
 
     // 6. Supervisors (General & Pedagogical)
     console.log('[Seed] Seeding Supervisors...');
-    const genSupUser = await User.create({
+    const genSupUser = await upsertUser({
       username: 'superviseur.gen',
       email: 'superviseur.gen@ecole-zitouni.dz',
       password: '0550112233',
@@ -272,7 +294,7 @@ const seedDatabase = async (standalone = false) => {
       officeLocation: 'المكتب الرئيسي - الجناح الإداري',
     });
 
-    const pedSupUser = await User.create({
+    const pedSupUser = await upsertUser({
       username: 'superviseur.ped',
       email: 'superviseur.ped@ecole-zitouni.dz',
       password: '0550445566',
@@ -296,7 +318,7 @@ const seedDatabase = async (standalone = false) => {
 
     // 7. Receptionist
     console.log('[Seed] Seeding Receptionist...');
-    const recepUser = await User.create({
+    const recepUser = await upsertUser({
       username: 'receptionniste',
       email: 'receptionniste@ecole-zitouni.dz',
       password: '0550778899',
@@ -3337,6 +3359,8 @@ const seedDatabase = async (standalone = false) => {
       process.exit(1);
     }
     throw error;
+  } finally {
+    isSeeding = false;
   }
 };
 
