@@ -1,7 +1,22 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { Platform } from 'react-native';
 import { storage } from '../utils/secureStore';
 
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5055';
+const resolveBaseUrl = (): string => {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl) {
+    if (Platform.OS === 'android' && envUrl.includes('localhost')) {
+      return envUrl.replace('localhost', '10.0.2.2');
+    }
+    return envUrl;
+  }
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:5055';
+  }
+  return 'http://localhost:5055';
+};
+
+export const API_BASE_URL = resolveBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

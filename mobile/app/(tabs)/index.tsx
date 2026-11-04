@@ -214,19 +214,19 @@ export default function AdminScreen() {
       ]);
 
       if (statsRes.data) setStats(statsRes.data);
-      if (postsRes.data) setPosts(postsRes.data.posts || postsRes.data || []);
-      if (usersRes.data) setSystemUsers(usersRes.data.users || usersRes.data || []);
-      if (classesRes.data) setClassesList(classesRes.data.classes || classesRes.data || []);
-      if (teachersRes.data) setTeachersList(teachersRes.data.teachers || teachersRes.data || []);
-      if (studentsRes.data) setStudentsList(studentsRes.data.students || studentsRes.data || []);
-      if (modulesRes.data) setModulesList(modulesRes.data.modules || modulesRes.data || []);
-      if (docsRes.data) setDocumentsList(docsRes.data.documents || docsRes.data || []);
-      if (schedulesRes.data) setSchedulesList(schedulesRes.data.schedules || schedulesRes.data || []);
-      if (backupsRes.data) setBackupsList(backupsRes.data.backups || []);
-      if (requestsRes.data) setAdminRequestsList(requestsRes.data.requests || requestsRes.data || []);
-      if (reportedRes.data) setReportedMessagesList(Array.isArray(reportedRes.data) ? reportedRes.data : []);
-      if (auditRes.data) setLoginAuditList(Array.isArray(auditRes.data) ? auditRes.data : []);
-      if (lessonsRes.data) setLessonsList(lessonsRes.data.lessons || lessonsRes.data || []);
+      if (postsRes.data) setPosts(Array.isArray(postsRes.data) ? postsRes.data : (postsRes.data.posts || []));
+      if (usersRes.data) setSystemUsers(Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data.users || []));
+      if (classesRes.data) setClassesList(Array.isArray(classesRes.data) ? classesRes.data : (classesRes.data.classes || []));
+      if (teachersRes.data) setTeachersList(Array.isArray(teachersRes.data) ? teachersRes.data : (teachersRes.data.teachers || []));
+      if (studentsRes.data) setStudentsList(Array.isArray(studentsRes.data) ? studentsRes.data : (studentsRes.data.students || []));
+      if (modulesRes.data) setModulesList(Array.isArray(modulesRes.data) ? modulesRes.data : (modulesRes.data.modules || []));
+      if (docsRes.data) setDocumentsList(Array.isArray(docsRes.data) ? docsRes.data : (docsRes.data.documents || []));
+      if (schedulesRes.data) setSchedulesList(Array.isArray(schedulesRes.data) ? schedulesRes.data : (schedulesRes.data.schedules || []));
+      if (backupsRes.data) setBackupsList(backupsRes.data.backups || (Array.isArray(backupsRes.data) ? backupsRes.data : []));
+      if (requestsRes.data) setAdminRequestsList(Array.isArray(requestsRes.data) ? requestsRes.data : (requestsRes.data.requests || []));
+      if (reportedRes.data) setReportedMessagesList(Array.isArray(reportedRes.data) ? reportedRes.data : (reportedRes.data.reportedMessages || []));
+      if (auditRes.data) setLoginAuditList(auditRes.data.logs || auditRes.data.loginLogs || (Array.isArray(auditRes.data) ? auditRes.data : []));
+      if (lessonsRes.data) setLessonsList(Array.isArray(lessonsRes.data) ? lessonsRes.data : (lessonsRes.data.lessons || []));
     } catch (err: any) {
       console.warn('Load data warning:', err.message);
     } finally {

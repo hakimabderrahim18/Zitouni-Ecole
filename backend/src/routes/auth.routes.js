@@ -2,6 +2,7 @@ const express = require('express');
 const {
   login,
   refreshToken,
+  getMe,
   updateProfile,
   uploadAvatar,
   deleteAvatar,
@@ -16,6 +17,8 @@ const router = express.Router();
 
 router.post('/login', login);
 router.post('/refresh', refreshToken);
+router.get('/me', protect, getMe);
+router.get('/profile', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.post('/profile/avatar', protect, upload.single('avatar'), uploadAvatar);
 router.delete('/profile/avatar', protect, deleteAvatar);

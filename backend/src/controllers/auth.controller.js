@@ -632,9 +632,55 @@ const deleteAccount = async (req, res, next) => {
   }
 };
 
+// Get current authenticated user session (/api/auth/me)
+const getMe = async (req, res, next) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: 'المستخدم غير موجود' });
+    }
+
+    let profile = null;
+    if (user.role === 'teacher') {
+      profile = await Teacher.findOne({ user: user._id }).populate('classes groups');
+    } else if (user.role === 'student') {
+      profile = await Student.findOne({ user: user._id }).populate('class group parent');
+    } else if (user.role === 'parent') {
+      profile = await Parent.findOne({ user: user._id }).populate({
+        path: 'children',
+        populate: { path: 'user class group' },
+      });
+    } else if (user.role === 'general_supervisor' || user.role === 'pedagogical_supervisor') {
+      profile = await Supervisor.findOne({ user: user._id }).populate('assignedClasses assignedTeachers');
+    } else if (user.role === 'receptionist') {
+      profile = await Receptionist.findOne({ user: user._id });
+    }
+
+    res.status(200).json({
+      user: {
+        id: user._id,
+        _id: user._id,
+        username: user.username || user.email.split('@')[0],
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        phoneNumber: user.phoneNumber,
+        profilePic: user.profilePic,
+        baseSalary: user.baseSalary,
+        salaryDeductionPerAbsence: user.salaryDeductionPerAbsence,
+      },
+      profile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   login,
   refreshToken,
+  getMe,
   updateProfile,
   uploadAvatar,
   deleteAvatar,
