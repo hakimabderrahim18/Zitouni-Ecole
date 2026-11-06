@@ -88,10 +88,19 @@ export const SchoolFeedView: React.FC<SchoolFeedViewProps> = () => {
       setPosts((prev) =>
         prev.map((p) => {
           if (p._id === postId) {
+            const currentLikes = p.likes || [];
+            const updatedLikes =
+              res.data.userReaction === 'like'
+                ? currentLikes.includes(user?.id || '')
+                  ? currentLikes
+                  : [...currentLikes, user?.id || '']
+                : currentLikes.filter((id) => id !== user?.id);
+
             return {
               ...p,
               reactionCounts: res.data.reactionCounts,
               userReaction: res.data.userReaction,
+              likes: updatedLikes,
             };
           }
           return p;
@@ -348,6 +357,18 @@ export const SchoolFeedView: React.FC<SchoolFeedViewProps> = () => {
         )}
       </ScrollView>
 
+      {/* Floating Action Button for Publishing */}
+      {canPublish && (
+        <TouchableOpacity
+          style={styles.floatingPublishBtn}
+          onPress={() => setCreateModalVisible(true)}
+          activeOpacity={0.85}
+        >
+          <Plus size={18} color="#F3E9DC" />
+          <Text style={styles.floatingPublishText}>نشر إعلان</Text>
+        </TouchableOpacity>
+      )}
+
       {/* MODAL 1: Three Dots Options Menu */}
       <PostOptionsMenuModal
         visible={!!optionsPost}
@@ -548,6 +569,31 @@ const styles = StyleSheet.create({
   },
   emptyPublishText: {
     fontSize: 12,
+    fontWeight: '800',
+    color: '#F3E9DC',
+  },
+  floatingPublishBtn: {
+    position: 'absolute',
+    bottom: 24,
+    left: 20,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.brand[500],
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    borderColor: theme.colors.gold[500],
+    shadowColor: theme.colors.brand[500],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 99,
+  },
+  floatingPublishText: {
+    fontSize: 13,
     fontWeight: '800',
     color: '#F3E9DC',
   },

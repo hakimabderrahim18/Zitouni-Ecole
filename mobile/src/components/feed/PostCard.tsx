@@ -9,6 +9,7 @@ import {
   Linking,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import {
   Pin,
@@ -148,7 +149,9 @@ export const PostCard: React.FC<PostCardProps> = ({
   const likeCount = reactionCounts.like || 0;
   const loveCount = reactionCounts.love || 0;
   const dislikeCount = reactionCounts.dislike || 0;
-  const isLiked = post.userReaction === 'like' || (!post.userReaction && post.likes?.includes(currentUserId || ''));
+  const isLiked =
+    post.userReaction === 'like' ||
+    (post.userReaction === undefined && (post.likes || []).includes(currentUserId || ''));
   const isLoved = post.userReaction === 'love';
   const isDisliked = post.userReaction === 'dislike';
 
@@ -191,6 +194,10 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   const handleOpenDoc = (url: string) => {
     const fullUrl = resolveMediaUrl(url);
+    if (Platform.OS === 'web') {
+      window.open(fullUrl, '_blank');
+      return;
+    }
     Linking.openURL(fullUrl).catch(() => {
       Alert.alert('خطأ', 'تعذر فتح الملف.');
     });

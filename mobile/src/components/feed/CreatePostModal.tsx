@@ -672,29 +672,35 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 />
               </View>
             )}
-
-            {/* Action Buttons */}
-            <View style={styles.bottomActions}>
-              <TouchableOpacity
-                style={[styles.publishSubmitBtn, submitting && { opacity: 0.7 }]}
-                onPress={handleSubmit}
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <>
-                    <Send size={16} color="#F3E9DC" />
-                    <Text style={styles.publishSubmitText}>نشر المنشور الآن</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.cancelBtn} onPress={onClose} disabled={submitting}>
-                <Text style={styles.cancelBtnText}>إلغاء</Text>
-              </TouchableOpacity>
-            </View>
           </ScrollView>
+
+          {/* Sticky Bottom Actions Bar */}
+          <View style={styles.bottomActions}>
+            <TouchableOpacity
+              style={[styles.publishSubmitBtn, submitting && { opacity: 0.7 }]}
+              onPress={handleSubmit}
+              disabled={submitting}
+              activeOpacity={0.85}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Send size={16} color="#F3E9DC" />
+                  <Text style={styles.publishSubmitText}>نشر المنشور الآن</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={onClose}
+              disabled={submitting}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.cancelBtnText}>إلغاء</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -1073,8 +1079,11 @@ const styles = StyleSheet.create({
   bottomActions: {
     flexDirection: 'row-reverse',
     gap: 12,
-    marginTop: 8,
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#FDFBF7',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(201, 162, 77, 0.25)',
   },
   publishSubmitBtn: {
     flex: 1,
