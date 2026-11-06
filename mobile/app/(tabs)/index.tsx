@@ -71,64 +71,18 @@ import { ReceptionistDashboardView } from '../../src/components/dashboards/Recep
 /*  Main Component: Unified Role-Aware Dashboard & RBAC Dispatcher      */
 /* ==================================================================== */
 
-export default function DashboardScreen() {
+function AdminDashboardView({
+  currentRoute,
+  setCurrentRoute,
+}: {
+  currentRoute: string;
+  setCurrentRoute: (r: string) => void;
+}) {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin' || user?.role === 'school';
 
   // Navigation Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [currentRoute, setCurrentRoute] = useState<string>('overview');
-
-  // RBAC Role-Based Dispatch: Render role-specific dashboard views
-  if (user?.role === 'teacher') {
-    return (
-      <TeacherDashboardView
-        currentRoute={currentRoute}
-        setCurrentRoute={setCurrentRoute}
-        onOpenDrawer={() => setIsDrawerOpen(true)}
-      />
-    );
-  }
-
-  if (user?.role === 'parent') {
-    return (
-      <ParentDashboardView
-        currentRoute={currentRoute}
-        setCurrentRoute={setCurrentRoute}
-        onOpenDrawer={() => setIsDrawerOpen(true)}
-      />
-    );
-  }
-
-  if (user?.role === 'student') {
-    return (
-      <StudentDashboardView
-        currentRoute={currentRoute}
-        setCurrentRoute={setCurrentRoute}
-        onOpenDrawer={() => setIsDrawerOpen(true)}
-      />
-    );
-  }
-
-  if (user?.role === 'general_supervisor' || user?.role === 'pedagogical_supervisor') {
-    return (
-      <SupervisorDashboardView
-        currentRoute={currentRoute}
-        setCurrentRoute={setCurrentRoute}
-        onOpenDrawer={() => setIsDrawerOpen(true)}
-      />
-    );
-  }
-
-  if (user?.role === 'receptionist') {
-    return (
-      <ReceptionistDashboardView
-        currentRoute={currentRoute}
-        setCurrentRoute={setCurrentRoute}
-        onOpenDrawer={() => setIsDrawerOpen(true)}
-      />
-    );
-  }
 
   // Loading & Refreshing
   const [loading, setLoading] = useState(true);
@@ -2760,6 +2714,69 @@ export default function DashboardScreen() {
         </View>
       </Modal>
     </View>
+  );
+}
+
+export default function DashboardScreen() {
+  const { user } = useAuthStore();
+  const [currentRoute, setCurrentRoute] = useState<string>('overview');
+
+  // RBAC Role-Based Dispatch: Render dedicated role dashboard
+  if (user?.role === 'teacher') {
+    return (
+      <TeacherDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => {}}
+      />
+    );
+  }
+
+  if (user?.role === 'parent') {
+    return (
+      <ParentDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => {}}
+      />
+    );
+  }
+
+  if (user?.role === 'student') {
+    return (
+      <StudentDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => {}}
+      />
+    );
+  }
+
+  if (user?.role === 'general_supervisor' || user?.role === 'pedagogical_supervisor') {
+    return (
+      <SupervisorDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => {}}
+      />
+    );
+  }
+
+  if (user?.role === 'receptionist') {
+    return (
+      <ReceptionistDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => {}}
+      />
+    );
+  }
+
+  return (
+    <AdminDashboardView
+      currentRoute={currentRoute}
+      setCurrentRoute={setCurrentRoute}
+    />
   );
 }
 
