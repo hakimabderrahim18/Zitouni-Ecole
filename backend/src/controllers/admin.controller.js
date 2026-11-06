@@ -1298,7 +1298,12 @@ const getStudentAuditHistory = async (req, res, next) => {
 
 const getClasses = async (req, res, next) => {
   try {
-    const classes = await Class.find().sort({ name: 1 });
+    let filter = {};
+    if (req.user && req.user.role === 'teacher') {
+      const teacher = await Teacher.findOne({ user: req.user.id });
+      filter = { _id: { $in: teacher ? teacher.classes : [] } };
+    }
+    const classes = await Class.find(filter).sort({ name: 1 });
     res.status(200).json(classes);
   } catch (error) {
     next(error);
@@ -1307,7 +1312,19 @@ const getClasses = async (req, res, next) => {
 
 const getGroups = async (req, res, next) => {
   try {
-    const groups = await Group.find()
+    let filter = {};
+    if (req.user && req.user.role === 'teacher') {
+      const teacher = await Teacher.findOne({ user: req.user.id });
+      const teacherClasses = teacher?.classes || [];
+      const teacherGroups = teacher?.groups || [];
+      filter = {
+        $or: [
+          { _id: { $in: teacherGroups } },
+          { class: { $in: teacherClasses } }
+        ]
+      };
+    }
+    const groups = await Group.find(filter)
       .populate('class')
       .populate({
         path: 'teachers',
@@ -1341,9 +1358,26 @@ const getUsers = async (req, res, next) => {
 // Get all Students with details
 const getStudents = async (req, res, next) => {
   try {
-    const students = await Student.find()
+    let filter = {};
+    if (req.user && req.user.role === 'teacher') {
+      const teacher = await Teacher.findOne({ user: req.user.id });
+      const teacherClasses = (teacher?.classes || []).map((c) => (c._id ? c._id.toString() : c.toString()));
+
+      if (req.query.classId) {
+        if (!teacherClasses.includes(req.query.classId.toString())) {
+          return res.status(200).json([]);
+        }
+        filter.class = req.query.classId;
+      } else {
+        filter.class = { $in: teacher?.classes || [] };
+      }
+    } else if (req.query.classId) {
+      filter.class = req.query.classId;
+    }
+
+    const students = await Student.find(filter)
       .populate('user', 'firstName lastName email phoneNumber isActive')
-      .populate('class', 'name')
+      .populate('class', 'name level')
       .populate('group', 'name')
       .populate({
         path: 'parent',

@@ -41,6 +41,7 @@ import { DashboardHeader } from '../DashboardHeader';
 import { NavigationDrawer } from '../NavigationDrawer';
 import { Button } from '../common/Button';
 import { SchoolFeedView } from '../feed/SchoolFeedView';
+import { ConversationView } from '../chat/ConversationView';
 
 interface ParentDashboardViewProps {
   onOpenDrawer: () => void;
@@ -241,6 +242,19 @@ export const ParentDashboardView: React.FC<ParentDashboardViewProps> = ({
             <Text style={styles.activeRouteSubText}>مستجدات وإعلانات المؤسسة</Text>
           </View>
           <SchoolFeedView />
+        </View>
+      ) : currentRoute === 'chat' ? (
+        <View style={{ flex: 1 }}>
+          <View style={styles.activeRouteSubHeader}>
+            <TouchableOpacity
+              style={styles.backToOverviewBtn}
+              onPress={() => setCurrentRoute('overview')}
+            >
+              <Text style={styles.backToOverviewText}>← العودة للرئيسية</Text>
+            </TouchableOpacity>
+            <Text style={styles.activeRouteSubText}>التواصل مع الإدارة والأساتذة</Text>
+          </View>
+          <ConversationView onBackToOverview={() => setCurrentRoute('overview')} />
         </View>
       ) : (
         <ScrollView
@@ -561,6 +575,62 @@ export const ParentDashboardView: React.FC<ParentDashboardViewProps> = ({
                   </View>
                 ))
               )}
+            </View>
+          )}
+
+          {/* Subview 5: Timetable */}
+          {currentRoute === 'timetable' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>جدول توقيت الأبناء والحصص الأسبوعية</Text>
+              <View style={styles.paymentCard}>
+                <View style={styles.paymentHeader}>
+                  <View style={[styles.badge, styles.badgeApproved]}>
+                    <Text style={styles.badgeText}>معتمد</Text>
+                  </View>
+                  <Text style={styles.lessonTitle}>
+                    التوقيت الأسبوعي لـ {selectedChild?.firstNameArabic || 'الابن'}
+                  </Text>
+                </View>
+                <Text style={styles.lessonDesc}>
+                  القسم: {selectedChild?.class?.name || 'القسم الدراسي'} • الفترة الصباحية والمسائية
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Subview 6: Re-enrollment */}
+          {currentRoute === 're-enrollment' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>إعادة التسجيل السنوي وتأكيد التمدرس</Text>
+              <View style={styles.paymentCard}>
+                <View style={styles.paymentHeader}>
+                  <View style={[styles.badge, styles.badgeApproved]}>
+                    <Text style={styles.badgeText}>ملف مؤكد</Text>
+                  </View>
+                  <Text style={styles.lessonTitle}>ملف التمدرس: 2026-2027</Text>
+                </View>
+                <Text style={styles.lessonDesc}>
+                  تم تأكيد تسجيل الأبناء بنجاح للموسم الدراسي الحالي وفق المنظومة الرسمية.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Subview 7: Requests */}
+          {currentRoute === 'requests' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>طلب الشهادات المدرسية والوثائق</Text>
+              <View style={styles.paymentCard}>
+                <View style={styles.paymentHeader}>
+                  <View style={[styles.badge, styles.badgeApproved]}>
+                    <Text style={styles.badgeText}>خدمة رقمية</Text>
+                  </View>
+                  <Text style={styles.lessonTitle}>الشهادات المدرسية والوثائق الإدارية</Text>
+                </View>
+                <Text style={styles.lessonDesc}>
+                  يمكنك استخراج الشهادة المدرسية وبطاقة المتابعة مباشرة عبر التواصل مع الإدارة.
+                </Text>
+              </View>
             </View>
           )}
         </ScrollView>

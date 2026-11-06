@@ -67,6 +67,8 @@ import { StudentDashboardView } from '../../src/components/dashboards/StudentDas
 import { SupervisorDashboardView } from '../../src/components/dashboards/SupervisorDashboardView';
 import { ReceptionistDashboardView } from '../../src/components/dashboards/ReceptionistDashboardView';
 import { SchoolFeedView } from '../../src/components/feed/SchoolFeedView';
+import { ConversationView } from '../../src/components/chat/ConversationView';
+import { useLocalSearchParams } from 'expo-router';
 
 /* ==================================================================== */
 /*  Main Component: Unified Role-Aware Dashboard & RBAC Dispatcher      */
@@ -805,6 +807,19 @@ function AdminDashboardView({
             <Text style={styles.activeRouteSubText}>فضاء التواصل والشبكة المدرسية</Text>
           </View>
           <SchoolFeedView />
+        </View>
+      ) : currentRoute === 'chat' ? (
+        <View style={{ flex: 1 }}>
+          <View style={styles.activeRouteSubHeader}>
+            <TouchableOpacity
+              style={styles.backToOverviewBtn}
+              onPress={() => setCurrentRoute('overview')}
+            >
+              <Text style={styles.backToOverviewText}>← العودة للرئيسية</Text>
+            </TouchableOpacity>
+            <Text style={styles.activeRouteSubText}>الرسائل والمحادثات المباشرة</Text>
+          </View>
+          <ConversationView onBackToOverview={() => setCurrentRoute('overview')} />
         </View>
       ) : (
         <ScrollView
@@ -1974,17 +1989,7 @@ function AdminDashboardView({
             </View>
           )}
 
-          {/* ============================================================ */}
-          {/* ROUTE 21: CHAT (الرسائل والمحادثة)                           */}
-          {/* ============================================================ */}
-          {currentRoute === 'chat' && (
-            <View style={styles.overviewContainer}>
-              <Text style={styles.sectionTitle}>الرسائل والمحادثات المباشرة</Text>
-              <Text style={styles.sectionSubtitle}>
-                يمكنك التوجه إلى قسم المحادثات من التبويب السفلي للتواصل الفوري.
-              </Text>
-            </View>
-          )}
+
         </ScrollView>
       )}
 
@@ -2540,7 +2545,14 @@ function AdminDashboardView({
 
 export default function DashboardScreen() {
   const { user } = useAuthStore();
+  const params = useLocalSearchParams<{ route?: string }>();
   const [currentRoute, setCurrentRoute] = useState<string>('overview');
+
+  useEffect(() => {
+    if (params.route) {
+      setCurrentRoute(params.route);
+    }
+  }, [params.route]);
 
   // RBAC Role-Based Dispatch: Render dedicated role dashboard
   if (user?.role === 'teacher') {

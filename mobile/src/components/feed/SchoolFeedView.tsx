@@ -18,6 +18,7 @@ import {
   Globe,
   Filter,
 } from 'lucide-react-native';
+import { Platform } from 'react-native';
 import { apiClient } from '../../api/client';
 import { useAuthStore } from '../../store/useAuthStore';
 import { theme } from '../../theme/tokens';
@@ -27,6 +28,14 @@ import { PostOptionsMenuModal } from './PostOptionsMenuModal';
 import { PostViewersAnalyticsModal } from './PostViewersAnalyticsModal';
 import { CreatePostModal } from './CreatePostModal';
 import { EditPostModal } from './EditPostModal';
+
+const notifyUser = (title: string, message: string) => {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}: ${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+};
 
 interface SchoolFeedViewProps {
   onOpenDrawer?: () => void;
@@ -97,12 +106,12 @@ export const SchoolFeedView: React.FC<SchoolFeedViewProps> = () => {
   const handleConfirmRead = async (postId: string) => {
     try {
       const res = await apiClient.post(`/api/posts/${postId}/confirm-read`);
-      Alert.alert('نجاح', res.data?.message || 'تم تسجيل اطلاعك على هذا الإعلان الرسمي بنجاح.');
+      notifyUser('نجاح', res.data?.message || 'تم تسجيل اطلاعك على هذا الإعلان الرسمي بنجاح.');
       setPosts((prev) =>
         prev.map((p) => (p._id === postId ? { ...p, userConfirmed: true } : p))
       );
     } catch (err: any) {
-      Alert.alert('خطأ', err.response?.data?.message || 'فشل تأكيد الاطلاع.');
+      notifyUser('خطأ', err.response?.data?.message || 'فشل تأكيد الاطلاع.');
     }
   };
 
@@ -110,12 +119,12 @@ export const SchoolFeedView: React.FC<SchoolFeedViewProps> = () => {
   const handleToggleHide = async (post: PostItem) => {
     try {
       const res = await apiClient.patch(`/api/posts/${post._id}/hide`);
-      Alert.alert('نجاح', res.data?.message || 'تم تحديث حالة المنشور.');
+      notifyUser('نجاح', res.data?.message || 'تم تحديث حالة المنشور.');
       setPosts((prev) =>
         prev.map((p) => (p._id === post._id ? { ...p, isHidden: res.data.isHidden } : p))
       );
     } catch (err: any) {
-      Alert.alert('خطأ', err.response?.data?.message || 'فشل إخفاء المنشور.');
+      notifyUser('خطأ', err.response?.data?.message || 'فشل إخفاء المنشور.');
     }
   };
 
@@ -123,12 +132,12 @@ export const SchoolFeedView: React.FC<SchoolFeedViewProps> = () => {
   const handleTogglePin = async (post: PostItem) => {
     try {
       const res = await apiClient.put(`/api/posts/${post._id}/pin`);
-      Alert.alert('نجاح', res.data?.message || 'تم تحديث تثبيت المنشور.');
+      notifyUser('نجاح', res.data?.message || 'تم تحديث تثبيت المنشور.');
       setPosts((prev) =>
         prev.map((p) => (p._id === post._id ? { ...p, isPinned: res.data.isPinned } : p))
       );
     } catch (err: any) {
-      Alert.alert('خطأ', err.response?.data?.message || 'فشل تثبيت المنشور.');
+      notifyUser('خطأ', err.response?.data?.message || 'فشل تثبيت المنشور.');
     }
   };
 
@@ -136,14 +145,14 @@ export const SchoolFeedView: React.FC<SchoolFeedViewProps> = () => {
   const handleToggleLock = async (post: PostItem) => {
     try {
       const res = await apiClient.put(`/api/posts/${post._id}/lock-comments`);
-      Alert.alert('نجاح', res.data?.message || 'تم تحديث حالة التعليقات.');
+      notifyUser('نجاح', res.data?.message || 'تم تحديث حالة التعليقات.');
       setPosts((prev) =>
         prev.map((p) =>
           p._id === post._id ? { ...p, commentsLocked: res.data.commentsLocked } : p
         )
       );
     } catch (err: any) {
-      Alert.alert('خطأ', err.response?.data?.message || 'فشل قفل التعليقات.');
+      notifyUser('خطأ', err.response?.data?.message || 'فشل قفل التعليقات.');
     }
   };
 
@@ -151,32 +160,37 @@ export const SchoolFeedView: React.FC<SchoolFeedViewProps> = () => {
   const handleDeletePost = async (post: PostItem) => {
     try {
       await apiClient.delete(`/api/posts/${post._id}`);
-      Alert.alert('نجاح', 'تم حذف المنشور نهائياً من الشبكة المدرسية.');
+      notifyUser('نجاح', 'تم حذف المنشور نهائياً من الشبكة المدرسية.');
       setPosts((prev) => prev.filter((p) => p._id !== post._id));
     } catch (err: any) {
-      Alert.alert('خطأ', err.response?.data?.message || 'فشل حذف المنشور.');
+      notifyUser('خطأ', err.response?.data?.message || 'فشل حذف المنشور.');
     }
   };
 
   // Delete Comment
   const handleDeleteComment = async (postId: string, commentId: string) => {
-    Alert.alert('تأكيد الحذف', 'هل أنت متأكد من حذف هذا التعليق؟', [
-      { text: 'إلغاء', style: 'cancel' },
-      {
-        text: 'حذف',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const res = await apiClient.delete(`/api/posts/${postId}/comments/${commentId}`);
-            setPosts((prev) =>
-              prev.map((p) => (p._id === postId ? { ...p, comments: res.data.comments } : p))
-            );
-          } catch (err: any) {
-            Alert.alert('خطأ', err.response?.data?.message || 'فشل حذف التعليق.');
-          }
-        },
-      },
-    ]);
+    const executeDelete = async () => {
+      try {
+        const res = await apiClient.delete(`/api/posts/${postId}/comments/${commentId}`);
+        setPosts((prev) =>
+          prev.map((p) => (p._id === postId ? { ...p, comments: res.data.comments } : p))
+        );
+        notifyUser('نجاح', 'تم حذف التعليق.');
+      } catch (err: any) {
+        notifyUser('خطأ', err.response?.data?.message || 'فشل حذف التعليق.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('هل أنت متأكد من حذف هذا التعليق؟')) {
+        executeDelete();
+      }
+    } else {
+      Alert.alert('تأكيد الحذف', 'هل أنت متأكد من حذف هذا التعليق؟', [
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: executeDelete },
+      ]);
+    }
   };
 
   // Handle Post Created

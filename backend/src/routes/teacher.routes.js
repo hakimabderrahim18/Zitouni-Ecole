@@ -11,6 +11,7 @@ const {
   getAttendanceRecords,
   importAttendanceExcel,
   downloadContract,
+  getTeacherClasses,
 } = require('../controllers/teacher.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/role.middleware');
@@ -21,6 +22,9 @@ const router = express.Router();
 router.use(protect);
 router.use(authorize('teacher'));
 
+router.get('/classes', getTeacherClasses);
+router.get('/classes/:classId/students', getAssignedStudents);
+router.get('/classes/:classId/groups/:groupId/students', getAssignedStudents);
 router.post('/courses', upload.single('file'), uploadCourse);
 router.get('/courses', getCourses);
 router.put('/courses/:courseId', upload.single('file'), updateCourse);
@@ -30,7 +34,6 @@ router.post('/attendance/import', upload.single('file'), importAttendanceExcel);
 router.get('/attendance/history', getAttendanceHistory);
 router.get('/attendance/records', getAttendanceRecords);
 router.post('/announcements', postAnnouncement);
-router.get('/classes/:classId/groups/:groupId/students', getAssignedStudents);
 router.get('/document/contract', downloadContract);
 
 module.exports = router;

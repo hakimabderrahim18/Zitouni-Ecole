@@ -27,6 +27,7 @@ import { theme } from '../../theme/tokens';
 import { DashboardHeader } from '../DashboardHeader';
 import { NavigationDrawer } from '../NavigationDrawer';
 import { SchoolFeedView } from '../feed/SchoolFeedView';
+import { ConversationView } from '../chat/ConversationView';
 
 interface StudentDashboardViewProps {
   onOpenDrawer: () => void;
@@ -111,6 +112,19 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
             <Text style={styles.activeRouteSubText}>إعلانات المدرسة</Text>
           </View>
           <SchoolFeedView />
+        </View>
+      ) : currentRoute === 'chat' ? (
+        <View style={{ flex: 1 }}>
+          <View style={styles.activeRouteSubHeader}>
+            <TouchableOpacity
+              style={styles.backToOverviewBtn}
+              onPress={() => setCurrentRoute('overview')}
+            >
+              <Text style={styles.backToOverviewText}>← العودة للرئيسية</Text>
+            </TouchableOpacity>
+            <Text style={styles.activeRouteSubText}>المراسلة والتواصل</Text>
+          </View>
+          <ConversationView onBackToOverview={() => setCurrentRoute('overview')} />
         </View>
       ) : (
         <ScrollView
@@ -294,6 +308,42 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                   </View>
                 </View>
               ))}
+            </View>
+          )}
+
+          {/* Subview 5: Timetable */}
+          {currentRoute === 'timetable' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>جدول توقيت القسم والحصص</Text>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>مخطط الحصص الأسبوعي</Text>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>2026-2027</Text>
+                  </View>
+                </View>
+                <Text style={styles.cardDesc}>
+                  جدول الحصص الأسبوعي معتمد وفق توقيت وزارة التربية الوطنية.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Subview 6: Re-enrollment */}
+          {currentRoute === 're-enrollment' && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>استمارة إعادة التسجيل</Text>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>حالة التسجيل السنوي</Text>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>مسجل</Text>
+                  </View>
+                </View>
+                <Text style={styles.cardDesc}>
+                  تم تأكيد تسجيلك بنجاح في السنة الدراسية الحالية.
+                </Text>
+              </View>
             </View>
           )}
         </ScrollView>

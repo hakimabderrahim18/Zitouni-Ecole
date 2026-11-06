@@ -28,6 +28,13 @@ export default function TeacherDashboard() {
 
   const activeTab = getActiveTab();
   
+  // Dynamic teacher assigned classes & groups state
+  const [assignedClasses, setAssignedClasses] = useState(profile?.classes || []);
+  const [assignedGroups, setAssignedGroups] = useState(profile?.groups || []);
+
+  const effectiveClasses = assignedClasses.length > 0 ? assignedClasses : (profile?.classes || []);
+  const effectiveGroups = assignedGroups.length > 0 ? assignedGroups : (profile?.groups || []);
+
   // Courses form state
   const [course, setCourse] = useState({ title: '', description: '', subject: '', classId: '', groupId: '' });
   const [courseFile, setCourseFile] = useState(null);
@@ -148,19 +155,45 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     fetchCourses();
+    const fetchTeacherMeta = async () => {
+      try {
+        const [clsRes, grpRes] = await Promise.all([
+          axios.get('/api/teachers/classes').catch(() => axios.get('/api/admin/classes')),
+          axios.get('/api/admin/groups').catch(() => ({ data: [] })),
+        ]);
+        if (Array.isArray(clsRes.data) && clsRes.data.length > 0) {
+          setAssignedClasses(clsRes.data);
+        }
+        if (Array.isArray(grpRes.data) && grpRes.data.length > 0) {
+          setAssignedGroups(grpRes.data);
+        }
+      } catch (e) {
+        console.warn('Failed to load teacher classes:', e);
+      }
+    };
+    fetchTeacherMeta();
   }, []);
 
   // Automatically select the teacher's first assigned Class & Group
   useEffect(() => {
-    if (profile?.classes?.length > 0) {
-      const defaultClass = profile.classes[0]._id;
-      // Find group corresponding to this class or default to first group
-      const defaultGroup = profile.groups?.find(g => g.class === defaultClass || g.class?._id === defaultClass)?._id || '';
+    const classes = effectiveClasses;
+    const groups = effectiveGroups;
+    if (classes && classes.length > 0) {
+      const defaultClass = classes[0]._id;
+      const defaultGroup = groups?.find(g => (g.class === defaultClass || g.class?._id === defaultClass))?._id || '';
 
-      setCourse({ title: '', description: '', subject: '', classId: defaultClass, groupId: defaultGroup });
-      setAttendanceFilter({ classId: defaultClass, groupId: defaultGroup, date: new Date().toISOString().split('T')[0] });
+      setCourse((prev) => ({
+        ...prev,
+        classId: prev.classId || defaultClass,
+        groupId: prev.groupId || defaultGroup,
+      }));
+      setAttendanceFilter((prev) => ({
+        ...prev,
+        classId: prev.classId || defaultClass,
+        groupId: prev.groupId || defaultGroup,
+      }));
     }
-  }, [profile]);
+  }, [assignedClasses, profile]);
 
   // Fetch student roster for attendance logs
   const handleFetchRoster = async (e) => {
@@ -366,7 +399,19 @@ export default function TeacherDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-8 text-right"
       >
-        {activeTab === 'classes' && <TeacherClasses profile={profile} />}
+        {activeTab === 'classes' && (
+          <TeacherClasses
+            profile={{ ...profile, classes: effectiveClasses, groups: effectiveGroups }}
+            onSelectClassForCourse={(classId) => {
+              setCourse((prev) => ({ ...prev, classId, groupId: '' }));
+              navigate('/dashboard/teacher');
+            }}
+            onSelectClassForAttendance={(classId) => {
+              setAttendanceFilter((prev) => ({ ...prev, classId, groupId: '' }));
+              navigate('/dashboard/teacher/attendance');
+            }}
+          />
+        )}
         {activeTab === 'lessons' && <LessonNotebook />}
         {activeTab === 'requests' && <AdministrativeRequestsManager />}
 
@@ -424,11 +469,11 @@ export default function TeacherDashboard() {
                     <select
                       value={course.classId}
                       required
-                      onChange={(e) => setCourse({ ...course, classId: e.target.value })}
+                      onChange={(e) => setCourse({ ...course, classId: e.target.value, groupId: '' })}
                       className="bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500"
                     >
-                      <option value="">اختر القسم</option>
-                      {profile?.classes?.map((c) => (
+                      <option value="">اختر القسم *</option>
+                      {effectiveClasses.map((c) => (
                         <option key={c._id} value={c._id}>{c.name}</option>
                       ))}
                     </select>
@@ -438,10 +483,12 @@ export default function TeacherDashboard() {
                       onChange={(e) => setCourse({ ...course, groupId: e.target.value })}
                       className="bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500"
                     >
-                      <option value="">اختر الفوج</option>
-                      {profile?.groups?.map((g) => (
-                        <option key={g._id} value={g._id}>{g.name}</option>
-                      ))}
+                      <option value="">القسم كاملاً (أو اختر الفوج)</option>
+                      {effectiveGroups
+                        .filter((g) => (g.class === course.classId || g.class?._id === course.classId))
+                        .map((g) => (
+                          <option key={g._id} value={g._id}>{g.name}</option>
+                        ))}
                     </select>
                   </div>
 
@@ -1042,11 +1089,11 @@ export default function TeacherDashboard() {
                     <select
                       value={editCourseData.classId}
                       required
-                      onChange={(e) => setEditCourseData({ ...editCourseData, classId: e.target.value })}
+                      onChange={(e) => setEditCourseData({ ...editCourseData, classId: e.target.value, groupId: '' })}
                       className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none"
                     >
                       <option value="">اختر القسم</option>
-                      {profile?.classes?.map((c) => (
+                      {effectiveClasses.map((c) => (
                         <option key={c._id} value={c._id}>{c.name}</option>
                       ))}
                     </select>
@@ -1060,9 +1107,11 @@ export default function TeacherDashboard() {
                       className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none"
                     >
                       <option value="">القسم كاملاً (بدون تخصيص فوج)</option>
-                      {profile?.groups?.map((g) => (
-                        <option key={g._id} value={g._id}>{g.name}</option>
-                      ))}
+                      {effectiveGroups
+                        .filter((g) => (g.class === editCourseData.classId || g.class?._id === editCourseData.classId))
+                        .map((g) => (
+                          <option key={g._id} value={g._id}>{g.name}</option>
+                        ))}
                     </select>
                   </div>
                 </div>

@@ -668,7 +668,7 @@ const deletePost = async (req, res, next) => {
     if (!post) return res.status(404).json({ message: 'المنشور غير موجود.' });
 
     const isOwner = post.publisher.toString() === userId.toString();
-    const isAuthorized = ['admin', 'school', 'general_supervisor'].includes(userRole);
+    const isAuthorized = ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'].includes(userRole);
 
     if (!isOwner && !isAuthorized) {
       return res.status(403).json({ message: 'غير مصرح لك بحذف هذا المنشور.' });
@@ -797,7 +797,7 @@ const reactToPost = async (req, res, next) => {
 // 13. Edit Post (Owner, Admin, School, or General Supervisor)
 const editPost = async (req, res, next) => {
   const { id } = req.params;
-  const { title, content, attachments, pedagogicalLinks } = req.body;
+  const { title, content, attachments, pedagogicalLinks, isPinned, commentsLocked } = req.body;
   const userId = req.user.id;
   const userRole = req.user.role;
 
@@ -806,7 +806,7 @@ const editPost = async (req, res, next) => {
     if (!post) return res.status(404).json({ message: 'المنشور غير موجود.' });
 
     const isOwner = post.publisher.toString() === userId.toString();
-    const isModerator = ['admin', 'school', 'general_supervisor'].includes(userRole);
+    const isModerator = ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'].includes(userRole);
 
     if (!isOwner && !isModerator) {
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا المنشور.' });
@@ -816,6 +816,8 @@ const editPost = async (req, res, next) => {
     if (content && content.trim()) post.content = content.trim();
     if (attachments && Array.isArray(attachments)) post.attachments = attachments;
     if (pedagogicalLinks && Array.isArray(pedagogicalLinks)) post.pedagogicalLinks = pedagogicalLinks;
+    if (typeof isPinned === 'boolean') post.isPinned = isPinned;
+    if (typeof commentsLocked === 'boolean') post.commentsLocked = commentsLocked;
 
     await post.save();
 
@@ -842,7 +844,7 @@ const toggleHidePost = async (req, res, next) => {
     if (!post) return res.status(404).json({ message: 'المنشور غير موجود.' });
 
     const isOwner = post.publisher.toString() === userId.toString();
-    const isModerator = ['admin', 'school', 'general_supervisor'].includes(userRole);
+    const isModerator = ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'].includes(userRole);
 
     if (!isOwner && !isModerator) {
       return res.status(403).json({ message: 'غير مصرح لك بإخفاء هذا المنشور.' });

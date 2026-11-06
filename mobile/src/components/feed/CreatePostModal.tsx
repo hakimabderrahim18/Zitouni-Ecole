@@ -243,7 +243,8 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
-      Alert.alert('تنبيه', 'يرجى ملء عنوان المنشور ومحتواه أولاً.');
+      if (Platform.OS === 'web') window.alert('تنبيه: يرجى ملء عنوان المنشور ومحتواه أولاً.');
+      else Alert.alert('تنبيه', 'يرجى ملء عنوان المنشور ومحتواه أولاً.');
       return;
     }
 
@@ -264,7 +265,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       };
 
       const res = await apiClient.post('/api/posts', payload);
-      Alert.alert('نجاح', 'تم نشر المنشور بنجاح في الشبكة المدرسية.');
+      if (Platform.OS === 'web') window.alert('نجاح: تم نشر المنشور بنجاح في الشبكة المدرسية.');
+      else Alert.alert('نجاح', 'تم نشر المنشور بنجاح في الشبكة المدرسية.');
+
       if (res.data?.post) {
         onPostCreated(res.data.post);
       }
@@ -279,10 +282,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       setIsScheduled(false);
       onClose();
     } catch (err: any) {
-      Alert.alert(
-        'خطأ في النشر',
-        err.response?.data?.message || 'حدث خطأ أثناء محاولة نشر المنشور.'
-      );
+      const msg = err.response?.data?.message || 'حدث خطأ أثناء محاولة نشر المنشور.';
+      if (Platform.OS === 'web') window.alert('خطأ في النشر: ' + msg);
+      else Alert.alert('خطأ في النشر', msg);
     } finally {
       setSubmitting(false);
     }

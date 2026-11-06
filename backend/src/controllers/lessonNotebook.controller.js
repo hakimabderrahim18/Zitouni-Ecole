@@ -34,6 +34,17 @@ const getLessons = async (req, res, next) => {
       } else {
         filter.class = { $in: classIds };
       }
+    } else if (role === 'teacher') {
+      const teacher = await Teacher.findOne({ user: user.id });
+      const teacherClasses = (teacher?.classes || []).map((c) => (c._id ? c._id.toString() : c.toString()));
+      if (classId) {
+        if (!teacherClasses.includes(classId.toString())) {
+          return res.status(200).json([]);
+        }
+        filter.class = classId;
+      } else {
+        filter.class = { $in: teacher?.classes || [] };
+      }
     } else if (classId) {
       filter.class = classId;
     }
@@ -97,7 +108,18 @@ const createLesson = async (req, res, next) => {
     let teacherId = null;
     if (user.role === 'teacher') {
       const teacher = await Teacher.findOne({ user: user.id });
-      if (teacher) teacherId = teacher._id;
+      if (!teacher) {
+        return res.status(404).json({ message: 'Profil enseignant introuvable.' });
+      }
+      const isAssigned = (teacher.classes || []).some(
+        (c) => (c._id ? c._id.toString() : c.toString()) === classId.toString()
+      );
+      if (!isAssigned) {
+        return res.status(403).json({
+          message: 'Accès refusé: vous ne pouvez ajouter des cours au cahier de texte que pour les classes qui vous sont assignées.',
+        });
+      }
+      teacherId = teacher._id;
     }
 
     const lesson = await LessonNotebook.create({
@@ -156,9 +178,21 @@ const updateLesson = async (req, res, next) => {
 
     // Only author or admin/supervisors/teachers can edit
     const isAuthor = lesson.teacherUser && lesson.teacherUser.toString() === user.id.toString();
-    const canEdit = isAuthor || ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher'].includes(user.role);
+    const canEdit = isAuthor || ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'].includes(user.role);
     if (!canEdit) {
       return res.status(403).json({ message: 'Non autorisé à modifier ce cours.' });
+    }
+
+    if (user.role === 'teacher' && req.body.classId) {
+      const teacher = await Teacher.findOne({ user: user.id });
+      const isAssigned = (teacher?.classes || []).some(
+        (c) => (c._id ? c._id.toString() : c.toString()) === req.body.classId.toString()
+      );
+      if (!isAssigned) {
+        return res.status(403).json({
+          message: 'Accès refusé: vous ne pouvez affecter ce cours qu\'à une classe qui vous est assignée.',
+        });
+      }
     }
 
     const updated = await LessonNotebook.findByIdAndUpdate(id, req.body, { new: true })

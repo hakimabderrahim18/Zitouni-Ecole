@@ -31,6 +31,7 @@ import { DashboardHeader } from '../DashboardHeader';
 import { NavigationDrawer } from '../NavigationDrawer';
 import { Button } from '../common/Button';
 import { SchoolFeedView } from '../feed/SchoolFeedView';
+import { ConversationView } from '../chat/ConversationView';
 
 interface ReceptionistDashboardViewProps {
   onOpenDrawer: () => void;
@@ -170,6 +171,19 @@ export const ReceptionistDashboardView: React.FC<ReceptionistDashboardViewProps>
             <Text style={styles.activeRouteSubText}>إعلانات المؤسسة</Text>
           </View>
           <SchoolFeedView />
+        </View>
+      ) : currentRoute === 'chat' ? (
+        <View style={{ flex: 1 }}>
+          <View style={styles.activeRouteSubHeader}>
+            <TouchableOpacity
+              style={styles.backToOverviewBtn}
+              onPress={() => setCurrentRoute('overview')}
+            >
+              <Text style={styles.backToOverviewText}>← العودة للرئيسية</Text>
+            </TouchableOpacity>
+            <Text style={styles.activeRouteSubText}>التواصل والمحادثات السريعة</Text>
+          </View>
+          <ConversationView onBackToOverview={() => setCurrentRoute('overview')} />
         </View>
       ) : (
         <ScrollView

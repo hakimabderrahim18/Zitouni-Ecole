@@ -15,6 +15,17 @@ const markAttendance = async (req, res, next) => {
       return res.status(400).json({ message: 'classId, date et records (tableau) sont requis.' });
     }
 
+    if (req.user && req.user.role === 'teacher') {
+      const Teacher = require('../models/teacher.model');
+      const teacher = await Teacher.findOne({ user: req.user.id });
+      const isAssigned = (teacher?.classes || []).some(
+        (c) => (c._id ? c._id.toString() : c.toString()) === classId.toString()
+      );
+      if (!isAssigned) {
+        return res.status(403).json({ message: 'Accès refusé: vous n\'êtes pas assigné à cette classe.' });
+      }
+    }
+
     const attendanceDate = new Date(date);
     attendanceDate.setHours(12, 0, 0, 0); // Normalize date to midday
 
@@ -195,6 +206,17 @@ const getClassAttendance = async (req, res, next) => {
   try {
     const { classId } = req.params;
     const { date, session } = req.query;
+
+    if (req.user && req.user.role === 'teacher') {
+      const Teacher = require('../models/teacher.model');
+      const teacher = await Teacher.findOne({ user: req.user.id });
+      const isAssigned = (teacher?.classes || []).some(
+        (c) => (c._id ? c._id.toString() : c.toString()) === classId.toString()
+      );
+      if (!isAssigned) {
+        return res.status(403).json({ message: 'Accès refusé: vous n\'êtes pas assigné à cette classe.' });
+      }
+    }
 
     const query = { class: classId };
 

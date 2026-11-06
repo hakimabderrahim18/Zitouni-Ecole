@@ -203,7 +203,16 @@ export default function ProfileScreen() {
         activeId="profile"
         onSelect={(id) => {
           setIsDrawerOpen(false);
-          router.push('/(tabs)');
+          if (id === 'profile') return;
+          if (id === 'chat' || id === 'messages') {
+            router.push('/(tabs)/messages');
+          } else if (id === 'students') {
+            router.push('/(tabs)/students');
+          } else if (id === 'exit-passes' || id === 'exit-permits') {
+            router.push('/(tabs)/exit-permits');
+          } else {
+            router.push({ pathname: '/(tabs)', params: { route: id } });
+          }
         }}
       />
 

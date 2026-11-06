@@ -283,7 +283,16 @@ export default function ExitPermitsScreen() {
         activeId="exit-permits"
         onSelect={(id) => {
           setIsDrawerOpen(false);
-          router.push('/(tabs)');
+          if (id === 'exit-passes' || id === 'exit-permits') return;
+          if (id === 'chat' || id === 'messages') {
+            router.push('/(tabs)/messages');
+          } else if (id === 'students') {
+            router.push('/(tabs)/students');
+          } else if (id === 'profile') {
+            router.push('/(tabs)/profile');
+          } else {
+            router.push({ pathname: '/(tabs)', params: { route: id } });
+          }
         }}
       />
 

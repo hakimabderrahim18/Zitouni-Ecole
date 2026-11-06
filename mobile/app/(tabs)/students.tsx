@@ -143,12 +143,28 @@ export default function StudentsScreen() {
         onSelect={(id) => {
           setIsDrawerOpen(false);
           if (id === 'students') return;
-          router.push('/(tabs)');
+          if (id === 'chat' || id === 'messages') {
+            router.push('/(tabs)/messages');
+          } else if (id === 'exit-passes' || id === 'exit-permits') {
+            router.push('/(tabs)/exit-permits');
+          } else if (id === 'profile') {
+            router.push('/(tabs)/profile');
+          } else {
+            router.push({ pathname: '/(tabs)', params: { route: id } });
+          }
         }}
       />
 
       {/* Search Header */}
       <View style={styles.searchHeader}>
+        {user?.role === 'teacher' && (
+          <View style={styles.teacherScopeBanner}>
+            <Text style={styles.teacherScopeText}>
+              الأقسام المسندة إليّ فقط ({students.length} تلميذ)
+            </Text>
+          </View>
+        )}
+
         <View style={styles.searchBox}>
           <Search size={18} color={theme.colors.text.muted} />
           <TextInput
@@ -287,6 +303,21 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.surface.border,
+  },
+  teacherScopeBanner: {
+    backgroundColor: 'rgba(123, 30, 58, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(123, 30, 58, 0.2)',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  teacherScopeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: theme.colors.brand[500],
   },
   searchBox: {
     flexDirection: 'row',

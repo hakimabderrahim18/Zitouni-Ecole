@@ -20,6 +20,16 @@ const uploadCourse = async (req, res, next) => {
       return res.status(404).json({ message: 'Teacher profile not found' });
     }
 
+    // Security check: teacher can only upload courses to their assigned classes
+    const isClassAssigned = (teacher.classes || []).some(
+      (c) => (c._id ? c._id.toString() : c.toString()) === classId.toString()
+    );
+    if (!isClassAssigned) {
+      return res.status(403).json({
+        message: 'Accès refusé: vous ne pouvez ajouter des cours que pour les classes qui vous sont assignées (لا يمكنك إضافة دروس إلا لأقسامك المسندة).',
+      });
+    }
+
     let fileUrl = '';
     let fileName = '';
 
@@ -81,10 +91,21 @@ const updateCourse = async (req, res, next) => {
       return res.status(404).json({ message: 'الدرس غير موجود أو لا تملك صلاحية تعديله.' });
     }
 
+    if (classId) {
+      const isClassAssigned = (teacher.classes || []).some(
+        (c) => (c._id ? c._id.toString() : c.toString()) === classId.toString()
+      );
+      if (!isClassAssigned) {
+        return res.status(403).json({
+          message: 'Accès refusé: vous ne pouvez affecter ce cours qu\'à une classe qui vous est assignée.',
+        });
+      }
+      course.class = classId;
+    }
+
     if (title) course.title = title.trim();
     if (description !== undefined) course.description = description.trim();
     if (subject) course.subject = subject.trim();
-    if (classId) course.class = classId;
     course.group = groupId || null;
 
     // If new file provided, update fileUrl and fileName
@@ -146,6 +167,20 @@ const markAttendance = async (req, res, next) => {
   const { classId, groupId, date, records } = req.body; // records: [{ studentId, status, remarks }]
 
   try {
+    const teacher = await Teacher.findOne({ user: req.user.id });
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher profile not found' });
+    }
+
+    const isClassAssigned = (teacher.classes || []).some(
+      (c) => (c._id ? c._id.toString() : c.toString()) === classId?.toString()
+    );
+    if (!isClassAssigned) {
+      return res.status(403).json({
+        message: 'Accès refusé: vous n\'êtes pas assigné à cette classe.',
+      });
+    }
+
     const savedRecords = [];
 
     for (const record of records) {
@@ -179,6 +214,17 @@ const postAnnouncement = async (req, res, next) => {
       return res.status(404).json({ message: 'Teacher profile not found' });
     }
 
+    if (classId) {
+      const isClassAssigned = (teacher.classes || []).some(
+        (c) => (c._id ? c._id.toString() : c.toString()) === classId.toString()
+      );
+      if (!isClassAssigned) {
+        return res.status(403).json({
+          message: 'Accès refusé: vous n\'êtes pas assigné à cette classe.',
+        });
+      }
+    }
+
     const announcement = await Announcement.create({
       title,
       content,
@@ -200,9 +246,33 @@ const getAssignedStudents = async (req, res, next) => {
   const { classId, groupId } = req.params;
 
   try {
-    const students = await Student.find({ class: classId, group: groupId })
+    const teacher = await Teacher.findOne({ user: req.user.id });
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher profile not found' });
+    }
+
+    const isClassAssigned = (teacher.classes || []).some(
+      (c) => (c._id ? c._id.toString() : c.toString()) === classId.toString()
+    );
+    if (!isClassAssigned) {
+      return res.status(403).json({
+        message: 'Accès refusé: vous n\'êtes pas assigné à cette classe.',
+      });
+    }
+
+    const query = { class: classId };
+    if (groupId && groupId !== 'all' && groupId !== 'null' && groupId !== 'undefined') {
+      query.group = groupId;
+    }
+
+    const students = await Student.find(query)
       .populate('user', 'firstName lastName email phoneNumber profilePic')
-      .populate('class group');
+      .populate('class group')
+      .populate({
+        path: 'parent',
+        populate: { path: 'user', select: 'firstName lastName email phoneNumber' }
+      })
+      .sort({ lastNameArabic: 1, firstNameArabic: 1, createdAt: -1 });
 
     res.status(200).json(students);
   } catch (error) {
@@ -421,6 +491,23 @@ const downloadContract = async (req, res, next) => {
   }
 };
 
+// Retrieve only the teacher's assigned classes and groups
+const getTeacherClasses = async (req, res, next) => {
+  try {
+    const teacher = await Teacher.findOne({ user: req.user.id })
+      .populate('classes')
+      .populate('groups');
+
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher profile not found' });
+    }
+
+    res.status(200).json(teacher.classes || []);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   uploadCourse,
   updateCourse,
@@ -433,5 +520,6 @@ module.exports = {
   getAttendanceRecords,
   importAttendanceExcel,
   downloadContract,
+  getTeacherClasses,
 };
 

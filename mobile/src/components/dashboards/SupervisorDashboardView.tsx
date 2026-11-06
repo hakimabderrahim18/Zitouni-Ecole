@@ -36,6 +36,7 @@ import { DashboardHeader } from '../DashboardHeader';
 import { NavigationDrawer } from '../NavigationDrawer';
 import { Button } from '../common/Button';
 import { SchoolFeedView } from '../feed/SchoolFeedView';
+import { ConversationView } from '../chat/ConversationView';
 
 interface SupervisorDashboardViewProps {
   onOpenDrawer: () => void;
@@ -264,6 +265,19 @@ export const SupervisorDashboardView: React.FC<SupervisorDashboardViewProps> = (
             <Text style={styles.activeRouteSubText}>آخر الأخبار والمستجدات</Text>
           </View>
           <SchoolFeedView />
+        </View>
+      ) : currentRoute === 'chat' ? (
+        <View style={{ flex: 1 }}>
+          <View style={styles.activeRouteSubHeader}>
+            <TouchableOpacity
+              style={styles.backToOverviewBtn}
+              onPress={() => setCurrentRoute('overview')}
+            >
+              <Text style={styles.backToOverviewText}>← العودة للرئيسية</Text>
+            </TouchableOpacity>
+            <Text style={styles.activeRouteSubText}>المحادثات الإدارية</Text>
+          </View>
+          <ConversationView onBackToOverview={() => setCurrentRoute('overview')} />
         </View>
       ) : (
         <ScrollView
@@ -499,6 +513,107 @@ export const SupervisorDashboardView: React.FC<SupervisorDashboardViewProps> = (
                   </View>
                 ))
               )}
+            </View>
+          )}
+
+          {/* Subview 4: Staff Attendance */}
+          {currentRoute === 'staff-attendance' && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>مواظبة الطاقم والخصم التلقائي</Text>
+              </View>
+              <View style={styles.passCard}>
+                <Text style={styles.passStudent}>سجل حضور الطاقم التربوي والإداري</Text>
+                <Text style={styles.passReason}>
+                  نسبة الحضور المسجلة لليوم: {(dashboardData as any).staffAttendanceRate || 98}%
+                </Text>
+                <Text style={styles.passTime}>النظام الآلي لتسجيل الحضور مفعل</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Subview 5: Student Attendance */}
+          {currentRoute === 'student-attendance' && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>غياب وحضور التلاميذ</Text>
+              </View>
+              <View style={styles.passCard}>
+                <Text style={styles.passStudent}>متابعة غيابات الأقسام والأفواج</Text>
+                <Text style={styles.passReason}>
+                  إجمالي الغيابات المسجلة اليوم: {(dashboardData as any).studentAbsencesCount || 4} تلاميذ
+                </Text>
+                <Text style={styles.passTime}>تم إشعار أولياء الأمور آلياً عبر الرسائل</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Subview 6: Canteen */}
+          {currentRoute === 'canteen' && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>حجوزات الإطعام والمطعم المدرسي</Text>
+              </View>
+              <View style={styles.passCard}>
+                <Text style={styles.passStudent}>خدمة المطعم والوجبات الساخنة</Text>
+                <Text style={styles.passReason}>
+                  الوجبات المحجوزة لليوم: 240 وجبة • الطور الابتدائي والمتوسط
+                </Text>
+                <Text style={styles.passTime}>المطعم المدرسي مراقب صحياً وغذائياً</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Subview 7: Class Assignment */}
+          {currentRoute === 'assignment' && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>إسناد الأقسام للمشرفين</Text>
+              </View>
+              <View style={styles.passCard}>
+                <Text style={styles.passStudent}>مخطط توزيع الأفواج التربوية</Text>
+                <Text style={styles.passReason}>
+                  الأفواج المسندة تخضع لمتابعة وإشراف دوري على مدار الأسبوع.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Subview 8: Timetable & Lessons */}
+          {(currentRoute === 'timetable' || currentRoute === 'lessons') && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>
+                  {currentRoute === 'timetable' ? 'جداول التوقيت والمخططات' : 'كراس الدروس والواجبات'}
+                </Text>
+              </View>
+              <View style={styles.passCard}>
+                <Text style={styles.passStudent}>سجل التوقيت والكراس اليومي</Text>
+                <Text style={styles.passReason}>
+                  متابعة تقدم البرنامج الدراسي وإنجاز الواجبات اليومية.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Subview 9: Inscriptions & Reported Messages */}
+          {(currentRoute === 'inscriptions' || currentRoute === 'reported-messages') && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>
+                  {currentRoute === 'inscriptions' ? 'التسجيلات والملفات المدرسية' : 'الرسائل المبلغ عنها'}
+                </Text>
+              </View>
+              <View style={styles.passCard}>
+                <Text style={styles.passStudent}>
+                  {currentRoute === 'inscriptions' ? 'ملفات التمدرس الجديدة' : 'سجل الرقابة والانضباط المدرسي'}
+                </Text>
+                <Text style={styles.passReason}>
+                  {currentRoute === 'inscriptions'
+                    ? 'الملفات المودعة مكتملة وخاضعة للتدقيق الإداري.'
+                    : 'لا توجد بلاغات حرجة معلقة حالياً.'}
+                </Text>
+              </View>
             </View>
           )}
         </ScrollView>

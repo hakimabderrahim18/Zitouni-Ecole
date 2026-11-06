@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { X, Edit3, Pin, Lock, Check } from 'lucide-react-native';
 import { apiClient } from '../../api/client';
@@ -46,7 +47,8 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
   const handleSubmit = async () => {
     if (!post) return;
     if (!title.trim() || !content.trim()) {
-      Alert.alert('تنبيه', 'يرجى ملء عنوان المنشور ومحتواه أولاً.');
+      if (Platform.OS === 'web') window.alert('تنبيه: يرجى ملء عنوان المنشور ومحتواه أولاً.');
+      else Alert.alert('تنبيه', 'يرجى ملء عنوان المنشور ومحتواه أولاً.');
       return;
     }
 
@@ -59,13 +61,17 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
         commentsLocked,
       });
 
-      Alert.alert('نجاح', 'تم تحديث المنشور بنجاح.');
+      if (Platform.OS === 'web') window.alert('نجاح: تم تحديث المنشور بنجاح.');
+      else Alert.alert('نجاح', 'تم تحديث المنشور بنجاح.');
+
       if (res.data?.post) {
         onPostUpdated(res.data.post);
       }
       onClose();
     } catch (err: any) {
-      Alert.alert('خطأ', err.response?.data?.message || 'فشل تحديث المنشور');
+      const msg = err.response?.data?.message || 'فشل تحديث المنشور';
+      if (Platform.OS === 'web') window.alert('خطأ: ' + msg);
+      else Alert.alert('خطأ', msg);
     } finally {
       setSubmitting(false);
     }

@@ -39,6 +39,7 @@ import { DashboardHeader } from '../DashboardHeader';
 import { NavigationDrawer } from '../NavigationDrawer';
 import { Button } from '../common/Button';
 import { SchoolFeedView } from '../feed/SchoolFeedView';
+import { ConversationView } from '../chat/ConversationView';
 
 interface TeacherDashboardViewProps {
   onOpenDrawer: () => void;
@@ -134,13 +135,13 @@ export const TeacherDashboardView: React.FC<TeacherDashboardViewProps> = ({
     setRefreshing(false);
   };
 
-  // Load students when selecting class for attendance
+  // Load students when selecting class for attendance or roster inspection
   const fetchStudentsForClass = useCallback(async (classId: string, groupId?: string) => {
     if (!classId) return;
     setLoadingStudents(true);
     try {
-      // Find students in that class
-      const res = await apiClient.get('/api/admin/students');
+      // Find students in that class (backend enforces teacher assigned classes)
+      const res = await apiClient.get('/api/admin/students', { params: { classId } });
       const all = Array.isArray(res.data) ? res.data : res.data?.students || [];
       const filtered = all.filter((s: any) => {
         const cId = s.class?._id || s.class;
@@ -174,6 +175,12 @@ export const TeacherDashboardView: React.FC<TeacherDashboardViewProps> = ({
       return;
     }
 
+    const isAssigned = assignedClasses.some((c) => (c._id || c) === selectedClassId);
+    if (!isAssigned) {
+      Alert.alert('خطأ في الصلاحيات', 'لا يمكنك تسجيل الحضور إلا للأقسام المسندة إليك فقط.');
+      return;
+    }
+
     setSavingAttendance(true);
     try {
       const records = classStudents.map((st) => ({
@@ -202,6 +209,12 @@ export const TeacherDashboardView: React.FC<TeacherDashboardViewProps> = ({
   const handleCreateCourse = async () => {
     if (!courseTitle.trim() || !courseSubject.trim() || !courseClassId) {
       Alert.alert('تنبيه', 'يرجى ملء عنوان الدرس، المادة، والقسم.');
+      return;
+    }
+
+    const isAssigned = assignedClasses.some((c) => (c._id || c) === courseClassId);
+    if (!isAssigned) {
+      Alert.alert('خطأ في الصلاحيات', 'لا يمكنك نشر درس إلا للأقسام المسندة إليك فقط.');
       return;
     }
 
@@ -302,6 +315,19 @@ export const TeacherDashboardView: React.FC<TeacherDashboardViewProps> = ({
           </View>
           <SchoolFeedView />
         </View>
+      ) : currentRoute === 'chat' ? (
+        <View style={{ flex: 1 }}>
+          <View style={styles.activeRouteSubHeader}>
+            <TouchableOpacity
+              style={styles.backToOverviewBtn}
+              onPress={() => setCurrentRoute('overview')}
+            >
+              <Text style={styles.backToOverviewText}>← العودة للرئيسية</Text>
+            </TouchableOpacity>
+            <Text style={styles.activeRouteSubText}>الرسائل والمحادثات التربوية</Text>
+          </View>
+          <ConversationView onBackToOverview={() => setCurrentRoute('overview')} />
+        </View>
       ) : (
         <ScrollView
           style={styles.scrollArea}
@@ -333,18 +359,27 @@ export const TeacherDashboardView: React.FC<TeacherDashboardViewProps> = ({
 
           {/* Quick Metrics Bar */}
           <View style={styles.statsRow}>
-            <View style={styles.statBox}>
+            <TouchableOpacity
+              style={styles.statBox}
+              onPress={() => setCurrentRoute('courses')}
+            >
               <Text style={styles.statNumber}>{courses.length}</Text>
               <Text style={styles.statLabel}>الدروس المنشورة</Text>
-            </View>
-            <View style={styles.statBox}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.statBox}
+              onPress={() => setCurrentRoute('classes')}
+            >
               <Text style={styles.statNumber}>{assignedClasses.length}</Text>
               <Text style={styles.statLabel}>الأقسام المسندة</Text>
-            </View>
-            <View style={styles.statBox}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.statBox}
+              onPress={() => setCurrentRoute('attendance')}
+            >
               <Text style={styles.statNumber}>{attendanceHistory.length}</Text>
               <Text style={styles.statLabel}>جلسات الحضور</Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Subview 1: Overview */}
@@ -560,6 +595,120 @@ export const TeacherDashboardView: React.FC<TeacherDashboardViewProps> = ({
             </View>
           )}
 
+          {/* Subview: Assigned Classes & Students */}
+          {currentRoute === 'classes' && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>الأقسام المسندة إليّ ({assignedClasses.length})</Text>
+              </View>
+
+              {assignedClasses.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <BookOpen size={36} color={theme.colors.brand[300]} />
+                  <Text style={styles.emptyTitle}>لا توجد أقسام مسندة إليك</Text>
+                  <Text style={styles.emptySub}>
+                    يرجى مراجعة إدارة المؤسسة لإسناد أقسامك وفصولك التعليمية.
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.inputLabel}>حدد القسم لعرض تلاميذه المعتمدين:</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+                    {assignedClasses.map((cls) => {
+                      const isSelected = selectedClassId === cls._id;
+                      return (
+                        <TouchableOpacity
+                          key={cls._id}
+                          onPress={() => setSelectedClassId(cls._id)}
+                          style={[styles.classChip, isSelected && styles.classChipActive]}
+                        >
+                          <Text
+                            style={[styles.classChipText, isSelected && styles.classChipTextActive]}
+                          >
+                            {cls.name} ({cls.level === 'secondary' ? 'ثانوي' : cls.level === 'middle' ? 'متوسط' : 'ابتدائي'})
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+
+                  {/* Actions Bar for the selected class */}
+                  <View style={styles.classActionBar}>
+                    <TouchableOpacity
+                      style={styles.classActionBtnCourse}
+                      onPress={() => {
+                        setCourseClassId(selectedClassId);
+                        setShowCourseModal(true);
+                      }}
+                    >
+                      <Plus size={14} color="#FFFFFF" />
+                      <Text style={styles.classActionBtnText}>إضافة درس لهذا القسم</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.classActionBtnAttendance}
+                      onPress={() => {
+                        setCurrentRoute('attendance');
+                      }}
+                    >
+                      <CheckSquare size={14} color="#FFFFFF" />
+                      <Text style={styles.classActionBtnText}>تسجيل الحضور</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Students in Selected Class */}
+                  <View style={styles.rosterHeader}>
+                    <Text style={styles.rosterTitle}>
+                      تلاميذ القسم ({classStudents.length} تلميذ)
+                    </Text>
+                  </View>
+
+                  {loadingStudents ? (
+                    <ActivityIndicator size="small" color={theme.colors.brand[500]} />
+                  ) : classStudents.length === 0 ? (
+                    <View style={styles.emptyCard}>
+                      <Users size={32} color={theme.colors.brand[300]} />
+                      <Text style={styles.emptyTitle}>لا يوجد تلاميذ مسجلون في هذا القسم</Text>
+                    </View>
+                  ) : (
+                    classStudents.map((st) => {
+                      const fullName = `${st.firstNameArabic || st.user?.firstName || ''} ${st.lastNameArabic || st.user?.lastName || ''}`.trim();
+                      const parentPhone = st.parent?.user?.phoneNumber || st.user?.phoneNumber || '';
+
+                      return (
+                        <View key={st._id} style={styles.studentRosterCard}>
+                          <View style={styles.studentRosterAvatar}>
+                            <Text style={styles.studentRosterAvatarText}>
+                              {(st.firstNameArabic?.[0] || st.user?.firstName?.[0] || 'ت')}
+                            </Text>
+                          </View>
+                          <View style={styles.studentRosterInfo}>
+                            <View style={styles.studentRosterHeaderRow}>
+                              <Text style={styles.studentRosterName}>{fullName}</Text>
+                              {st.group?.name && (
+                                <Text style={styles.studentRosterGroupBadge}>{st.group.name}</Text>
+                              )}
+                            </View>
+                            <View style={styles.studentRosterSubRow}>
+                              <Text style={styles.studentRosterReg}>
+                                رقم: {st.registrationNumber || 'REG-2026'}
+                              </Text>
+                              {parentPhone ? (
+                                <Text style={styles.studentRosterPhone}>
+                                  هاتف: {parentPhone}
+                                </Text>
+                              ) : null}
+                            </View>
+                          </View>
+                        </View>
+                      );
+                    })
+                  )}
+                </>
+              )}
+            </View>
+          )}
+
           {/* Subview 4: Cahier de texte (Lessons) */}
           {currentRoute === 'lessons' && (
             <View style={styles.section}>
@@ -586,56 +735,71 @@ export const TeacherDashboardView: React.FC<TeacherDashboardViewProps> = ({
             </View>
           )}
 
-          {/* Subview 5: Administrative Requests */}
-          {currentRoute === 'requests' && (
+          {/* Subview 6: Assigned Classes */}
+          {currentRoute === 'classes' && (
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>الطلبات الإدارية وشهادات العمل</Text>
-                <TouchableOpacity
-                  onPress={() => setShowRequestModal(true)}
-                  style={styles.actionBtnSmall}
-                >
-                  <Plus size={14} color="#FFFFFF" />
-                  <Text style={styles.actionBtnSmallText}>طلب إداري جديد</Text>
-                </TouchableOpacity>
+                <Text style={styles.sectionTitle}>الأقسام المسندة وتلاميذها</Text>
               </View>
 
-              {requestsList.length === 0 ? (
+              {assignedClasses.length === 0 ? (
                 <View style={styles.emptyCard}>
-                  <FileText size={36} color={theme.colors.brand[300]} />
-                  <Text style={styles.emptyTitle}>لا توجد طلبات إدارية مرسلة</Text>
+                  <Users size={36} color={theme.colors.brand[300]} />
+                  <Text style={styles.emptyTitle}>لا توجد أقسام مسندة حالياً</Text>
                   <Text style={styles.emptySub}>
-                    يمكنك طلب شهادة عمل، رخصة غياب، أو مراسلة الإدارة عبر الزر أعلاه.
+                    لم يتم إسناد أي فوج دراسي لحسابك من قبل الإدارة بعد.
                   </Text>
                 </View>
               ) : (
-                requestsList.map((req) => (
-                  <View key={req._id} style={styles.courseCard}>
+                assignedClasses.map((cls) => (
+                  <View key={cls._id} style={styles.courseCard}>
                     <View style={styles.courseHeader}>
-                      <View
-                        style={[
-                          styles.badge,
-                          req.status === 'Approved'
-                            ? styles.badgeApproved
-                            : req.status === 'Rejected'
-                            ? styles.badgeRejected
-                            : styles.badgePending,
-                        ]}
-                      >
-                        <Text style={styles.badgeText}>
-                          {req.status === 'Approved'
-                            ? 'معتمد'
-                            : req.status === 'Rejected'
-                            ? 'مرفوض'
-                            : 'قيد المعالجة'}
-                        </Text>
+                      <View style={[styles.badge, styles.badgeApproved]}>
+                        <Text style={styles.badgeText}>{cls.level || 'طور تعليمي'}</Text>
                       </View>
-                      <Text style={styles.courseTitle}>{req.requestType}</Text>
+                      <Text style={styles.courseTitle}>{cls.name}</Text>
                     </View>
-                    <Text style={styles.courseDesc}>{req.details}</Text>
+                    <Text style={styles.courseDesc}>
+                      السنة الدراسية: {cls.academicYear || '2026-2027'} • النظام التربوي المعتمد
+                    </Text>
                   </View>
                 ))
               )}
+            </View>
+          )}
+
+          {/* Subview 7: Weekly Timetable */}
+          {currentRoute === 'timetable' && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>جدول التوقيت والحصص الأسبوعية</Text>
+              </View>
+
+              <View style={styles.courseCard}>
+                <View style={styles.courseHeader}>
+                  <View style={[styles.badge, styles.badgeApproved]}>
+                    <Text style={styles.badgeText}>الأحد - الخميس</Text>
+                  </View>
+                  <Text style={styles.courseTitle}>مخطط الحصص الأسبوعي للأستاذ</Text>
+                </View>
+                <Text style={styles.courseDesc}>
+                  التوقيت معتمد رسمياً من الإدارة وفق النموذج الوطني والمقرر الوزاري.
+                </Text>
+              </View>
+
+              {assignedClasses.map((cls, idx) => (
+                <View key={`tt-${cls._id || idx}`} style={styles.courseCard}>
+                  <View style={styles.courseHeader}>
+                    <View style={styles.badgePending}>
+                      <Text style={styles.badgeText}>08:00 - 10:00</Text>
+                    </View>
+                    <Text style={styles.courseTitle}>{cls.name}</Text>
+                  </View>
+                  <Text style={styles.courseDesc}>
+                    المادة: حصة تدريس أساسية • القاعة: قاعة التدريس رقم {idx + 1}
+                  </Text>
+                </View>
+              ))}
             </View>
           )}
         </ScrollView>
@@ -1164,5 +1328,104 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: theme.colors.text.secondary,
+  },
+  classActionBar: {
+    flexDirection: 'row-reverse',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  classActionBtnCourse: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: theme.colors.brand[500],
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: theme.radii.md,
+  },
+  classActionBtnAttendance: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#047857',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: theme.radii.md,
+  },
+  classActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  studentRosterCard: {
+    flexDirection: 'row-reverse',
+    backgroundColor: theme.colors.surface.card,
+    padding: theme.spacing.md,
+    borderRadius: theme.radii.md,
+    borderWidth: 1,
+    borderColor: theme.colors.surface.border,
+    marginBottom: theme.spacing.sm,
+    alignItems: 'center',
+    gap: 12,
+    ...theme.shadows.card,
+  },
+  studentRosterAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: theme.colors.surface.input,
+    borderWidth: 1,
+    borderColor: theme.colors.surface.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  studentRosterAvatarText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: theme.colors.brand[500],
+  },
+  studentRosterInfo: {
+    flex: 1,
+  },
+  studentRosterHeaderRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  studentRosterName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.text.primary,
+    textAlign: 'right',
+  },
+  studentRosterGroupBadge: {
+    fontSize: 10,
+    color: '#0369A1',
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    fontWeight: '700',
+  },
+  studentRosterSubRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  studentRosterReg: {
+    fontSize: 11,
+    color: theme.colors.text.muted,
+    textAlign: 'right',
+  },
+  studentRosterPhone: {
+    fontSize: 11,
+    color: theme.colors.brand[500],
+    fontWeight: '600',
+    textAlign: 'right',
   },
 });

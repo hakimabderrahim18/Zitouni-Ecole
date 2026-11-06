@@ -242,8 +242,20 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   key={item.id}
                   style={[styles.navItem, isActive && styles.navItemActive]}
                   onPress={() => {
-                    onSelect(item.id);
                     onClose();
+                    if (item.id === 'chat' || item.id === 'messages') {
+                      onSelect(item.id);
+                      router.push('/(tabs)/messages');
+                    } else if (item.id === 'students' && user?.role !== 'admin' && user?.role !== 'school') {
+                      router.push('/(tabs)/students');
+                    } else if (
+                      (item.id === 'exit-passes' || item.id === 'exit-permits') &&
+                      (user?.role === 'parent' || user?.role === 'receptionist')
+                    ) {
+                      router.push('/(tabs)/exit-permits');
+                    } else {
+                      onSelect(item.id);
+                    }
                   }}
                   activeOpacity={0.75}
                 >
