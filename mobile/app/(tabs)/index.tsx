@@ -61,18 +61,74 @@ import { Button } from '../../src/components/common/Button';
 import { theme } from '../../src/theme/tokens';
 import { NavigationDrawer, ADMIN_NAV_ITEMS } from '../../src/components/NavigationDrawer';
 import { DashboardHeader } from '../../src/components/DashboardHeader';
+import { TeacherDashboardView } from '../../src/components/dashboards/TeacherDashboardView';
+import { ParentDashboardView } from '../../src/components/dashboards/ParentDashboardView';
+import { StudentDashboardView } from '../../src/components/dashboards/StudentDashboardView';
+import { SupervisorDashboardView } from '../../src/components/dashboards/SupervisorDashboardView';
+import { ReceptionistDashboardView } from '../../src/components/dashboards/ReceptionistDashboardView';
 
 /* ==================================================================== */
-/*  Main Component: Unified Admin Dashboard & All 21 Modules            */
+/*  Main Component: Unified Role-Aware Dashboard & RBAC Dispatcher      */
 /* ==================================================================== */
 
-export default function AdminScreen() {
+export default function DashboardScreen() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin' || user?.role === 'school';
 
   // Navigation Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentRoute, setCurrentRoute] = useState<string>('overview');
+
+  // RBAC Role-Based Dispatch: Render role-specific dashboard views
+  if (user?.role === 'teacher') {
+    return (
+      <TeacherDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => setIsDrawerOpen(true)}
+      />
+    );
+  }
+
+  if (user?.role === 'parent') {
+    return (
+      <ParentDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => setIsDrawerOpen(true)}
+      />
+    );
+  }
+
+  if (user?.role === 'student') {
+    return (
+      <StudentDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => setIsDrawerOpen(true)}
+      />
+    );
+  }
+
+  if (user?.role === 'general_supervisor' || user?.role === 'pedagogical_supervisor') {
+    return (
+      <SupervisorDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => setIsDrawerOpen(true)}
+      />
+    );
+  }
+
+  if (user?.role === 'receptionist') {
+    return (
+      <ReceptionistDashboardView
+        currentRoute={currentRoute}
+        setCurrentRoute={setCurrentRoute}
+        onOpenDrawer={() => setIsDrawerOpen(true)}
+      />
+    );
+  }
 
   // Loading & Refreshing
   const [loading, setLoading] = useState(true);

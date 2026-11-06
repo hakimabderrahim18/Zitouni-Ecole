@@ -22,6 +22,7 @@ import {
   Filter,
 } from 'lucide-react-native';
 import { apiClient } from '../../src/api/client';
+import { useAuthStore } from '../../src/store/useAuthStore';
 import { theme } from '../../src/theme/tokens';
 import { DashboardHeader } from '../../src/components/DashboardHeader';
 import { NavigationDrawer } from '../../src/components/NavigationDrawer';
@@ -60,6 +61,7 @@ interface StudentDoc {
 
 export default function StudentsScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [students, setStudents] = useState<StudentDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,15 +71,21 @@ export default function StudentsScreen() {
 
   const fetchStudents = useCallback(async () => {
     try {
-      const res = await apiClient.get('/api/admin/students');
-      const data = Array.isArray(res.data) ? res.data : res.data?.students || [];
-      setStudents(data);
+      if (user?.role === 'parent') {
+        const res = await apiClient.get('/api/parents/children');
+        const data = Array.isArray(res.data) ? res.data : [];
+        setStudents(data);
+      } else {
+        const res = await apiClient.get('/api/admin/students');
+        const data = Array.isArray(res.data) ? res.data : res.data?.students || [];
+        setStudents(data);
+      }
     } catch (err: any) {
       console.warn('Could not load students:', err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     fetchStudents();

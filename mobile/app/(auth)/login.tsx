@@ -216,6 +216,13 @@ export default function LoginScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
+                onPress={() => fillAccount('0550112233', '0550112233')}
+                style={styles.roleChip}
+              >
+                <Text style={styles.roleChipText}>مراقب عام (0550112233)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 onPress={() => fillAccount('0550445566', '0550445566')}
                 style={styles.roleChip}
               >

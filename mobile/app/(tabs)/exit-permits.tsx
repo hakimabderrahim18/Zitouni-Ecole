@@ -493,7 +493,7 @@ export default function ExitPermitsScreen() {
                 </View>
 
                 {/* Supervisor & Admin Action Buttons */}
-                {isSupervisorOrAdmin && isPending && (
+                {isSupervisorOrAdmin && isPending && user?.role !== 'receptionist' && (
                   <View style={styles.actionsRow}>
                     <TouchableOpacity
                       onPress={() => handleApprove(item._id)}
@@ -510,6 +510,28 @@ export default function ExitPermitsScreen() {
                     >
                       <XCircle size={16} color="#FFFFFF" />
                       <Text style={styles.actionBtnText}>رفض الطلب</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* Receptionist Gate Verification */}
+                {user?.role === 'receptionist' && isApproved && item.status !== 'Used' && (
+                  <View style={styles.actionsRow}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        try {
+                          await apiClient.put(`/api/receptionist/exit-pass/${item._id}/verify`);
+                          Alert.alert('تم بنجاح', 'تم تأكيد خروج التلميذ عبر البوابة.');
+                          fetchPermits();
+                        } catch (err: any) {
+                          Alert.alert('خطأ', err.response?.data?.message || 'فشل تأكيد الخروج');
+                        }
+                      }}
+                      style={[styles.actionBtn, styles.approveBtn]}
+                      activeOpacity={0.85}
+                    >
+                      <ShieldCheck size={16} color="#FFFFFF" />
+                      <Text style={styles.actionBtnText}>تأكيد خروج التلميذ من البوابة</Text>
                     </TouchableOpacity>
                   </View>
                 )}

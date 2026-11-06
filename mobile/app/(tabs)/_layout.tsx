@@ -1,9 +1,35 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, Users, ShieldCheck, MessageSquare, UserCircle2 } from 'lucide-react-native';
+import {
+  LayoutDashboard,
+  Users,
+  ShieldCheck,
+  MessageSquare,
+  UserCircle2,
+  GraduationCap,
+  Baby,
+} from 'lucide-react-native';
 import { theme } from '../../src/theme/tokens';
+import { useAuthStore } from '../../src/store/useAuthStore';
 
 export default function TabLayout() {
+  const { user } = useAuthStore();
+  const role = user?.role;
+
+  const getStudentsTabTitle = () => {
+    if (role === 'parent') return 'أبنائي';
+    if (role === 'teacher') return 'أقسامي';
+    if (role === 'student') return 'زملائي';
+    if (role === 'receptionist') return 'الزوار';
+    return 'التلاميذ';
+  };
+
+  const getExitPermitsTabTitle = () => {
+    if (role === 'parent') return 'طلب خروج';
+    if (role === 'receptionist') return 'البوابة';
+    return 'أذونات الخروج';
+  };
+
   return (
     <Tabs
       screenOptions={{
@@ -35,15 +61,22 @@ export default function TabLayout() {
       <Tabs.Screen
         name="students"
         options={{
-          title: 'التلاميذ',
-          tabBarIcon: ({ color, size }) => <Users color={color} size={size} />,
+          title: getStudentsTabTitle(),
+          tabBarIcon: ({ color, size }) =>
+            role === 'parent' ? (
+              <Baby color={color} size={size} />
+            ) : role === 'teacher' ? (
+              <GraduationCap color={color} size={size} />
+            ) : (
+              <Users color={color} size={size} />
+            ),
           headerTitle: 'دليل التلاميذ والأقسام',
         }}
       />
       <Tabs.Screen
         name="exit-permits"
         options={{
-          title: 'أذونات الخروج',
+          title: getExitPermitsTabTitle(),
           tabBarIcon: ({ color, size }) => <ShieldCheck color={color} size={size} />,
           headerTitle: 'أذونات وتصاريح الخروج',
         }}
