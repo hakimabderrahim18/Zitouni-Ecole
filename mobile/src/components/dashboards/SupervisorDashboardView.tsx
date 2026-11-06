@@ -35,6 +35,7 @@ import { theme } from '../../theme/tokens';
 import { DashboardHeader } from '../DashboardHeader';
 import { NavigationDrawer } from '../NavigationDrawer';
 import { Button } from '../common/Button';
+import { SchoolFeedView } from '../feed/SchoolFeedView';
 
 interface SupervisorDashboardViewProps {
   onOpenDrawer: () => void;
@@ -250,6 +251,19 @@ export const SupervisorDashboardView: React.FC<SupervisorDashboardViewProps> = (
         <View style={styles.centerLoading}>
           <ActivityIndicator size="large" color={theme.colors.brand[500]} />
           <Text style={styles.loadingText}>جاري تحميل فضاء المراقبة العامة من الخادم...</Text>
+        </View>
+      ) : currentRoute === 'feed' ? (
+        <View style={{ flex: 1 }}>
+          <View style={styles.activeRouteSubHeader}>
+            <TouchableOpacity
+              style={styles.backToOverviewBtn}
+              onPress={() => setCurrentRoute('overview')}
+            >
+              <Text style={styles.backToOverviewText}>← العودة للرئيسية</Text>
+            </TouchableOpacity>
+            <Text style={styles.activeRouteSubText}>آخر الأخبار والمستجدات</Text>
+          </View>
+          <SchoolFeedView />
         </View>
       ) : (
         <ScrollView
@@ -829,4 +843,32 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.brand[500] },
   formGroup: { marginBottom: theme.spacing.md },
+  activeRouteSubHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(123, 30, 58, 0.05)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(201, 162, 77, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  activeRouteSubText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.brand[500],
+  },
+  backToOverviewBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: theme.colors.surface.card,
+    borderWidth: 1,
+    borderColor: theme.colors.surface.border,
+  },
+  backToOverviewText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.colors.text.secondary,
+  },
 });

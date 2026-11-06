@@ -66,6 +66,7 @@ import { ParentDashboardView } from '../../src/components/dashboards/ParentDashb
 import { StudentDashboardView } from '../../src/components/dashboards/StudentDashboardView';
 import { SupervisorDashboardView } from '../../src/components/dashboards/SupervisorDashboardView';
 import { ReceptionistDashboardView } from '../../src/components/dashboards/ReceptionistDashboardView';
+import { SchoolFeedView } from '../../src/components/feed/SchoolFeedView';
 
 /* ==================================================================== */
 /*  Main Component: Unified Role-Aware Dashboard & RBAC Dispatcher      */
@@ -792,6 +793,19 @@ function AdminDashboardView({
           <ActivityIndicator size="large" color={theme.colors.brand[500]} />
           <Text style={styles.loadingText}>جاري مزامنة بيانات المؤسسة من السيرفر...</Text>
         </View>
+      ) : currentRoute === 'feed' ? (
+        <View style={{ flex: 1 }}>
+          <View style={styles.activeRouteSubHeader}>
+            <TouchableOpacity
+              style={styles.backToOverviewBtn}
+              onPress={() => setCurrentRoute('overview')}
+            >
+              <Text style={styles.backToOverviewText}>← العودة للرئيسية</Text>
+            </TouchableOpacity>
+            <Text style={styles.activeRouteSubText}>فضاء التواصل والشبكة المدرسية</Text>
+          </View>
+          <SchoolFeedView />
+        </View>
       ) : (
         <ScrollView
           style={styles.scrollBody}
@@ -804,199 +818,6 @@ function AdminDashboardView({
             />
           }
         >
-          {/* ============================================================ */}
-          {/* ROUTE 1: FEED (آخر الأخبار والمستجدات)                       */}
-          {/* ============================================================ */}
-          {currentRoute === 'feed' && (
-            <View style={styles.feedContainer}>
-              <View style={styles.bannerCard}>
-                <View style={styles.bannerContent}>
-                  <View style={styles.bannerIcon}>
-                    <Megaphone size={24} color="#F3E9DC" />
-                  </View>
-                  <View style={styles.bannerTextGroup}>
-                    <Text style={styles.bannerTitle}>فضاء التواصل الأكاديمي</Text>
-                    <Text style={styles.bannerSubtitle}>
-                      تابع الإعلانات والأخبار وتفاعل مع مجتمعك التعليمي
-                    </Text>
-                  </View>
-                  <View style={styles.liveBadge}>
-                    <Sparkles size={12} color={theme.colors.gold[500]} />
-                    <Text style={styles.liveBadgeText}>مباشر</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Publish Box */}
-              <View style={styles.publishCard}>
-                <Text style={styles.publishHeader}>إدارة ونشر الإعلانات الرسمية</Text>
-                <Text style={styles.publishDesc}>
-                  بصفتك إدارة المؤسسة، يمكنك نشر البيانات والمذكرات الرسمية لجميع المستخدمين.
-                </Text>
-                <Button
-                  label="نشر إعلان رسمي جديد"
-                  onPress={() => setShowCreatePostModal(true)}
-                  style={styles.publishActionBtn}
-                />
-              </View>
-
-              <Text style={styles.feedHeaderTitle}>جميع المنشورات والإعلانات الرسمية</Text>
-
-              {posts.map((item) => {
-                const authorName = item.publisher
-                  ? `${item.publisher.firstName} ${item.publisher.lastName}`
-                  : 'الإدارة العامة';
-                const authorRole = getRoleLabel(item.publisher?.role);
-                const likesCount = item.reactionCounts?.total ?? (item.likes?.length || 0);
-                const hasLiked =
-                  (item.likes || []).includes(user?.id || '') || item.userReaction === 'like';
-                const commentsCount = item.comments?.length || 0;
-                const isCommentsOpen = !!expandedComments[item._id];
-
-                return (
-                  <View key={item._id} style={styles.postCard}>
-                    {item.isPinned && (
-                      <View style={styles.pinnedBanner}>
-                        <Pin size={13} color={theme.colors.gold[600]} />
-                        <Text style={styles.pinnedBannerText}>إعلان رسمي مثبت في الواجهة</Text>
-                      </View>
-                    )}
-
-                    <View style={styles.authorHeader}>
-                      <View style={styles.avatarCrest}>
-                        <Text style={styles.avatarCrestText}>{authorName[0] || 'إ'}</Text>
-                      </View>
-                      <View style={styles.authorTextGroup}>
-                        <View style={styles.authorNameRow}>
-                          <Text style={styles.authorName}>{authorName}</Text>
-                          <CheckCircle2 size={13} color={theme.colors.gold[500]} />
-                        </View>
-                        <Text style={styles.authorRole}>{authorRole}</Text>
-                      </View>
-                      <View style={styles.timeTag}>
-                        <Clock size={11} color={theme.colors.text.subtle} />
-                        <Text style={styles.timeTagText}>{timeAgo(item.createdAt)}</Text>
-                      </View>
-                      {isAdmin && (
-                        <TouchableOpacity
-                          style={styles.postMoreBtn}
-                          onPress={() => handleOpenPostOptions(item)}
-                          accessibilityLabel="خيارات المنشور"
-                        >
-                          <MoreVertical size={16} color={theme.colors.brand[600]} />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-
-                    <Text style={styles.postTitle}>{item.title}</Text>
-                    <Text style={styles.postBody}>{item.content}</Text>
-
-                    <View style={styles.postFooter}>
-                      <View style={styles.interactionRow}>
-                        <TouchableOpacity
-                          style={[styles.actionBtn, hasLiked && styles.actionBtnActive]}
-                          onPress={() => handleToggleLike(item._id)}
-                        >
-                          <Heart
-                            size={16}
-                            color={hasLiked ? theme.colors.brand[500] : theme.colors.text.muted}
-                            fill={hasLiked ? theme.colors.brand[500] : 'transparent'}
-                          />
-                          <Text
-                            style={[styles.actionBtnText, hasLiked && styles.actionBtnTextActive]}
-                          >
-                            {likesCount} إعجاب
-                          </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={styles.actionBtn}
-                          onPress={() =>
-                            setExpandedComments((prev) => ({
-                              ...prev,
-                              [item._id]: !prev[item._id],
-                            }))
-                          }
-                        >
-                          <MessageSquare size={16} color={theme.colors.text.muted} />
-                          <Text style={styles.actionBtnText}>{commentsCount} تعليق</Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      {isAdmin && (
-                        <View style={styles.adminControlsRow}>
-                          <TouchableOpacity
-                            style={styles.adminIconBtn}
-                            onPress={() => handleTogglePin(item._id)}
-                          >
-                            <Pin
-                              size={15}
-                              color={
-                                item.isPinned ? theme.colors.gold[600] : theme.colors.text.muted
-                              }
-                            />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={styles.adminIconBtn}
-                            onPress={() => {
-                              setEditingPost(item);
-                              setEditTitle(item.title);
-                              setEditContent(item.content);
-                            }}
-                          >
-                            <Edit3 size={15} color={theme.colors.text.muted} />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={styles.adminIconBtn}
-                            onPress={() => handleDeletePost(item._id)}
-                          >
-                            <Trash2 size={15} color="#E11D48" />
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
-
-                    {isCommentsOpen && (
-                      <View style={styles.commentsContainer}>
-                        <View style={styles.commentInputRow}>
-                          <TextInput
-                            style={styles.commentInput}
-                            placeholder="اكتب تعليقاً..."
-                            placeholderTextColor={theme.colors.text.subtle}
-                            value={commentInputs[item._id] || ''}
-                            onChangeText={(t) =>
-                              setCommentInputs((prev) => ({ ...prev, [item._id]: t }))
-                            }
-                          />
-                          <TouchableOpacity
-                            style={styles.sendCommentBtn}
-                            onPress={() => handleAddComment(item._id)}
-                          >
-                            <Send size={14} color="#FFFFFF" />
-                          </TouchableOpacity>
-                        </View>
-
-                        {item.comments && item.comments.length > 0 ? (
-                          item.comments.map((c: any) => (
-                            <View key={c._id} style={styles.commentBubble}>
-                              <View style={styles.commentHeader}>
-                                <Text style={styles.commentAuthor}>{c.userName || 'مستخدم'}</Text>
-                                <Text style={styles.commentTime}>{timeAgo(c.createdAt)}</Text>
-                              </View>
-                              <Text style={styles.commentText}>{c.content}</Text>
-                            </View>
-                          ))
-                        ) : (
-                          <Text style={styles.noCommentsText}>لا توجد تعليقات بعد.</Text>
-                        )}
-                      </View>
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          )}
-
           {/* ============================================================ */}
           {/* ROUTE 2: OVERVIEW (لوحة القيادة والمؤشرات)                    */}
           {/* ============================================================ */}
