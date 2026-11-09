@@ -23,6 +23,8 @@ import {
   ThumbsDown,
   MessageSquare,
   Eye,
+  EyeOff,
+  UserX,
   Download,
   FileText,
   ExternalLink,
@@ -44,6 +46,8 @@ interface PostCardProps {
   onReact: (postId: string, reactionType: 'like' | 'love' | 'dislike') => void;
   onConfirmRead: (postId: string) => void;
   onDeleteComment: (postId: string, commentId: string) => void;
+  onToggleHideComment?: (postId: string, commentId: string) => void;
+  onBanUserFromComments?: (postId: string, targetUserId: string, userName?: string) => void;
 }
 
 const roleLabels: Record<string, string> = {
@@ -106,6 +110,14 @@ const formatPostFullTime = (dateStr?: string): string => {
   return `${dateFormatted} في تمام ${time} (${ago})`;
 };
 
+const formatCommentTime = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const time = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const ago = timeAgo(dateStr);
+  return `${time} • ${ago}`;
+};
+
 export const PostCard: React.FC<PostCardProps> = ({
   post,
   currentUserId,
@@ -115,6 +127,8 @@ export const PostCard: React.FC<PostCardProps> = ({
   onReact,
   onConfirmRead,
   onDeleteComment,
+  onToggleHideComment,
+  onBanUserFromComments,
 }) => {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -528,35 +542,96 @@ export const PostCard: React.FC<PostCardProps> = ({
           {/* Comments List */}
           {comments.length > 0 ? (
             <View style={styles.commentsList}>
-              {comments.map((comm) => (
-                <View key={comm._id} style={styles.commentCard}>
-                  <View style={styles.commentHeader}>
-                    <View style={styles.commentAuthorRow}>
-                      <Text style={styles.commentAuthorName}>{comm.userName}</Text>
-                      {comm.userRole ? (
-                        <View style={styles.commentRoleTag}>
-                          <Text style={styles.commentRoleTagText}>
-                            {roleLabels[comm.userRole] || comm.userRole}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                    <View style={styles.commentActionGroup}>
-                      <Text style={styles.commentTimeText}>
-                        {timeAgo(comm.createdAt)}
-                      </Text>
-                      {canModerate && (
-                        <TouchableOpacity
-                          onPress={() => onDeleteComment(post._id, comm._id)}
-                          style={styles.commentDeleteBtn}
-                        >
-                          <Trash2 size={12} color="#BE123C" />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
+              {comments.map((comm) => {
+                const commUserId = typeof comm.user === 'object' ? comm.user?._id : comm.user;
+                const isCommentAuthor = commUserId && String(commUserId) === String(currentUserId);
+                const canDeleteThisComment = canModerate || isCommentAuthor;
+                const isUserBanned = post.bannedUsersFromComments?.some(
+                  (id) => String(id) === String(commUserId)
+                );
 
-                  <Text style={styles.commentContent}>{comm.content}</Text>
+                return (
+                  <View
+                    key={comm._id}
+                    style={[
+                      styles.commentCard,
+                      comm.isHidden && styles.commentCardHidden,
+                    ]}
+                  >
+                    <View style={styles.commentHeader}>
+                      <View style={styles.commentAuthorRow}>
+                        <Text style={styles.commentAuthorName}>{comm.userName}</Text>
+                        {comm.userRole ? (
+                          <View style={styles.commentRoleTag}>
+                            <Text style={styles.commentRoleTagText}>
+                              {roleLabels[comm.userRole] || comm.userRole}
+                            </Text>
+                          </View>
+                        ) : null}
+                        {comm.isHidden && (
+                          <View style={styles.hiddenCommentBadge}>
+                            <Text style={styles.hiddenCommentBadgeText}>مخفي</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <View style={styles.commentActionGroup}>
+                        {/* Ban/Unban user on this post */}
+                        {canModerate && commUserId && String(commUserId) !== String(currentUserId) && (
+                          <TouchableOpacity
+                            onPress={() => onBanUserFromComments?.(post._id, String(commUserId), comm.userName)}
+                            style={[
+                              styles.commentActionBtn,
+                              isUserBanned && styles.commentActionBtnBanned,
+                            ]}
+                            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                          >
+                            <UserX size={13} color={isUserBanned ? '#BE123C' : '#94A3B8'} />
+                          </TouchableOpacity>
+                        )}
+
+                        {/* Delete comment */}
+                        {canDeleteThisComment && (
+                          <TouchableOpacity
+                            onPress={() => onDeleteComment(post._id, comm._id)}
+                            style={styles.commentActionBtn}
+                            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                          >
+                            <Trash2 size={13} color="#BE123C" />
+                          </TouchableOpacity>
+                        )}
+
+                        {/* Hide / Unhide comment */}
+                        {canModerate && (
+                          <TouchableOpacity
+                            onPress={() => onToggleHideComment?.(post._id, comm._id)}
+                            style={[
+                              styles.commentActionBtn,
+                              comm.isHidden && styles.commentActionBtnHidden,
+                            ]}
+                            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                          >
+                            {comm.isHidden ? (
+                              <Eye size={13} color="#D97706" />
+                            ) : (
+                              <EyeOff size={13} color="#94A3B8" />
+                            )}
+                          </TouchableOpacity>
+                        )}
+
+                        {/* Timestamp with Clock */}
+                        <View style={styles.commentTimeWrapper}>
+                          <Text style={styles.commentTimeText}>
+                            {formatCommentTime(comm.createdAt)}
+                          </Text>
+                          <Clock size={11} color={theme.colors.gold[600]} />
+                        </View>
+                      </View>
+                    </View>
+
+                    <Text style={[styles.commentContent, comm.isHidden && styles.commentContentHidden]}>
+                      {comm.content}
+                    </Text>
 
                   {/* Replies List */}
                   {comm.replies && comm.replies.length > 0 && (
@@ -611,7 +686,8 @@ export const PostCard: React.FC<PostCardProps> = ({
                     </View>
                   )}
                 </View>
-              ))}
+                );
+              })}
             </View>
           ) : (
             <Text style={styles.noCommentsText}>لا توجد تعليقات بعد على هذا المنشور.</Text>
@@ -1110,16 +1186,48 @@ const styles = StyleSheet.create({
     color: theme.colors.gold[700],
   },
   commentActionGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  commentActionBtn: {
+    padding: 3,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+  },
+  commentActionBtnBanned: {
+    backgroundColor: 'rgba(190, 18, 60, 0.12)',
+  },
+  commentActionBtnHidden: {
+    backgroundColor: 'rgba(217, 119, 6, 0.12)',
+  },
+  commentTimeWrapper: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 8,
+    gap: 3,
   },
   commentTimeText: {
     fontSize: 9,
     color: theme.colors.text.muted,
   },
-  commentDeleteBtn: {
-    padding: 2,
+  commentCardHidden: {
+    backgroundColor: 'rgba(254, 243, 199, 0.35)',
+    borderColor: '#FCD34D',
+  },
+  hiddenCommentBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  hiddenCommentBadgeText: {
+    fontSize: 8,
+    fontWeight: '700',
+    color: '#B45309',
+  },
+  commentContentHidden: {
+    color: '#78350F',
+    fontStyle: 'italic',
   },
   commentContent: {
     fontSize: 12,

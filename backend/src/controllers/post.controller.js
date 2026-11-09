@@ -255,7 +255,8 @@ const getFeed = async (req, res, next) => {
 
         // Format comments with hide state
         obj.comments = (obj.comments || []).map(comm => {
-          if (comm.isHidden && !isOwner && !isPrivileged && comm.user?.toString() !== userId.toString()) {
+          const commUserId = (comm.user?._id || comm.user)?.toString();
+          if (comm.isHidden && !isOwner && !isPrivileged && commUserId !== userId.toString()) {
             return {
               ...comm,
               content: 'تم إخفاء هذا التعليق للمراجعة الإدارية',
@@ -864,7 +865,7 @@ const toggleHidePost = async (req, res, next) => {
   }
 };
 
-// 15. Delete Comment (Comment author, Post owner, Admin, General Supervisor)
+// 15. Delete Comment (Comment author, Post owner, Admin, Supervisors, Teacher)
 const deleteComment = async (req, res, next) => {
   const { id, commentId } = req.params;
   const userId = req.user.id;
@@ -877,17 +878,18 @@ const deleteComment = async (req, res, next) => {
     const comment = post.comments.id(commentId);
     if (!comment) return res.status(404).json({ message: 'التعليق غير موجود.' });
 
-    const isCommentAuthor = comment.user.toString() === userId.toString();
-    const isPostOwner = post.publisher.toString() === userId.toString();
-    const isModerator = ['admin', 'school', 'general_supervisor'].includes(userRole);
+    const isCommentAuthor = (comment.user?._id || comment.user)?.toString() === userId.toString();
+    const isPostOwner = (post.publisher?._id || post.publisher)?.toString() === userId.toString();
+    const isModerator = ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher'].includes(userRole);
 
     if (!isCommentAuthor && !isPostOwner && !isModerator) {
       return res.status(403).json({ message: 'غير مصرح لك بحذف هذا التعليق.' });
     }
 
-    comment.isDeleted = true;
-    comment.content = 'تم حذف هذا التعليق من قبل الإدارة';
+    // Completely remove comment from post
+    post.comments.pull({ _id: commentId });
     await post.save();
+    await post.populate('comments.user', 'firstName lastName role profilePic');
 
     res.status(200).json({
       message: 'تم حذف التعليق بنجاح.',
@@ -911,9 +913,9 @@ const toggleHideComment = async (req, res, next) => {
     const comment = post.comments.id(commentId);
     if (!comment) return res.status(404).json({ message: 'التعليق غير موجود.' });
 
-    const isCommentAuthor = comment.user.toString() === userId.toString();
-    const isPostOwner = post.publisher.toString() === userId.toString();
-    const isModerator = ['admin', 'school', 'general_supervisor'].includes(userRole);
+    const isCommentAuthor = (comment.user?._id || comment.user)?.toString() === userId.toString();
+    const isPostOwner = (post.publisher?._id || post.publisher)?.toString() === userId.toString();
+    const isModerator = ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher'].includes(userRole);
 
     if (!isCommentAuthor && !isPostOwner && !isModerator) {
       return res.status(403).json({ message: 'غير مصرح لك بإخفاء هذا التعليق.' });
@@ -922,10 +924,12 @@ const toggleHideComment = async (req, res, next) => {
     comment.isHidden = !comment.isHidden;
     comment.hiddenBy = comment.isHidden ? userId : null;
     await post.save();
+    await post.populate('comments.user', 'firstName lastName role profilePic');
 
     res.status(200).json({
       message: comment.isHidden ? 'تم إخفاء التعليق.' : 'تم إظهار التعليق.',
       comments: post.comments,
+      isHidden: comment.isHidden,
     });
   } catch (error) {
     next(error);
@@ -936,26 +940,28 @@ const toggleHideComment = async (req, res, next) => {
 const banUserFromComments = async (req, res, next) => {
   const { id } = req.params;
   const { targetUserId } = req.body;
+  const userId = req.user.id;
   const userRole = req.user.role;
 
   try {
     const post = await Announcement.findById(id);
     if (!post) return res.status(404).json({ message: 'المنشور غير موجود.' });
 
-    const isModerator = ['admin', 'school', 'general_supervisor'].includes(userRole);
-    if (!isModerator) {
-      return res.status(403).json({ message: 'فقط الإدارة والمراقب العام يمكنهما حظر المستخدمين من التعليق.' });
+    const isPostOwner = (post.publisher?._id || post.publisher)?.toString() === userId.toString();
+    const isModerator = ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher'].includes(userRole);
+    if (!isPostOwner && !isModerator) {
+      return res.status(403).json({ message: 'غير مصرح لك بحظر المستخدمين من التعليق على هذا المنشور.' });
     }
 
     if (!post.bannedUsersFromComments) post.bannedUsersFromComments = [];
 
     const isAlreadyBanned = post.bannedUsersFromComments.some(
-      (u) => u.toString() === targetUserId.toString()
+      (u) => (u._id || u)?.toString() === targetUserId?.toString()
     );
 
     if (isAlreadyBanned) {
       post.bannedUsersFromComments = post.bannedUsersFromComments.filter(
-        (u) => u.toString() !== targetUserId.toString()
+        (u) => (u._id || u)?.toString() !== targetUserId?.toString()
       );
     } else {
       post.bannedUsersFromComments.push(targetUserId);
@@ -964,8 +970,9 @@ const banUserFromComments = async (req, res, next) => {
     await post.save();
 
     res.status(200).json({
-      message: isAlreadyBanned ? 'تم رفع حظر التعليق عن المستخدم.' : 'تم حظر المستخدم من التعليق على هذا المنشور.',
+      message: isAlreadyBanned ? 'تم رفع حظر التعليق عن هذا المستخدم.' : 'تم حظر المستخدم من التعليق على هذا المنشور.',
       bannedUsers: post.bannedUsersFromComments,
+      isBanned: !isAlreadyBanned,
     });
   } catch (error) {
     next(error);

@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuthStore } from '../src/store/useAuthStore';
+import { connectSocket, disconnectSocket } from '../src/services/socket';
 import { theme } from '../src/theme/tokens';
 
 const queryClient = new QueryClient({
@@ -17,13 +18,24 @@ const queryClient = new QueryClient({
 });
 
 function AuthGuard() {
-  const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  const { user, isAuthenticated, isLoading, initialize } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const uid = user.id || (user as any)._id;
+      if (uid) {
+        connectSocket(uid);
+      }
+    } else if (!isAuthenticated) {
+      disconnectSocket();
+    }
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     if (isLoading) return;

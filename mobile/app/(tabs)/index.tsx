@@ -68,6 +68,7 @@ import { SupervisorDashboardView } from '../../src/components/dashboards/Supervi
 import { ReceptionistDashboardView } from '../../src/components/dashboards/ReceptionistDashboardView';
 import { SchoolFeedView } from '../../src/components/feed/SchoolFeedView';
 import { ConversationView } from '../../src/components/chat/ConversationView';
+import { AdminAccountsView } from '../../src/components/admin/AdminAccountsView';
 import { useLocalSearchParams } from 'expo-router';
 
 /* ==================================================================== */
@@ -99,6 +100,7 @@ function AdminDashboardView({
   const [teachersList, setTeachersList] = useState<any[]>([]);
   const [studentsList, setStudentsList] = useState<any[]>([]);
   const [modulesList, setModulesList] = useState<any[]>([]);
+  const [groupsList, setGroupsList] = useState<any[]>([]);
   const [documentsList, setDocumentsList] = useState<any[]>([]);
   const [schedulesList, setSchedulesList] = useState<any[]>([]);
   const [backupsList, setBackupsList] = useState<any[]>([]);
@@ -209,6 +211,7 @@ function AdminDashboardView({
         reportedRes,
         auditRes,
         lessonsRes,
+        groupsRes,
       ] = await Promise.all([
         apiClient.get('/api/admin/dashboard/stats').catch(() => ({ data: null })),
         apiClient.get('/api/posts').catch(() => ({ data: { posts: [] } })),
@@ -224,6 +227,7 @@ function AdminDashboardView({
         apiClient.get('/api/messages/reported').catch(() => ({ data: [] })),
         apiClient.get('/api/admin/login-audit').catch(() => ({ data: [] })),
         apiClient.get('/api/lessons').catch(() => ({ data: [] })),
+        apiClient.get('/api/admin/groups').catch(() => ({ data: [] })),
       ]);
 
       if (statsRes.data) setStats(statsRes.data);
@@ -233,6 +237,7 @@ function AdminDashboardView({
       if (teachersRes.data) setTeachersList(Array.isArray(teachersRes.data) ? teachersRes.data : (teachersRes.data.teachers || []));
       if (studentsRes.data) setStudentsList(Array.isArray(studentsRes.data) ? studentsRes.data : (studentsRes.data.students || []));
       if (modulesRes.data) setModulesList(Array.isArray(modulesRes.data) ? modulesRes.data : (modulesRes.data.modules || []));
+      if (groupsRes.data) setGroupsList(Array.isArray(groupsRes.data) ? groupsRes.data : (groupsRes.data.groups || []));
       if (docsRes.data) setDocumentsList(Array.isArray(docsRes.data) ? docsRes.data : (docsRes.data.documents || []));
       if (schedulesRes.data) setSchedulesList(Array.isArray(schedulesRes.data) ? schedulesRes.data : (schedulesRes.data.schedules || []));
       if (backupsRes.data) setBackupsList(backupsRes.data.backups || (Array.isArray(backupsRes.data) ? backupsRes.data : []));
@@ -836,12 +841,16 @@ function AdminDashboardView({
           {/* ============================================================ */}
           {/* ROUTE 2: OVERVIEW (لوحة القيادة والمؤشرات)                    */}
           {/* ============================================================ */}
+          {/* ============================================================ */}
+          {/* ROUTE 2: OVERVIEW (لوحة القيادة والمؤشرات)                    */}
+          {/* ============================================================ */}
           {currentRoute === 'overview' && (
             <View style={styles.overviewContainer}>
               {/* 3 Quick Action Banners */}
               <View style={styles.quickBannersGroup}>
+                {/* 1. Login & Security Audit Trail */}
                 <TouchableOpacity
-                  style={styles.quickBannerCard}
+                  style={[styles.quickBannerCard, { borderColor: 'rgba(123, 30, 58, 0.25)' }]}
                   onPress={() => setCurrentRoute('login-audit')}
                   activeOpacity={0.85}
                 >
@@ -855,7 +864,7 @@ function AdminDashboardView({
                   </View>
                   <Text style={styles.quickBannerTitle}>سجل جلسات الدخول والأمان</Text>
                   <Text style={styles.quickBannerDesc}>
-                    متابعة سجلات تسجيل الدخول، رصد المحاولات الفاشلة، الأجهزة، وإلغاء حظر الحسابات.
+                    متابعة سجلات تسجيل الدخول، رصد المحاولات الفاشلة، الأجهزة والمتصفحات، وإلغاء حظر الحسابات المقفلة.
                   </Text>
                   <View style={styles.quickBannerFooter}>
                     <Text style={styles.quickBannerLinkText}>فتح السجل والمتابعة</Text>
@@ -863,8 +872,9 @@ function AdminDashboardView({
                   </View>
                 </TouchableOpacity>
 
+                {/* 2. School Inscriptions & Receipts */}
                 <TouchableOpacity
-                  style={styles.quickBannerCard}
+                  style={[styles.quickBannerCard, { borderColor: 'rgba(201, 162, 77, 0.40)' }]}
                   onPress={() => setCurrentRoute('inscriptions')}
                   activeOpacity={0.85}
                 >
@@ -872,13 +882,13 @@ function AdminDashboardView({
                     <View style={[styles.quickBannerIconBg, { backgroundColor: theme.colors.gold[500] }]}>
                       <FileText size={22} color="#FFFFFF" />
                     </View>
-                    <View style={[styles.quickBannerPill, { backgroundColor: 'rgba(201,162,77,0.15)' }]}>
+                    <View style={[styles.quickBannerPill, { backgroundColor: 'rgba(201, 162, 77, 0.15)', borderColor: 'rgba(201, 162, 77, 0.30)' }]}>
                       <Text style={[styles.quickBannerPillText, { color: theme.colors.brand[500] }]}>تسجيلات رسمية</Text>
                     </View>
                   </View>
                   <Text style={styles.quickBannerTitle}>التسجيلات واستخراج الوصولات</Text>
                   <Text style={styles.quickBannerDesc}>
-                    تسجيل التلاميذ باستمارة أو Excel، استخراج وصل التسجيل الفوري، وتوليد وحفظ الملف المدرسي.
+                    تسجيل التلاميذ باستمارة أو Excel، استخراج وصل التسجيل الفوري، وتوليد وحفظ وطباعة الملف المدرسي الشامل.
                   </Text>
                   <View style={styles.quickBannerFooter}>
                     <Text style={styles.quickBannerLinkText}>إدارة التسجيلات والوصولات</Text>
@@ -886,8 +896,9 @@ function AdminDashboardView({
                   </View>
                 </TouchableOpacity>
 
+                {/* 3. Reported Messages Moderation */}
                 <TouchableOpacity
-                  style={styles.quickBannerCard}
+                  style={[styles.quickBannerCard, { borderColor: '#FECDD3' }]}
                   onPress={() => setCurrentRoute('reported-messages')}
                   activeOpacity={0.85}
                 >
@@ -895,13 +906,13 @@ function AdminDashboardView({
                     <View style={[styles.quickBannerIconBg, { backgroundColor: '#E11D48' }]}>
                       <ShieldAlert size={22} color="#FFFFFF" />
                     </View>
-                    <View style={[styles.quickBannerPill, { backgroundColor: '#FFE4E6' }]}>
+                    <View style={[styles.quickBannerPill, { backgroundColor: '#FFE4E6', borderColor: '#FECDD3' }]}>
                       <Text style={[styles.quickBannerPillText, { color: '#BE123C' }]}>بلاغات وانضباط</Text>
                     </View>
                   </View>
                   <Text style={styles.quickBannerTitle}>الرسائل والمحادثات المبلغ عنها</Text>
                   <Text style={styles.quickBannerDesc}>
-                    مراجعة البلاغات الواردة من المستخدمين حول الرسائل والمحادثات المخالفة واتخاذ إجراء.
+                    مراجعة البلاغات الواردة من المستخدمين حول الرسائل والمحادثات المخالفة واتخاذ إجراء الحذف أو الإخفاء.
                   </Text>
                   <View style={styles.quickBannerFooter}>
                     <Text style={styles.quickBannerLinkText}>معالجة البلاغات الإدارية</Text>
@@ -910,9 +921,9 @@ function AdminDashboardView({
                 </TouchableOpacity>
               </View>
 
-              {/* 5 Daily Operational KPIs */}
-              <Text style={styles.sectionTitle}>مؤشرات الأداء والتشغيل اليومي</Text>
+              {/* 5 Daily Operational KPIs (Row 2) */}
               <View style={styles.kpiRow}>
+                {/* 1. Absences */}
                 <View style={styles.kpiCard}>
                   <View style={styles.kpiHeader}>
                     <Text style={[styles.kpiLabel, { color: '#BE123C' }]}>الغيابات اليومية</Text>
@@ -921,57 +932,61 @@ function AdminDashboardView({
                   <Text style={[styles.kpiValue, { color: '#BE123C' }]}>
                     {stats?.todayAbsences ?? 0}
                   </Text>
-                  <Text style={styles.kpiSub}>غيابات مسجلة اليوم</Text>
+                  <Text style={styles.kpiSub}>غيابات التلاميذ المسجلة اليوم</Text>
                 </View>
 
+                {/* 2. Lates */}
                 <View style={styles.kpiCard}>
                   <View style={styles.kpiHeader}>
                     <Text style={[styles.kpiLabel, { color: '#B45309' }]}>التأخرات المسجلة</Text>
                     <Calendar size={16} color="#D97706" />
                   </View>
-                  <Text style={[styles.kpiValue, { color: '#B45309' }]}>
+                  <Text style={[styles.kpiValue, { color: '#D97706' }]}>
                     {stats?.todayLates ?? 0}
                   </Text>
-                  <Text style={styles.kpiSub}>تأخرات بحاجة لتبرير</Text>
+                  <Text style={styles.kpiSub}>تأخرات بحاجة إلى تبرير</Text>
                 </View>
 
+                {/* 3. New Registrations */}
                 <View style={styles.kpiCard}>
                   <View style={styles.kpiHeader}>
                     <Text style={[styles.kpiLabel, { color: '#047857' }]}>التسجيلات الجديدة</Text>
                     <GraduationCap size={16} color="#059669" />
                   </View>
-                  <Text style={[styles.kpiValue, { color: '#047857' }]}>
+                  <Text style={[styles.kpiValue, { color: '#059669' }]}>
                     {stats?.newRegistrations ?? stats?.students ?? 0}
                   </Text>
-                  <Text style={styles.kpiSub}>ملفات مكتملة</Text>
+                  <Text style={styles.kpiSub}>ملفات التسجيل المكتملة</Text>
                 </View>
 
+                {/* 4. Unread Messages */}
                 <View style={styles.kpiCard}>
                   <View style={styles.kpiHeader}>
-                    <Text style={[styles.kpiLabel, { color: theme.colors.brand[500] }]}>رسائل غير مقروءة</Text>
+                    <Text style={[styles.kpiLabel, { color: theme.colors.brand[500] }]}>رسائل الإدارة غير المقروءة</Text>
                     <MessageSquare size={16} color={theme.colors.brand[500]} />
                   </View>
                   <Text style={[styles.kpiValue, { color: theme.colors.brand[500] }]}>
                     {stats?.unreadAdminMessages ?? 0}
                   </Text>
-                  <Text style={styles.kpiSub}>مرسلة للإدارة</Text>
+                  <Text style={styles.kpiSub}>مرسلة للإدارة ولم تُستعرض</Text>
                 </View>
 
-                <View style={styles.kpiCard}>
+                {/* 5. Received Requests */}
+                <View style={[styles.kpiCard, styles.kpiCardFull]}>
                   <View style={styles.kpiHeader}>
-                    <Text style={[styles.kpiLabel, { color: '#1D4ED8' }]}>الطلبات الإدارية</Text>
+                    <Text style={[styles.kpiLabel, { color: '#1D4ED8' }]}>الطلبات الإدارية المستلمة</Text>
                     <FileText size={16} color="#2563EB" />
                   </View>
                   <Text style={[styles.kpiValue, { color: '#1D4ED8' }]}>
                     {stats?.receivedRequests ?? 0}
                   </Text>
-                  <Text style={styles.kpiSub}>شهادات ومبررات</Text>
+                  <Text style={styles.kpiSub}>شهادات ومبررات قيد المعالجة</Text>
                 </View>
               </View>
 
-              {/* 4 Global Counts */}
-              <Text style={styles.sectionTitle}>الإحصائيات العامة للمؤسسة</Text>
+              {/* 4 Global Counts (Row 3) */}
               <View style={styles.globalCountsRow}>
+                {/* 1. Students */}
                 <View style={styles.countCard}>
                   <View style={styles.countTextGroup}>
                     <Text style={styles.countLabel}>إجمالي التلاميذ</Text>
@@ -982,6 +997,7 @@ function AdminDashboardView({
                   </View>
                 </View>
 
+                {/* 2. Teachers */}
                 <View style={styles.countCard}>
                   <View style={styles.countTextGroup}>
                     <Text style={styles.countLabel}>إجمالي الأساتذة</Text>
@@ -992,6 +1008,7 @@ function AdminDashboardView({
                   </View>
                 </View>
 
+                {/* 3. Classes */}
                 <View style={styles.countCard}>
                   <View style={styles.countTextGroup}>
                     <Text style={styles.countLabel}>الأقسام الدراسية</Text>
@@ -1002,6 +1019,7 @@ function AdminDashboardView({
                   </View>
                 </View>
 
+                {/* 4. Total Revenue */}
                 <View style={styles.countCard}>
                   <View style={styles.countTextGroup}>
                     <Text style={styles.countLabel}>مجموع المداخيل</Text>
@@ -1009,93 +1027,104 @@ function AdminDashboardView({
                       {stats?.totalRevenue ? `${stats.totalRevenue.toLocaleString()} دج` : '0 دج'}
                     </Text>
                   </View>
-                  <View style={[styles.countIconBg, { backgroundColor: '#ECFDF5' }]}>
+                  <View style={[styles.countIconBg, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
                     <CreditCard size={22} color="#059669" />
                   </View>
                 </View>
               </View>
 
-              {/* Financial Transactions Hub */}
+              {/* Financial Transactions Hub (Section 4) */}
               <View style={styles.financeHubCard}>
                 <View style={styles.financeHubHeader}>
-                  <View>
-                    <Text style={styles.financeHubTitle}>آخر المعاملات المالية المنجزة</Text>
-                    <Text style={styles.financeHubSub}>إيصالات المصاريف والخدمات المسددة</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row-reverse', gap: 6, alignItems: 'center' }}>
+                  <Text style={styles.financeHubTitle}>آخر المعاملات المالية المنجزة</Text>
+                  <View style={styles.financeHubBtns}>
+                    <TouchableOpacity
+                      style={styles.exportExcelBtn}
+                      onPress={() => handleExportExcel('المالية والمعاملات')}
+                    >
+                      <Download size={13} color="#059669" />
+                      <Text style={styles.exportExcelBtnText}>تصدير Excel</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.addInvoiceBtn}
                       onPress={() => setShowCreatePaymentModal(true)}
                     >
                       <Plus size={14} color="#FFFFFF" />
-                      <Text style={styles.addInvoiceBtnText}>إنشاء فاتورة</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.addInvoiceBtn, { backgroundColor: '#059669' }]}
-                      onPress={() => handleExportExcel('المالية والمعاملات')}
-                    >
-                      <Download size={13} color="#FFFFFF" />
-                      <Text style={styles.addInvoiceBtnText}>تصدير Excel</Text>
+                      <Text style={styles.addInvoiceBtnText}>إنشاء فاتورة جديدة</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
 
-                <View style={styles.transactionsList}>
-                  {stats?.recentPayments && stats.recentPayments.length > 0 ? (
-                    stats.recentPayments.map((pay: any) => {
-                      const studentName = pay.student?.user
-                        ? `${pay.student.user.firstName} ${pay.student.user.lastName}`
-                        : 'تلميذ مقيد';
-                      const isPaid = pay.status === 'Paid';
-                      const typeLabel =
-                        pay.type === 'Tuition'
-                          ? 'رسوم التمدرس'
-                          : pay.type === 'Transport'
-                          ? 'النقل المدرسي'
-                          : pay.type === 'Food' || pay.type === 'Lunch'
-                          ? 'الإطعام المدرسي'
-                          : pay.type === 'Activity'
-                          ? 'النشاطات'
-                          : pay.type;
+                {/* Table with horizontal scroll */}
+                <Text style={styles.swipeHintText}>↔ اسحب الجدول أفقياً للاطلاع على كافة الأعمدة والبيانات</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContent}>
+                  <View style={styles.tableWrapper}>
+                    {/* Table Header Row */}
+                    <View style={styles.tableHeaderRow}>
+                      <Text style={[styles.thCol, { width: 175 }]}>رقم العملية</Text>
+                      <Text style={[styles.thCol, { width: 135 }]}>التلميذ المستفيد</Text>
+                      <Text style={[styles.thCol, { width: 105 }]}>المبلغ المستحق</Text>
+                      <Text style={[styles.thCol, { width: 120 }]}>الخدمة المسددة</Text>
+                      <Text style={[styles.thCol, { width: 95, textAlign: 'center' }]}>حالة الدفع</Text>
+                    </View>
 
-                      return (
-                        <View key={pay._id} style={styles.transactionRow}>
-                          <View style={styles.transactionRight}>
-                            <View style={styles.transactionIconBg}>
-                              <CreditCard size={16} color={isPaid ? '#059669' : '#D97706'} />
-                            </View>
-                            <View>
-                              <Text style={styles.transactionStudent}>{studentName}</Text>
-                              <Text style={styles.transactionType}>{typeLabel}</Text>
-                            </View>
-                          </View>
-                          <View style={styles.transactionLeft}>
-                            <Text style={styles.transactionAmount}>
-                              {pay.amount.toLocaleString()} دج
+                    {/* Table Rows */}
+                    {stats?.recentPayments && stats.recentPayments.length > 0 ? (
+                      stats.recentPayments.map((pay: any) => {
+                        const studentName = pay.student?.user
+                          ? `${pay.student.user.firstName} ${pay.student.user.lastName}`
+                          : 'تلميذ مقيد';
+                        const isPaid = pay.status === 'Paid';
+                        const typeLabel =
+                          pay.type === 'Tuition'
+                            ? 'رسوم التمدرس'
+                            : pay.type === 'Transport'
+                            ? 'النقل المدرسي'
+                            : pay.type === 'Lunch'
+                            ? 'الإطعام المدرسي'
+                            : pay.type;
+
+                        return (
+                          <View key={pay._id} style={styles.tableDataRow}>
+                            <Text style={[styles.tdColId, { width: 175 }]} numberOfLines={1}>
+                              {pay._id}
                             </Text>
-                            <View
-                              style={[
-                                styles.statusBadge,
-                                isPaid ? styles.statusPaid : styles.statusPending,
-                              ]}
-                            >
-                              <Text
+                            <Text style={[styles.tdColStudent, { width: 135 }]} numberOfLines={1}>
+                              {studentName}
+                            </Text>
+                            <Text style={[styles.tdColAmount, { width: 105 }]}>
+                              {pay.amount} دج
+                            </Text>
+                            <Text style={[styles.tdColService, { width: 120 }]} numberOfLines={1}>
+                              {typeLabel}
+                            </Text>
+                            <View style={[styles.tdColStatus, { width: 95 }]}>
+                              <View
                                 style={[
-                                  styles.statusBadgeText,
-                                  isPaid ? styles.statusPaidText : styles.statusPendingText,
+                                  styles.statusPill,
+                                  isPaid ? styles.statusPillPaid : styles.statusPillPending,
                                 ]}
                               >
-                                {isPaid ? 'مسدد' : 'معلق'}
-                              </Text>
+                                <Text
+                                  style={[
+                                    styles.statusPillText,
+                                    isPaid ? styles.statusPillPaidText : styles.statusPillPendingText,
+                                  ]}
+                                >
+                                  {isPaid ? 'مسددة' : 'قيد الانتظار'}
+                                </Text>
+                              </View>
                             </View>
                           </View>
-                        </View>
-                      );
-                    })
-                  ) : (
-                    <Text style={styles.noDataText}>لا توجد معاملات مالية مسجلة حالياً</Text>
-                  )}
-                </View>
+                        );
+                      })
+                    ) : (
+                      <View style={styles.tableEmptyBox}>
+                        <Text style={styles.noDataText}>لا توجد معاملات مالية مسجلة حالياً.</Text>
+                      </View>
+                    )}
+                  </View>
+                </ScrollView>
               </View>
             </View>
           )}
@@ -1103,132 +1132,18 @@ function AdminDashboardView({
           {/* ============================================================ */}
           {/* ROUTE 3: USERS & ACCOUNTS (المستخدمين والصلاحيات)              */}
           {/* ============================================================ */}
-          {currentRoute === 'users' && (
-            <View style={styles.usersContainer}>
-              <View style={styles.usersHeaderRow}>
-                <View>
-                  <Text style={styles.sectionTitle}>المستخدمين والصلاحيات</Text>
-                  <Text style={styles.sectionSubtitle}>
-                    إدارة {systemUsers.length} حساباً: الأساتذة، الأولياء، التلاميذ والموظفين
-                  </Text>
-                </View>
-                <View style={{ flexDirection: 'row-reverse', gap: 6, alignItems: 'center' }}>
-                  <TouchableOpacity
-                    style={styles.addUserButton}
-                    onPress={() => setShowCreateUserModal(true)}
-                  >
-                    <Plus size={15} color="#FFFFFF" />
-                    <Text style={styles.addUserButtonText}>إضافة مستخدم</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.addUserButton, { backgroundColor: '#059669' }]}
-                    onPress={() => handleExportExcel('قائمة المستخدمين')}
-                  >
-                    <Download size={14} color="#FFFFFF" />
-                    <Text style={styles.addUserButtonText}>تصدير Excel</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.searchBar}>
-                <Search size={18} color={theme.colors.text.muted} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="البحث بالاسم، البريد أو رقم الهاتف..."
-                  placeholderTextColor={theme.colors.text.subtle}
-                  value={userSearch}
-                  onChangeText={setUserSearch}
-                />
-              </View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.roleChipsScroll}
-              >
-                {[
-                  { id: 'all', label: 'الكل' },
-                  { id: 'teacher', label: 'أساتذة' },
-                  { id: 'student', label: 'تلاميذ' },
-                  { id: 'parent', label: 'أولياء' },
-                  { id: 'pedagogical_supervisor', label: 'مراقب تربوي' },
-                  { id: 'general_supervisor', label: 'مراقب عام' },
-                  { id: 'receptionist', label: 'استقبال' },
-                  { id: 'admin', label: 'إدارة' },
-                ].map((chip) => (
-                  <TouchableOpacity
-                    key={chip.id}
-                    style={[styles.roleChip, userRoleFilter === chip.id && styles.roleChipActive]}
-                    onPress={() => setUserRoleFilter(chip.id)}
-                  >
-                    <Text
-                      style={[
-                        styles.roleChipText,
-                        userRoleFilter === chip.id && styles.roleChipTextActive,
-                      ]}
-                    >
-                      {chip.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              <View style={styles.usersList}>
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((u) => (
-                    <View key={u._id} style={styles.userCard}>
-                      <View style={styles.userCardRight}>
-                        <View style={styles.userAvatar}>
-                          <Text style={styles.userAvatarText}>{u.firstName[0] || 'م'}</Text>
-                        </View>
-                        <View style={styles.userInfo}>
-                          <View style={styles.userNameRow}>
-                            <Text style={styles.userName}>
-                              {u.firstName} {u.lastName}
-                            </Text>
-                            <View style={styles.roleTag}>
-                              <Text style={styles.roleTagText}>{getRoleLabel(u.role)}</Text>
-                            </View>
-                          </View>
-                          <Text style={styles.userContact}>{u.phoneNumber || u.email}</Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.userActions}>
-                        <TouchableOpacity
-                          style={[
-                            styles.statusToggleBtn,
-                            u.isActive ? styles.statusActive : styles.statusFrozen,
-                          ]}
-                          onPress={() => handleToggleUserActive(u)}
-                        >
-                          {u.isActive ? (
-                            <>
-                              <Check size={12} color="#059669" />
-                              <Text style={styles.statusActiveText}>مفعل</Text>
-                            </>
-                          ) : (
-                            <>
-                              <Lock size={12} color="#BE123C" />
-                              <Text style={styles.statusFrozenText}>مجمد</Text>
-                            </>
-                          )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={styles.deleteUserBtn}
-                          onPress={() => handleDeleteUser(u._id, `${u.firstName} ${u.lastName}`)}
-                        >
-                          <Trash2 size={14} color="#BE123C" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.noDataText}>لا توجد حسابات مطابقة لمعايير البحث</Text>
-                )}
-              </View>
-            </View>
+          {(currentRoute === 'users' || currentRoute === 'accounts' || currentRoute === 'register') && (
+            <AdminAccountsView
+              systemUsers={systemUsers}
+              classesList={classesList}
+              groupsList={groupsList}
+              modulesList={modulesList}
+              studentsList={studentsList}
+              teachersList={teachersList}
+              onRefreshData={loadData}
+              onOpenTeacherDossier={(t) => setSelectedTeacherForDossier(t)}
+              onOpenStudentDossier={(s) => setSelectedStudentForDossier(s)}
+            />
           )}
 
           {/* ============================================================ */}
@@ -2546,7 +2461,8 @@ function AdminDashboardView({
 export default function DashboardScreen() {
   const { user } = useAuthStore();
   const params = useLocalSearchParams<{ route?: string }>();
-  const [currentRoute, setCurrentRoute] = useState<string>('overview');
+  // Initial page for every role is the news feed (fil d'actualité)
+  const [currentRoute, setCurrentRoute] = useState<string>('feed');
 
   useEffect(() => {
     if (params.route) {
@@ -2709,30 +2625,32 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   quickBannerCard: {
-    backgroundColor: theme.colors.surface.card,
+    backgroundColor: '#FFFFFF',
     borderRadius: theme.radii.lg,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: 'rgba(201,162,77,0.35)',
     ...theme.shadows.sm,
   },
   quickBannerTop: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   quickBannerIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   quickBannerPill: {
     backgroundColor: 'rgba(123,30,58,0.1)',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(123,30,58,0.2)',
   },
   quickBannerPillText: {
     fontSize: 10,
@@ -2740,36 +2658,38 @@ const styles = StyleSheet.create({
     color: theme.colors.brand[500],
   },
   quickBannerTitle: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '900',
     color: theme.colors.brand[500],
     fontFamily: theme.typography.fontFamily.serif,
     marginTop: 10,
+    textAlign: 'right',
   },
   quickBannerDesc: {
     fontSize: 12,
-    color: theme.colors.text.secondary,
+    color: 'rgba(43,32,34,0.72)',
     lineHeight: 18,
     marginTop: 4,
+    textAlign: 'right',
   },
   quickBannerFooter: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(201,162,77,0.2)',
+    borderTopColor: 'rgba(201,162,77,0.25)',
     paddingTop: 10,
     marginTop: 12,
   },
   quickBannerLinkText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
     color: theme.colors.brand[500],
   },
   quickBannerArrow: {
-    fontSize: 14,
+    fontSize: 15,
     color: theme.colors.brand[500],
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
 
   sectionTitle: {
@@ -2787,127 +2707,261 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   kpiRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   kpiCard: {
     flex: 1,
-    minWidth: '46%',
-    backgroundColor: theme.colors.surface.card,
-    borderRadius: theme.radii.md,
+    minWidth: '47%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(201,162,77,0.3)',
+    borderColor: 'rgba(201,162,77,0.35)',
     ...theme.shadows.sm,
   },
+  kpiCardFull: {
+    minWidth: '100%',
+  },
   kpiHeader: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 6,
   },
   kpiLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
+    textAlign: 'right',
   },
   kpiValue: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '900',
     fontFamily: theme.typography.fontFamily.serif,
+    textAlign: 'right',
+    marginVertical: 2,
   },
   kpiSub: {
-    fontSize: 9,
-    color: theme.colors.text.subtle,
-    marginTop: 2,
+    fontSize: 9.5,
+    color: '#64748B',
+    textAlign: 'right',
   },
 
   globalCountsRow: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   countCard: {
     flex: 1,
-    minWidth: '46%',
-    backgroundColor: theme.colors.surface.card,
-    borderRadius: theme.radii.md,
+    minWidth: '47%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: theme.colors.surface.border,
-    flexDirection: 'row',
+    borderColor: 'rgba(201,162,77,0.3)',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     ...theme.shadows.sm,
   },
   countTextGroup: {
     flex: 1,
+    alignItems: 'flex-end',
   },
   countLabel: {
     fontSize: 10,
-    fontWeight: '700',
-    color: theme.colors.text.muted,
+    fontWeight: '800',
+    color: '#64748B',
+    textAlign: 'right',
+    textTransform: 'uppercase',
   },
   countValue: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '900',
-    color: theme.colors.brand[500],
+    color: '#0F172A',
     marginTop: 2,
+    fontFamily: 'monospace',
+    textAlign: 'right',
   },
   countIconBg: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     backgroundColor: 'rgba(123,30,58,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(123,30,58,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   /* Finance Hub */
   financeHubCard: {
-    backgroundColor: theme.colors.surface.card,
-    borderRadius: theme.radii.lg,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.surface.border,
+    borderColor: 'rgba(201,162,77,0.35)',
     ...theme.shadows.sm,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   financeHubHeader: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surface.border,
+    borderBottomColor: '#F1F5F9',
     paddingBottom: 12,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   financeHubTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: theme.colors.text.primary,
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#0F172A',
+    fontFamily: theme.typography.fontFamily.serif,
+    textAlign: 'right',
   },
   financeHubSub: {
     fontSize: 10,
     color: theme.colors.text.muted,
     marginTop: 2,
   },
+  financeHubBtns: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  exportExcelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#6EE7B7',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  exportExcelBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#059669',
+  },
   addInvoiceBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: theme.colors.brand[500],
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: theme.radii.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   addInvoiceBtnText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFFFFF',
   },
+  swipeHintText: {
+    fontSize: 10,
+    color: '#94A3B8',
+    textAlign: 'right',
+    marginBottom: 8,
+  },
+  tableScrollContent: {
+    paddingBottom: 4,
+  },
+  tableWrapper: {
+    minWidth: 595,
+  },
+  tableHeaderRow: {
+    flexDirection: 'row-reverse',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 4,
+  },
+  thCol: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#64748B',
+    textAlign: 'right',
+  },
+  tableDataRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  tdColId: {
+    fontSize: 10.5,
+    fontFamily: 'monospace',
+    color: '#94A3B8',
+    textAlign: 'right',
+  },
+  tdColStudent: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'right',
+  },
+  tdColAmount: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    fontFamily: 'monospace',
+    color: '#1E293B',
+    textAlign: 'right',
+  },
+  tdColService: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#334155',
+    textAlign: 'right',
+  },
+  tdColStatus: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  statusPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  statusPillPaid: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  statusPillPaidText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  statusPillPending: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
+  statusPillPendingText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#D97706',
+  },
+  tableEmptyBox: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+
   transactionsList: {
     gap: 8,
   },

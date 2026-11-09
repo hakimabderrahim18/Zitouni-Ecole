@@ -62,6 +62,7 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
 ];
 
 export const TEACHER_NAV_ITEMS: NavItem[] = [
+  { id: 'feed', label: 'آخر الأخبار والمستجدات', icon: Globe },
   { id: 'overview', label: 'لوحة الأستاذ والمهام', icon: BookOpen },
   { id: 'courses', label: 'الدروس والملفات المرفوعة', icon: FileText },
   { id: 'classes', label: 'الأقسام المسندة وتلاميذها', icon: Users },
@@ -69,11 +70,11 @@ export const TEACHER_NAV_ITEMS: NavItem[] = [
   { id: 'timetable', label: 'جدول التوقيت الأسبوعي', icon: Calendar },
   { id: 'lessons', label: 'كراس الدروس والواجبات (Cahier)', icon: BookOpen },
   { id: 'requests', label: 'الطلبات الإدارية وشهادات العمل', icon: FileText },
-  { id: 'feed', label: 'آخر الأخبار والمستجدات', icon: Globe },
   { id: 'chat', label: 'الرسائل والمحادثات التربوية', icon: MessageSquare },
 ];
 
 export const PARENT_NAV_ITEMS: NavItem[] = [
+  { id: 'feed', label: 'مستجدات وإعلانات المؤسسة', icon: Globe },
   { id: 'overview', label: 'متابعة الأبناء والتمدرس', icon: Users },
   { id: 'payments', label: 'الفواتير والرسوم المدرسية والوصولات', icon: CreditCard },
   { id: 'exit-passes', label: 'أذونات وتصاريح الخروج', icon: ShieldCheck },
@@ -81,22 +82,22 @@ export const PARENT_NAV_ITEMS: NavItem[] = [
   { id: 'lessons', label: 'كراس الدروس والواجبات المنزلية', icon: BookOpen },
   { id: 're-enrollment', label: 'إعادة التسجيل السنوي', icon: CheckSquare },
   { id: 'requests', label: 'طلب الشهادات المدرسية والوثائق', icon: FileText },
-  { id: 'feed', label: 'مستجدات وإعلانات المؤسسة', icon: Globe },
   { id: 'chat', label: 'التواصل مع الإدارة والأساتذة', icon: MessageSquare },
 ];
 
 export const STUDENT_NAV_ITEMS: NavItem[] = [
+  { id: 'feed', label: 'إعلانات المدرسة', icon: Globe },
   { id: 'overview', label: 'ملخص تمدرسي ودروسي', icon: BookOpen },
   { id: 'courses', label: 'الدروس والملخصات والواجبات', icon: FileText },
   { id: 'timetable', label: 'جدول توقيت القسم', icon: Calendar },
   { id: 'attendance', label: 'سجل غياباتي وتأخيراتي', icon: CheckSquare },
   { id: 'lessons', label: 'كراس الدروس اليومي', icon: BookOpen },
   { id: 're-enrollment', label: 'استمارة إعادة التسجيل', icon: FileText },
-  { id: 'feed', label: 'إعلانات المدرسة', icon: Globe },
   { id: 'chat', label: 'المراسلة والتواصل', icon: MessageSquare },
 ];
 
 export const GENERAL_SUPERVISOR_NAV_ITEMS: NavItem[] = [
+  { id: 'feed', label: 'آخر الأخبار والمستجدات', icon: Globe },
   { id: 'overview', label: 'لوحة المراقب العام والمؤشرات', icon: BookOpen },
   { id: 'staff-attendance', label: 'مواظبة الطاقم والخصم التلقائي', icon: CheckSquare },
   { id: 'student-attendance', label: 'غياب وحضور التلاميذ', icon: Users },
@@ -108,11 +109,11 @@ export const GENERAL_SUPERVISOR_NAV_ITEMS: NavItem[] = [
   { id: 'lessons', label: 'كراس الدروس (Cahier de texte)', icon: BookOpen },
   { id: 'inscriptions', label: 'التسجيلات والملفات المدرسية', icon: FileText },
   { id: 'reported-messages', label: 'الرسائل المبلغ عنها', icon: ShieldAlert },
-  { id: 'feed', label: 'آخر الأخبار والمستجدات', icon: Globe },
   { id: 'chat', label: 'المحادثات الإدارية', icon: MessageSquare },
 ];
 
 export const PEDAGOGICAL_SUPERVISOR_NAV_ITEMS: NavItem[] = [
+  { id: 'feed', label: 'إعلانات المؤسسة', icon: Globe },
   { id: 'overview', label: 'لوحة المشرف التربوي', icon: BookOpen },
   { id: 'student-attendance', label: 'متابعة غياب وحضور الأقسام', icon: CheckSquare },
   { id: 'exit-passes', label: 'تصاريح وأذونات الخروج', icon: ShieldCheck },
@@ -120,15 +121,14 @@ export const PEDAGOGICAL_SUPERVISOR_NAV_ITEMS: NavItem[] = [
   { id: 'canteen', label: 'حجوزات الإطعام', icon: BookOpen },
   { id: 'timetable', label: 'جداول التوقيت', icon: Calendar },
   { id: 'lessons', label: 'كراس الدروس', icon: BookOpen },
-  { id: 'feed', label: 'إعلانات المؤسسة', icon: Globe },
   { id: 'chat', label: 'المحادثات', icon: MessageSquare },
 ];
 
 export const RECEPTIONIST_NAV_ITEMS: NavItem[] = [
+  { id: 'feed', label: 'إعلانات المؤسسة', icon: Globe },
   { id: 'overview', label: 'مكتب الاستقبال والزوار', icon: BookOpen },
   { id: 'visitors', label: 'سجل الزوار الوافدين والدخول والخروج', icon: Users },
   { id: 'exit-passes', label: 'التحقق من تصاريح الخروج عند البوابة', icon: ShieldCheck },
-  { id: 'feed', label: 'إعلانات المؤسسة', icon: Globe },
   { id: 'chat', label: 'التواصل السريع', icon: MessageSquare },
 ];
 

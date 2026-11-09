@@ -7,6 +7,7 @@ const Teacher = require('../models/teacher.model');
 const Student = require('../models/student.model');
 const Parent = require('../models/parent.model');
 const Class = require('../models/class.model');
+const ChatGroup = require('../models/chatGroup.model');
 const AuditLog = require('../models/auditLog.model');
 
 // Compute the set of user IDs the given user is allowed to converse with,
@@ -116,9 +117,46 @@ const getContacts = async (req, res, next) => {
 // Get message history between two users (Direct Chat)
 const getMessageHistory = async (req, res, next) => {
   const { otherUserId } = req.params;
-  const currentUserId = req.user.id;
+  const currentUserId = req.user.id || req.user._id;
 
   try {
+    const now = new Date();
+
+    // 1. Mark unread messages sent by otherUserId to currentUserId as read FIRST
+    const updateResult = await Message.updateMany(
+      {
+        conversationType: 'direct',
+        sender: otherUserId,
+        receiver: currentUserId,
+        $or: [{ isRead: false }, { status: { $ne: 'read' } }],
+      },
+      {
+        $set: { isRead: true, status: 'read', readAt: now },
+        $addToSet: { seenBy: { user: currentUserId, seenAt: now } },
+      }
+    );
+
+    // If any messages were marked as read, broadcast real-time event to socket
+    if (updateResult.modifiedCount > 0) {
+      try {
+        const { getIO } = require('../sockets/socket.manager');
+        const io = getIO();
+        const sId = String(otherUserId);
+        const rId = String(currentUserId);
+        const room = [sId, rId].sort().join('_');
+        const payload = {
+          conversationType: 'direct',
+          readerId: rId,
+          otherUserId: sId,
+          readAt: now,
+          status: 'read',
+          isRead: true,
+        };
+        io.to(room).to(sId).to(rId).emit('conversation_messages_seen', payload);
+      } catch (e) {}
+    }
+
+    // 2. Query messages with updated read & seen status
     const messages = await Message.find({
       conversationType: 'direct',
       $or: [
@@ -134,20 +172,6 @@ const getMessageHistory = async (req, res, next) => {
         populate: { path: 'sender', select: 'firstName lastName role' },
       })
       .sort({ createdAt: 1 });
-
-    // Mark as read if receiving messages and register seen timestamp
-    const now = new Date();
-    await Message.updateMany(
-      {
-        sender: otherUserId,
-        receiver: currentUserId,
-        isRead: false,
-      },
-      {
-        $set: { isRead: true, status: 'read', readAt: now },
-        $push: { seenBy: { user: currentUserId, seenAt: now } },
-      }
-    );
 
     res.status(200).json(messages);
   } catch (error) {
@@ -275,8 +299,12 @@ const sendMessage = async (req, res, next) => {
     try {
       const { getIO } = require('../sockets/socket.manager');
       const io = getIO();
-      const room = [senderId, receiverId].sort().join('_');
+      const sId = String(senderId);
+      const rId = String(receiverId);
+      const room = [sId, rId].sort().join('_');
       io.to(room).emit('receive_direct_message', populatedMsg);
+      io.to(rId).emit('receive_direct_message', populatedMsg);
+      io.to(sId).emit('receive_direct_message', populatedMsg);
     } catch (socketError) {
       // socket.io not initialized or inactive
     }
@@ -303,119 +331,154 @@ const sendMessage = async (req, res, next) => {
 const getGroupChannels = async (req, res, next) => {
   const user = req.user;
   const role = user.role;
-  const groups = [];
 
   try {
-    // 1. General Administration / Teachers Staff Channel
-    if (['admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher'].includes(role)) {
-      groups.push({
+    // 1. Ensure default channels exist in database
+    const defaultChannels = [
+      {
         channelId: 'group_teachers_staff',
         title: 'قاعة الأساتذة وهيئة التدريس (Teachers Staff)',
         groupType: 'teachers',
         description: 'مجموعة المداولات والتبادل بين الطاقم التربوي والإدارة',
-      });
-    }
-
-    // 2. Supervisors / Administration Channel
-    if (['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'].includes(role)) {
-      groups.push({
+        targetAudience: ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher'],
+        isDefault: true,
+      },
+      {
         channelId: 'group_supervisors_admin',
         title: 'إدارة الإشراف والمراقبة العامة (Supervisors & Admin)',
         groupType: 'supervisors',
         description: 'غرفة التنسيق بين الإدارة والمراقبين',
-      });
+        targetAudience: ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'],
+        isDefault: true,
+      },
+    ];
+
+    for (const def of defaultChannels) {
+      const exists = await ChatGroup.findOne({ channelId: def.channelId });
+      if (!exists) {
+        await ChatGroup.create({ ...def, isActive: true });
+      }
     }
 
-    // 3. Class channels
-    if (['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'].includes(role)) {
-      // Admins & Supervisors see all classes
-      const classes = await Class.find().sort({ name: 1 });
-      classes.forEach((cls) => {
-        groups.push({
-          channelId: `group_class_${cls._id}`,
+    // Ensure class channels exist for each Class
+    const allClasses = await Class.find().sort({ name: 1 });
+    for (const cls of allClasses) {
+      const classChannelId = `group_class_${cls._id}`;
+      const parentsChannelId = `group_parents_${cls._id}`;
+
+      const classExists = await ChatGroup.findOne({ channelId: classChannelId });
+      if (!classExists) {
+        await ChatGroup.create({
+          channelId: classChannelId,
           classId: cls._id,
           title: `فوج القسم: ${cls.name}`,
           groupType: 'class',
           description: `قناة التواصل الرسمية مع تلاميذ قسم ${cls.name}`,
+          targetAudience: ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher', 'student'],
+          isDefault: true,
+          isActive: true,
         });
-        groups.push({
-          channelId: `group_parents_${cls._id}`,
+      }
+
+      const parentsExists = await ChatGroup.findOne({ channelId: parentsChannelId });
+      if (!parentsExists) {
+        await ChatGroup.create({
+          channelId: parentsChannelId,
           classId: cls._id,
           title: `أولياء أمور قسم: ${cls.name}`,
           groupType: 'class_parents',
           description: `قناة التواصل مع أولياء تلاميذ قسم ${cls.name}`,
-        });
-      });
-    } else if (role === 'teacher') {
-      const teacher = await Teacher.findOne({ user: user.id });
-      if (teacher && teacher.classes && teacher.classes.length > 0) {
-        const classes = await Class.find({ _id: { $in: teacher.classes } }).sort({ name: 1 });
-        classes.forEach((cls) => {
-          groups.push({
-            channelId: `group_class_${cls._id}`,
-            classId: cls._id,
-            title: `فوج القسم: ${cls.name}`,
-            groupType: 'class',
-            description: `قناة التواصل مع تلاميذ قسم ${cls.name}`,
-          });
-          groups.push({
-            channelId: `group_parents_${cls._id}`,
-            classId: cls._id,
-            title: `أولياء أمور قسم: ${cls.name}`,
-            groupType: 'class_parents',
-            description: `قناة التواصل مع أولياء تلاميذ قسم ${cls.name}`,
-          });
-        });
-      }
-    } else if (role === 'student') {
-      const student = await Student.findOne({ user: user.id }).populate('class');
-      if (student && student.class) {
-        groups.push({
-          channelId: `group_class_${student.class._id}`,
-          classId: student.class._id,
-          title: `فوج القسم: ${student.class.name}`,
-          groupType: 'class',
-          description: `قناة قسمك الرسمية للتواصل مع الأساتذة والزملاء`,
-        });
-      }
-    } else if (role === 'parent') {
-      const parent = await Parent.findOne({ user: user.id }).populate({
-        path: 'children',
-        populate: { path: 'class' },
-      });
-      if (parent && parent.children) {
-        const seenClass = new Set();
-        parent.children.forEach((child) => {
-          if (child.class && !seenClass.has(child.class._id.toString())) {
-            seenClass.add(child.class._id.toString());
-            groups.push({
-              channelId: `group_parents_${child.class._id}`,
-              classId: child.class._id,
-              title: `أولياء أمور قسم: ${child.class.name} (${child.firstName})`,
-              groupType: 'class_parents',
-              description: `قناة التواصل الرسمية مع أساتذة قسم ${child.class.name}`,
-            });
-          }
+          targetAudience: ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher', 'parent'],
+          isDefault: true,
+          isActive: true,
         });
       }
     }
 
-    // Attach last message and unread count for each group
+    // 2. Query all active groups from database
+    const allActiveGroups = await ChatGroup.find({ isActive: { $ne: false } })
+      .populate('classId', 'name level division grade')
+      .populate('groupId', 'name')
+      .sort({ isDefault: -1, createdAt: -1 });
+
+    // 3. Filter groups visible to the current user
+    let visibleGroups = [];
+
+    if (['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'].includes(role)) {
+      visibleGroups = allActiveGroups;
+    } else if (role === 'teacher') {
+      const teacher = await Teacher.findOne({ user: user.id });
+      const teacherClassIds = (teacher?.classes || []).map((c) => c.toString());
+
+      visibleGroups = allActiveGroups.filter((grp) => {
+        const aud = grp.targetAudience || ['all'];
+        const matchesAudience = aud.includes('all') || aud.includes('teacher') || aud.includes('teachers');
+        if (!matchesAudience) return false;
+
+        // If it's attached to a specific class, teacher must teach that class
+        if (grp.classId) {
+          const cId = (grp.classId._id || grp.classId).toString();
+          return teacherClassIds.includes(cId);
+        }
+        return true;
+      });
+    } else if (role === 'student') {
+      const student = await Student.findOne({ user: user.id }).populate('class');
+      const studentClassId = student?.class?._id?.toString() || student?.class?.toString();
+
+      visibleGroups = allActiveGroups.filter((grp) => {
+        const aud = grp.targetAudience || ['all'];
+        const matchesAudience = aud.includes('all') || aud.includes('student') || aud.includes('students');
+        if (!matchesAudience) return false;
+
+        if (grp.classId) {
+          const cId = (grp.classId._id || grp.classId).toString();
+          return studentClassId && cId === studentClassId;
+        }
+        return true;
+      });
+    } else if (role === 'parent') {
+      const parent = await Parent.findOne({ user: user.id }).populate('children');
+      const childrenClassIds = new Set();
+      (parent?.children || []).forEach((c) => {
+        if (c.class) childrenClassIds.add((c.class._id || c.class).toString());
+      });
+
+      visibleGroups = allActiveGroups.filter((grp) => {
+        const aud = grp.targetAudience || ['all'];
+        const matchesAudience = aud.includes('all') || aud.includes('parent') || aud.includes('parents');
+        if (!matchesAudience) return false;
+
+        if (grp.classId) {
+          const cId = (grp.classId._id || grp.classId).toString();
+          return childrenClassIds.has(cId);
+        }
+        return true;
+      });
+    } else {
+      visibleGroups = allActiveGroups.filter((grp) => {
+        const aud = grp.targetAudience || ['all'];
+        return aud.includes('all') || aud.includes(role);
+      });
+    }
+
+    // 4. Attach last message and accurate unread count for each group
     const groupsWithStats = await Promise.all(
-      groups.map(async (grp) => {
-        const lastMsg = await Message.findOne({ groupChannelId: grp.channelId })
+      visibleGroups.map(async (grp) => {
+        const obj = grp.toObject();
+        const lastMsg = await Message.findOne({ groupChannelId: obj.channelId })
           .sort({ createdAt: -1 })
           .populate('sender', 'firstName lastName role');
         const unreadCount = await Message.countDocuments({
-          groupChannelId: grp.channelId,
+          groupChannelId: obj.channelId,
           sender: { $ne: user.id },
-          'readBy.user': { $ne: user.id },
+          'seenBy.user': { $ne: user.id },
         });
 
         return {
-          ...grp,
+          ...obj,
           lastMessage: lastMsg ? `${lastMsg.sender?.firstName || ''}: ${lastMsg.content || '📎 مرفق'}` : '',
-          lastUpdated: lastMsg ? lastMsg.createdAt : null,
+          lastUpdated: lastMsg ? lastMsg.createdAt : obj.updatedAt || obj.createdAt,
           unreadCount,
         };
       })
@@ -427,10 +490,151 @@ const getGroupChannels = async (req, res, next) => {
   }
 };
 
+// Create a new group channel (Administration: admin, school, general_supervisor, pedagogical_supervisor)
+const createGroupChannel = async (req, res, next) => {
+  const { title, description, groupType = 'custom', targetAudience = ['all'], classId, groupId } = req.body;
+  const userId = req.user?.id || req.user?._id;
+
+  if (!title || !title.trim()) {
+    return res.status(400).json({ message: 'عنوان المجموعة مطلوب.' });
+  }
+
+  try {
+    const cleanClassId = classId && mongoose.isValidObjectId(classId) ? classId : null;
+    const cleanGroupId = groupId && mongoose.isValidObjectId(groupId) ? groupId : null;
+
+    let channelId;
+    if (groupType === 'class' && cleanClassId) {
+      channelId = `group_class_${cleanClassId}`;
+    } else if (groupType === 'class_parents' && cleanClassId) {
+      channelId = `group_parents_${cleanClassId}`;
+    } else if (groupType === 'class_group' && cleanGroupId) {
+      channelId = `group_class_group_${cleanGroupId}`;
+    } else {
+      channelId = `group_custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    }
+
+    // Check if channel already exists
+    const existing = await ChatGroup.findOne({ channelId });
+    if (existing) {
+      existing.isActive = true;
+      existing.title = title.trim();
+      existing.description = description ? description.trim() : '';
+      existing.groupType = groupType;
+      existing.targetAudience = Array.isArray(targetAudience) && targetAudience.length > 0 ? targetAudience : ['all'];
+      existing.classId = cleanClassId;
+      existing.groupId = cleanGroupId;
+      await existing.save();
+
+      try {
+        const { getIO } = require('../sockets/socket.manager');
+        getIO().emit('group_channel_created', existing);
+      } catch (e) {}
+
+      return res.status(201).json({
+        message: 'تم تفعيل وإنشاء المجموعة بنجاح.',
+        group: existing,
+      });
+    }
+
+    const newGroup = await ChatGroup.create({
+      channelId,
+      title: title.trim(),
+      description: description ? description.trim() : '',
+      groupType,
+      targetAudience: Array.isArray(targetAudience) && targetAudience.length > 0 ? targetAudience : ['all'],
+      classId: cleanClassId,
+      groupId: cleanGroupId,
+      createdBy: mongoose.isValidObjectId(userId) ? userId : null,
+      isDefault: false,
+      isActive: true,
+    });
+
+    try {
+      const { getIO } = require('../sockets/socket.manager');
+      getIO().emit('group_channel_created', newGroup);
+    } catch (e) {}
+
+    res.status(201).json({
+      message: 'تم إنشاء المجموعة بنجاح.',
+      group: newGroup,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Update an existing group channel (Administration)
+const updateGroupChannel = async (req, res, next) => {
+  const { channelId } = req.params;
+  const { title, description, groupType, targetAudience, classId, groupId } = req.body;
+
+  try {
+    let group = await ChatGroup.findOne({ channelId });
+    if (!group) {
+      return res.status(404).json({ message: 'المجموعة غير موجودة.' });
+    }
+
+    if (title && title.trim()) group.title = title.trim();
+    if (typeof description === 'string') group.description = description.trim();
+    if (groupType) group.groupType = groupType;
+    if (Array.isArray(targetAudience) && targetAudience.length > 0) {
+      group.targetAudience = targetAudience;
+    }
+    if (classId !== undefined) {
+      group.classId = classId && mongoose.isValidObjectId(classId) ? classId : null;
+    }
+    if (groupId !== undefined) {
+      group.groupId = groupId && mongoose.isValidObjectId(groupId) ? groupId : null;
+    }
+
+    await group.save();
+
+    try {
+      const { getIO } = require('../sockets/socket.manager');
+      getIO().emit('group_channel_updated', group);
+    } catch (e) {}
+
+    res.status(200).json({
+      message: 'تم تحديث بيانات المجموعة بنجاح.',
+      group,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Delete a group channel (Administration)
+const deleteGroupChannel = async (req, res, next) => {
+  const { channelId } = req.params;
+
+  try {
+    const group = await ChatGroup.findOne({ channelId });
+    if (!group) {
+      return res.status(404).json({ message: 'المجموعة غير موجودة.' });
+    }
+
+    group.isActive = false;
+    await group.save();
+
+    try {
+      const { getIO } = require('../sockets/socket.manager');
+      getIO().emit('group_channel_deleted', { channelId });
+    } catch (e) {}
+
+    res.status(200).json({
+      message: 'تم حذف المجموعة بنجاح.',
+      channelId,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Get group messages for a specific channel
 const getGroupMessages = async (req, res, next) => {
   const { channelId } = req.params;
-  const userId = req.user.id;
+  const userId = req.user.id || req.user._id;
 
   try {
     const channelVariants = [channelId];
@@ -459,6 +663,35 @@ const getGroupMessages = async (req, res, next) => {
       }
     }
 
+    // 1. Mark unread messages as read by current user FIRST and register seen timestamp
+    const now = new Date();
+    const updateResult = await Message.updateMany(
+      {
+        groupChannelId: { $in: channelVariants },
+        sender: { $ne: userId },
+        'seenBy.user': { $ne: userId },
+      },
+      {
+        $addToSet: {
+          seenBy: { user: userId, seenAt: now },
+          readBy: { user: userId, readAt: now },
+        },
+        $set: { isRead: true },
+      }
+    );
+
+    if (updateResult.modifiedCount > 0) {
+      try {
+        const { getIO } = require('../sockets/socket.manager');
+        getIO().to(String(channelId)).emit('group_messages_seen', {
+          channelId,
+          readerId: userId,
+          seenAt: now,
+        });
+      } catch (e) {}
+    }
+
+    // 2. Query messages with updated seenBy
     const messages = await Message.find({ groupChannelId: { $in: channelVariants }, conversationType: 'group' })
       .populate('sender', 'firstName lastName role profilePic')
       .populate({
@@ -467,23 +700,6 @@ const getGroupMessages = async (req, res, next) => {
         populate: { path: 'sender', select: 'firstName lastName role' },
       })
       .sort({ createdAt: 1 });
-
-    // Mark unread messages as read by current user and register seen timestamp
-    const now = new Date();
-    await Message.updateMany(
-      {
-        groupChannelId: { $in: channelVariants },
-        sender: { $ne: userId },
-        'readBy.user': { $ne: userId },
-      },
-      {
-        $push: {
-          readBy: { user: userId, readAt: now },
-          seenBy: { user: userId, seenAt: now },
-        },
-        $set: { isRead: true },
-      }
-    );
 
     res.status(200).json(messages);
   } catch (error) {
@@ -536,11 +752,13 @@ const sendGroupMessage = async (req, res, next) => {
         populate: { path: 'sender', select: 'firstName lastName role' },
       });
 
-    // Broadcast via socket.io to the group room
+    // Broadcast via socket.io to the group room and global notification
     try {
       const { getIO } = require('../sockets/socket.manager');
       const io = getIO();
-      io.to(channelId).emit('receive_group_message', populatedMsg);
+      const chId = String(channelId);
+      io.to(chId).emit('receive_group_message', populatedMsg);
+      io.emit('receive_group_message', populatedMsg);
     } catch (socketError) {
       // socket.io not initialized
     }
@@ -703,13 +921,20 @@ const reactToMessage = async (req, res, next) => {
     try {
       const { getIO } = require('../sockets/socket.manager');
       const io = getIO();
+      const sId = String(message.sender?._id || message.sender);
+      const rId = String(message.receiver?._id || message.receiver);
       const targetRoom = message.conversationType === 'group'
-        ? message.groupChannelId
-        : [message.sender.toString(), message.receiver.toString()].sort().join('_');
-      io.to(targetRoom).emit('message_reaction_updated', {
+        ? String(message.groupChannelId)
+        : [sId, rId].sort().join('_');
+      const payload = {
         messageId: message._id,
         reactions: message.reactions,
-      });
+      };
+      io.to(targetRoom).emit('message_reaction_updated', payload);
+      if (message.conversationType !== 'group') {
+        io.to(sId).emit('message_reaction_updated', payload);
+        io.to(rId).emit('message_reaction_updated', payload);
+      }
     } catch (e) {}
 
     res.status(200).json({ reactions: message.reactions });
@@ -744,20 +969,33 @@ const markMessageSeen = async (req, res, next) => {
       try {
         const { getIO } = require('../sockets/socket.manager');
         const io = getIO();
+        const sId = String(message.sender?._id || message.sender);
+        const rId = String(message.receiver?._id || message.receiver);
         const targetRoom = message.conversationType === 'group'
-          ? message.groupChannelId
-          : [message.sender.toString(), message.receiver.toString()].sort().join('_');
-        io.to(targetRoom).emit('message_seen_updated', {
+          ? String(message.groupChannelId)
+          : [sId, rId].sort().join('_');
+        const payload = {
           messageId: message._id,
           seenBy: message.seenBy,
           readAt: now,
-        });
+          status: 'read',
+          isRead: true,
+          readerId: userId,
+        };
+        io.to(targetRoom).emit('message_seen_updated', payload);
+        if (message.conversationType !== 'group') {
+          io.to(sId).emit('message_seen_updated', payload);
+          io.to(rId).emit('message_seen_updated', payload);
+        }
       } catch (e) {}
     }
 
     res.status(200).json({
+      messageId: message._id,
       seenBy: message.seenBy,
       readAt: message.readAt,
+      status: 'read',
+      isRead: true,
     });
   } catch (error) {
     next(error);
@@ -787,14 +1025,21 @@ const toggleHideMessage = async (req, res, next) => {
     try {
       const { getIO } = require('../sockets/socket.manager');
       const io = getIO();
+      const sId = String(message.sender?._id || message.sender);
+      const rId = String(message.receiver?._id || message.receiver);
       const targetRoom = message.conversationType === 'group'
-        ? message.groupChannelId
-        : [message.sender.toString(), message.receiver.toString()].sort().join('_');
-      io.to(targetRoom).emit('message_moderated', {
+        ? String(message.groupChannelId)
+        : [sId, rId].sort().join('_');
+      const payload = {
         messageId: message._id,
         isHidden: message.isHidden,
         isDeleted: message.isDeleted,
-      });
+      };
+      io.to(targetRoom).emit('message_moderated', payload);
+      if (message.conversationType !== 'group') {
+        io.to(sId).emit('message_moderated', payload);
+        io.to(rId).emit('message_moderated', payload);
+      }
     } catch (e) {}
 
     res.status(200).json({
@@ -834,14 +1079,21 @@ const deleteMessage = async (req, res, next) => {
     try {
       const { getIO } = require('../sockets/socket.manager');
       const io = getIO();
+      const sId = String(message.sender?._id || message.sender);
+      const rId = String(message.receiver?._id || message.receiver);
       const targetRoom = message.conversationType === 'group'
-        ? message.groupChannelId
-        : [message.sender.toString(), message.receiver.toString()].sort().join('_');
-      io.to(targetRoom).emit('message_moderated', {
+        ? String(message.groupChannelId)
+        : [sId, rId].sort().join('_');
+      const payload = {
         messageId: message._id,
         isDeleted: true,
         content: message.content,
-      });
+      };
+      io.to(targetRoom).emit('message_moderated', payload);
+      if (message.conversationType !== 'group') {
+        io.to(sId).emit('message_moderated', payload);
+        io.to(rId).emit('message_moderated', payload);
+      }
     } catch (e) {}
 
     res.status(200).json({ message: 'تم حذف الرسالة بنجاح.' });
@@ -985,6 +1237,9 @@ module.exports = {
   sendMessage,
   getContacts,
   getGroupChannels,
+  createGroupChannel,
+  updateGroupChannel,
+  deleteGroupChannel,
   getGroupMessages,
   sendGroupMessage,
   auditConversationWithReason,

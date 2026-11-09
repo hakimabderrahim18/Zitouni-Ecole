@@ -8,6 +8,9 @@ const {
   uploadAttachment,
   getContacts,
   getGroupChannels,
+  createGroupChannel,
+  updateGroupChannel,
+  deleteGroupChannel,
   getGroupMessages,
   sendGroupMessage,
   reactToMessage,
@@ -47,7 +50,10 @@ router.patch('/:messageId/reports/:reportId', authorize('admin', 'school', 'gene
 
 // School group channels (Art. 18-19)
 router.get('/groups', getGroupChannels);
+router.post('/groups', authorize('admin', 'school', 'general_supervisor', 'pedagogical_supervisor'), createGroupChannel);
 router.get('/groups/:channelId', getGroupMessages);
+router.put('/groups/:channelId', authorize('admin', 'school', 'general_supervisor', 'pedagogical_supervisor'), updateGroupChannel);
+router.delete('/groups/:channelId', authorize('admin', 'school', 'general_supervisor', 'pedagogical_supervisor'), deleteGroupChannel);
 router.post('/groups/:channelId', sendGroupMessage);
 
 // Administrative Audits with Traceability

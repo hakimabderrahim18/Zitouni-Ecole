@@ -184,6 +184,25 @@
   background: var(--scrollbar-hover);
 }
 
+/* Sleek subtle scrollbar for Chat message feed in RTL */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 162, 77, 0.45) transparent;
+}
+.chat-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(201, 162, 77, 0.35);
+  border-radius: 9999px;
+}
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+  background: #7B1E3A;
+}
+
 /* Glassmorphism primitives — soft cream paper cards with gentle depth & gold border */
 .glass-panel {
   background: var(--luxury-card);

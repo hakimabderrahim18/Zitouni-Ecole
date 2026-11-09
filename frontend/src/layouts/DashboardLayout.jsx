@@ -40,7 +40,7 @@ const getNotificationIcon = (type) => {
   }
 };
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout({ children, noPadding = false }) {
   const { user, profile, logout, updateUser } = useAuthStore();
   const { connectSocket, disconnectSocket } = useChatStore();
   const { notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
@@ -739,7 +739,7 @@ export default function DashboardLayout({ children }) {
           </div>
         </header>
 
-        <div className="flex-1 p-3.5 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden min-w-0 max-w-full">
+        <div className={`flex-1 min-w-0 max-w-full ${noPadding ? 'p-1.5 sm:p-3 overflow-hidden flex flex-col h-[calc(100vh-4rem)]' : 'p-3.5 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden'}`}>
           {children}
         </div>
 

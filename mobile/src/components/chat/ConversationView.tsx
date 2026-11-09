@@ -11,6 +11,9 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  Alert,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import {
   Send,
@@ -29,10 +32,24 @@ import {
   Phone,
   RefreshCw,
   X,
+  CornerDownLeft,
+  Smile,
+  Eye,
+  EyeOff,
+  Trash2,
+  Plus,
+  Edit3,
 } from 'lucide-react-native';
 import { apiClient } from '../../api/client';
 import { useAuthStore } from '../../store/useAuthStore';
 import { theme } from '../../theme/tokens';
+import {
+  connectSocket,
+  joinConversationRoom,
+  leaveConversationRoom,
+  joinGroupChannelRoom,
+  leaveGroupChannelRoom,
+} from '../../services/socket';
 
 export interface ChatUser {
   _id: string;
@@ -57,6 +74,10 @@ export interface GroupItem {
   title: string;
   groupType: string;
   description?: string;
+  targetAudience?: string[];
+  isDefault?: boolean;
+  classId?: any;
+  groupId?: any;
   lastMessage?: string;
   lastUpdated?: string;
   unreadCount?: number;
@@ -90,6 +111,21 @@ export interface MessageItem {
   attachmentUrl?: string;
   attachmentName?: string;
   mediaType?: string;
+  isHidden?: boolean;
+  isDeleted?: boolean;
+  reactions?: any[];
+  seenBy?: any[];
+  readAt?: string;
+  replyTo?: {
+    _id: string;
+    content?: string;
+    sender?: {
+      _id?: string;
+      firstName?: string;
+      lastName?: string;
+      role?: string;
+    };
+  } | null;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -139,6 +175,249 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
 
   // Input State
   const [inputText, setInputText] = useState('');
+
+  // User privileges & Message Actions State
+  const currentUserRole = user?.role || '';
+  const isPrivileged = ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'].includes(
+    currentUserRole
+  );
+  const [activeActionsMsgId, setActiveActionsMsgId] = useState<string | null>(null);
+  const [showEmojiPickerMsgId, setShowEmojiPickerMsgId] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<MessageItem | null>(null);
+
+  // Message Action Handlers
+  const handleReactToMessage = async (messageId: string, emoji: string) => {
+    try {
+      const res = await apiClient.post(`/api/messages/${messageId}/react`, { emoji });
+      setMessages((prev) =>
+        prev.map((m) =>
+          String(m._id) === String(messageId) ? { ...m, reactions: res.data.reactions } : m
+        )
+      );
+      setShowEmojiPickerMsgId(null);
+      setActiveActionsMsgId(null);
+    } catch (err: any) {
+      console.warn('Failed to react:', err.message);
+    }
+  };
+
+  const handleToggleHideMessage = async (messageId: string) => {
+    try {
+      const res = await apiClient.patch(`/api/messages/${messageId}/hide`);
+      setMessages((prev) =>
+        prev.map((m) =>
+          String(m._id) === String(messageId) ? { ...m, isHidden: res.data.isHidden } : m
+        )
+      );
+      setActiveActionsMsgId(null);
+    } catch (err: any) {
+      console.warn('Failed to toggle hide message:', err.message);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    const executeDelete = async () => {
+      try {
+        await apiClient.delete(`/api/messages/${messageId}`);
+        setMessages((prev) =>
+          prev.map((m) =>
+            String(m._id) === String(messageId)
+              ? { ...m, isDeleted: true, content: 'تم حذف هذه الرسالة من قبل الإدارة' }
+              : m
+          )
+        );
+        setActiveActionsMsgId(null);
+      } catch (err: any) {
+        console.warn('Failed to delete message:', err.message);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('هل أنت متأكد من حذف هذه الرسالة؟')) {
+        executeDelete();
+      }
+    } else {
+      Alert.alert('تأكيد الحذف', 'هل أنت متأكد من حذف هذه الرسالة نهائياً؟', [
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: executeDelete },
+      ]);
+    }
+  };
+
+  // Group Management State (Creation & Edition Modals)
+  const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
+  const [editGroupModalVisible, setEditGroupModalVisible] = useState(false);
+  const [selectedGroupForEdit, setSelectedGroupForEdit] = useState<GroupItem | null>(null);
+
+  const [groupFormTitle, setGroupFormTitle] = useState('');
+  const [groupFormDesc, setGroupFormDesc] = useState('');
+  const [groupFormAudience, setGroupFormAudience] = useState<string[]>(['all']);
+  const [groupFormType, setGroupFormType] = useState('custom'); // 'custom' | 'class' | 'class_group' | 'class_parents'
+  const [groupFormClassId, setGroupFormClassId] = useState('');
+  const [groupFormGroupId, setGroupFormGroupId] = useState('');
+  const [availableClasses, setAvailableClasses] = useState<any[]>([]);
+  const [availableClassGroups, setAvailableClassGroups] = useState<any[]>([]);
+  const [isSubmittingGroup, setIsSubmittingGroup] = useState(false);
+
+  // Messages FlatList ref for reliable auto-scrolling
+  const flatListRef = React.useRef<FlatList>(null);
+
+  useEffect(() => {
+    if (isPrivileged) {
+      apiClient.get('/api/admin/classes')
+        .then((r) => Array.isArray(r.data) && setAvailableClasses(r.data))
+        .catch(() => {});
+      apiClient.get('/api/admin/groups')
+        .then((r) => Array.isArray(r.data) && setAvailableClassGroups(r.data))
+        .catch(() => {});
+    }
+  }, [isPrivileged]);
+
+  const openCreateGroup = () => {
+    setGroupFormType('custom');
+    setGroupFormClassId('');
+    setGroupFormGroupId('');
+    setGroupFormTitle('');
+    setGroupFormDesc('');
+    setGroupFormAudience(['all']);
+    setCreateGroupModalVisible(true);
+  };
+
+  const openEditGroup = (group: GroupItem) => {
+    setSelectedGroupForEdit(group);
+    setGroupFormType(group.groupType || 'custom');
+    setGroupFormClassId(group.classId?._id || group.classId || '');
+    setGroupFormGroupId(group.groupId?._id || group.groupId || '');
+    setGroupFormTitle(group.title || '');
+    setGroupFormDesc(group.description || '');
+    setGroupFormAudience(
+      Array.isArray(group.targetAudience) && group.targetAudience.length > 0
+        ? group.targetAudience
+        : ['all']
+    );
+    setEditGroupModalVisible(true);
+  };
+
+  const handleSelectClass = (cId: string) => {
+    setGroupFormClassId(cId);
+    setGroupFormGroupId('');
+    const cls = availableClasses.find((c) => String(c._id) === String(cId));
+    if (cls) {
+      if (groupFormType === 'class') {
+        setGroupFormTitle(`مجموعة قسم: ${cls.name}`);
+        setGroupFormDesc(`قناة التواصل والمتابعة الأكاديمية لقسم ${cls.name}`);
+      } else if (groupFormType === 'class_parents') {
+        setGroupFormTitle(`أولياء أمور قسم: ${cls.name}`);
+        setGroupFormDesc(`قناة التواصل مع أولياء تلاميذ قسم ${cls.name}`);
+      }
+    }
+  };
+
+  const handleSelectClassGroup = (gId: string) => {
+    setGroupFormGroupId(gId);
+    const grp = availableClassGroups.find((g) => String(g._id) === String(gId));
+    const cls = availableClasses.find((c) => String(c._id) === String(groupFormClassId));
+    if (grp) {
+      const clsName = cls ? cls.name : (grp.class?.name || '');
+      setGroupFormTitle(`فوج: ${grp.name} - ${clsName}`);
+      setGroupFormDesc(`قناة العمل والأنشطة الخاصة بفوج ${grp.name}`);
+    }
+  };
+
+  const toggleAudienceTag = (tag: string) => {
+    if (tag === 'all') {
+      setGroupFormAudience(['all']);
+      return;
+    }
+    setGroupFormAudience((prev) => {
+      const filtered = prev.filter((t) => t !== 'all');
+      if (filtered.includes(tag)) {
+        const next = filtered.filter((t) => t !== tag);
+        return next.length === 0 ? ['all'] : next;
+      } else {
+        return [...filtered, tag];
+      }
+    });
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupFormTitle.trim() || isSubmittingGroup) return;
+    setIsSubmittingGroup(true);
+    try {
+      await apiClient.post('/api/messages/groups', {
+        title: groupFormTitle.trim(),
+        description: groupFormDesc.trim(),
+        targetAudience: groupFormAudience,
+        groupType: groupFormType,
+        classId: groupFormClassId || undefined,
+        groupId: groupFormGroupId || undefined,
+      });
+      setCreateGroupModalVisible(false);
+      setGroupFormTitle('');
+      setGroupFormDesc('');
+      setGroupFormClassId('');
+      setGroupFormGroupId('');
+      await fetchData();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'فشل إنشاء المجموعة.';
+      if (Platform.OS === 'web') alert(msg);
+      else Alert.alert('خطأ', msg);
+    } finally {
+      setIsSubmittingGroup(false);
+    }
+  };
+
+  const handleUpdateGroup = async () => {
+    if (!selectedGroupForEdit || !groupFormTitle.trim() || isSubmittingGroup) return;
+    setIsSubmittingGroup(true);
+    try {
+      await apiClient.put(`/api/messages/groups/${selectedGroupForEdit.channelId}`, {
+        title: groupFormTitle.trim(),
+        description: groupFormDesc.trim(),
+        targetAudience: groupFormAudience,
+        groupType: groupFormType,
+        classId: groupFormClassId || undefined,
+        groupId: groupFormGroupId || undefined,
+      });
+      setEditGroupModalVisible(false);
+      setSelectedGroupForEdit(null);
+      await fetchData();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'فشل تحديث المجموعة.';
+      if (Platform.OS === 'web') alert(msg);
+      else Alert.alert('خطأ', msg);
+    } finally {
+      setIsSubmittingGroup(false);
+    }
+  };
+
+  const handleDeleteGroup = (channelId: string, groupTitle?: string) => {
+    const executeDelete = async () => {
+      try {
+        await apiClient.delete(`/api/messages/groups/${channelId}`);
+        setGroups((prev) => prev.filter((g) => g.channelId !== channelId));
+        if (activeGroup?.channelId === channelId) {
+          closeChatThread();
+        }
+      } catch (err: any) {
+        const msg = err.response?.data?.message || 'فشل حذف المجموعة.';
+        if (Platform.OS === 'web') alert(msg);
+        else Alert.alert('خطأ', msg);
+      }
+    };
+
+    const confirmMsg = `هل أنت متأكد من حذف مجموعة "${groupTitle || 'هذه المجموعة'}" نهائياً؟`;
+    if (Platform.OS === 'web') {
+      if (window.confirm(confirmMsg)) {
+        executeDelete();
+      }
+    } else {
+      Alert.alert('تأكيد الحذف', confirmMsg, [
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: executeDelete },
+      ]);
+    }
+  };
 
   // 1. Fetch Conversations, Groups, and Contacts
   const fetchData = useCallback(async () => {
@@ -208,6 +487,236 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
     fetchMessagesHistory();
   }, [fetchMessagesHistory]);
 
+  // Real-time: Join/Leave direct conversation room
+  useEffect(() => {
+    if (activePartner?._id && currentUserId) {
+      joinConversationRoom(currentUserId, activePartner._id);
+      return () => {
+        leaveConversationRoom(currentUserId, activePartner._id);
+      };
+    }
+  }, [activePartner?._id, currentUserId]);
+
+  // Real-time: Join/Leave group channel room
+  useEffect(() => {
+    if (activeGroup?.channelId) {
+      joinGroupChannelRoom(activeGroup.channelId);
+      return () => {
+        leaveGroupChannelRoom(activeGroup.channelId);
+      };
+    }
+  }, [activeGroup?.channelId]);
+
+  // Real-time Socket Event Listeners
+  useEffect(() => {
+    if (!currentUserId) return;
+    const socket = connectSocket(currentUserId);
+
+    const handleReceiveDirectMessage = (newMsg: any) => {
+      const msgSenderId = String(newMsg.sender?._id || newMsg.sender || '');
+      const msgReceiverId = String(newMsg.receiver?._id || newMsg.receiver || '');
+      const currentActivePartnerId = String(activePartner?._id || '');
+
+      // 1. If currently in the direct chat with this person, append message
+      if (
+        currentActivePartnerId &&
+        (msgSenderId === currentActivePartnerId || msgReceiverId === currentActivePartnerId)
+      ) {
+        setMessages((prev) => {
+          if (prev.some((m) => String(m._id) === String(newMsg._id))) return prev;
+          return [...prev, newMsg];
+        });
+
+        // Mark as seen immediately if we received it
+        if (msgSenderId === currentActivePartnerId && newMsg._id) {
+          apiClient.post(`/api/messages/${newMsg._id}/seen`).catch(() => {});
+        }
+      }
+
+      // 2. Update conversations list in real-time
+      setConversations((prev) => {
+        const otherUserId = msgSenderId === String(currentUserId) ? msgReceiverId : msgSenderId;
+        const exists = prev.some((c) => String(c.user?._id) === otherUserId);
+
+        if (exists) {
+          return prev
+            .map((c) => {
+              if (String(c.user?._id) === otherUserId) {
+                const isCurrentlyOpen = currentActivePartnerId === otherUserId;
+                return {
+                  ...c,
+                  lastMessage: newMsg.content || (newMsg.attachmentUrl ? 'مرفق' : ''),
+                  lastUpdated: newMsg.createdAt || new Date().toISOString(),
+                  unreadCount: isCurrentlyOpen
+                    ? 0
+                    : (c.unreadCount || 0) + (msgSenderId !== String(currentUserId) ? 1 : 0),
+                };
+              }
+              return c;
+            })
+            .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+        } else {
+          apiClient
+            .get('/api/messages/conversations')
+            .then((r) => Array.isArray(r.data) && setConversations(r.data))
+            .catch(() => {});
+          return prev;
+        }
+      });
+    };
+
+    const handleReceiveGroupMessage = (newMsg: any) => {
+      const groupChannelId = String(newMsg.groupChannelId || '');
+      const currentActiveGroupId = String(activeGroup?.channelId || '');
+
+      if (currentActiveGroupId && groupChannelId === currentActiveGroupId) {
+        setMessages((prev) => {
+          if (prev.some((m) => String(m._id) === String(newMsg._id))) return prev;
+          return [...prev, newMsg];
+        });
+      }
+
+      setGroups((prev) =>
+        prev
+          .map((g) => {
+            if (String(g.channelId) === groupChannelId) {
+              return {
+                ...g,
+                lastMessage: newMsg.content || (newMsg.attachmentUrl ? 'مرفق' : ''),
+                lastUpdated: newMsg.createdAt || new Date().toISOString(),
+              };
+            }
+            return g;
+          })
+          .sort((a, b) => new Date(b.lastUpdated || 0).getTime() - new Date(a.lastUpdated || 0).getTime())
+      );
+    };
+
+    const handleReactionUpdated = ({ messageId, reactions }: any) => {
+      setMessages((prev) =>
+        prev.map((m) => (String(m._id) === String(messageId) ? { ...m, reactions } : m))
+      );
+    };
+
+    const handleSeenUpdated = ({ messageId, seenBy, readAt }: any) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          String(m._id) === String(messageId)
+            ? { ...m, seenBy, isRead: true, status: 'read', readAt }
+            : m
+        )
+      );
+    };
+
+    const handleMessageModerated = ({ messageId, isHidden, isDeleted, content }: any) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (String(m._id) !== String(messageId)) return m;
+          const updated = { ...m };
+          if (typeof isHidden === 'boolean') updated.isHidden = isHidden;
+          if (typeof isDeleted === 'boolean') updated.isDeleted = isDeleted;
+          if (content) updated.content = content;
+          return updated;
+        })
+      );
+    };
+
+    const handleGroupCreated = () => {
+      fetchData();
+    };
+    const handleGroupUpdated = () => {
+      fetchData();
+    };
+    const handleGroupDeleted = ({ channelId }: any) => {
+      fetchData();
+      if (activeGroup?.channelId === channelId) {
+        closeChatThread();
+      }
+    };
+
+    const handleConversationMessagesSeen = ({ readerId, readAt }: any) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          const sId = typeof m.sender === 'object' ? m.sender?._id : m.sender;
+          if (String(sId) !== String(readerId)) {
+            return { ...m, isRead: true, status: 'read', readAt };
+          }
+          return m;
+        })
+      );
+    };
+
+    const handleGroupMessagesSeen = ({ channelId, readerId, seenAt }: any) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.groupChannelId === channelId) {
+            const seenList = m.seenBy || [];
+            if (!seenList.some((s) => String(s.user?._id || s.user) === String(readerId))) {
+              return {
+                ...m,
+                seenBy: [...seenList, { user: readerId, seenAt }],
+              };
+            }
+          }
+          return m;
+        })
+      );
+    };
+
+    socket.on('receive_direct_message', handleReceiveDirectMessage);
+    socket.on('receive_group_message', handleReceiveGroupMessage);
+    socket.on('message_reaction_updated', handleReactionUpdated);
+    socket.on('message_seen_updated', handleSeenUpdated);
+    socket.on('conversation_messages_seen', handleConversationMessagesSeen);
+    socket.on('group_messages_seen', handleGroupMessagesSeen);
+    socket.on('message_moderated', handleMessageModerated);
+    socket.on('group_channel_created', handleGroupCreated);
+    socket.on('group_channel_updated', handleGroupUpdated);
+    socket.on('group_channel_deleted', handleGroupDeleted);
+
+    return () => {
+      socket.off('receive_direct_message', handleReceiveDirectMessage);
+      socket.off('receive_group_message', handleReceiveGroupMessage);
+      socket.off('message_reaction_updated', handleReactionUpdated);
+      socket.off('message_seen_updated', handleSeenUpdated);
+      socket.off('conversation_messages_seen', handleConversationMessagesSeen);
+      socket.off('group_messages_seen', handleGroupMessagesSeen);
+      socket.off('message_moderated', handleMessageModerated);
+      socket.off('group_channel_created', handleGroupCreated);
+      socket.off('group_channel_updated', handleGroupUpdated);
+      socket.off('group_channel_deleted', handleGroupDeleted);
+    };
+  }, [currentUserId, activePartner?._id, activeGroup?.channelId]);
+
+  // Reliable auto-scroll to bottom on opening a conversation & on message updates
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: false });
+      }, 40);
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 150);
+    }
+  }, [messages, activePartner?._id, activeGroup?.channelId]);
+
+  // Automatically mark incoming messages as seen when reading a conversation
+  useEffect(() => {
+    if (messages.length > 0 && currentUserId && (activePartner?._id || activeGroup?.channelId)) {
+      messages.forEach((msg) => {
+        const sId = typeof msg.sender === 'object' ? msg.sender?._id : msg.sender;
+        if (sId && String(sId) !== String(currentUserId)) {
+          const alreadySeen = (msg as any).seenBy?.some(
+            (s: any) => String(s.user?._id || s.user) === String(currentUserId)
+          );
+          if (!alreadySeen) {
+            apiClient.post(`/api/messages/${msg._id}/seen`).catch(() => {});
+          }
+        }
+      });
+    }
+  }, [messages, currentUserId, activePartner?._id, activeGroup?.channelId]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([fetchData(), fetchMessagesHistory()]);
@@ -226,9 +735,13 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
         const res = await apiClient.post('/api/messages', {
           receiverId: activePartner._id,
           content: text,
+          replyTo: replyingTo?._id || undefined,
         });
+        setReplyingTo(null);
         if (res.data) {
-          setMessages((prev) => [...prev, res.data]);
+          setMessages((prev) =>
+            prev.some((m) => String(m._id) === String(res.data._id)) ? prev : [...prev, res.data]
+          );
         } else {
           await fetchMessagesHistory();
         }
@@ -241,9 +754,13 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
           content: text,
           groupTitle: activeGroup.title || '',
           groupType: activeGroup.groupType || 'class',
+          replyTo: replyingTo?._id || undefined,
         });
+        setReplyingTo(null);
         if (res.data) {
-          setMessages((prev) => [...prev, res.data]);
+          setMessages((prev) =>
+            prev.some((m) => String(m._id) === String(res.data._id)) ? prev : [...prev, res.data]
+          );
         } else {
           await fetchMessagesHistory();
         }
@@ -372,9 +889,16 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
           </View>
         ) : (
           <FlatList
+            ref={flatListRef}
             data={messages}
             keyExtractor={(item, index) => item._id || `msg-${index}`}
             contentContainerStyle={styles.messagesList}
+            onContentSizeChange={() => {
+              flatListRef.current?.scrollToEnd({ animated: false });
+            }}
+            onLayout={() => {
+              flatListRef.current?.scrollToEnd({ animated: false });
+            }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -403,29 +927,222 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
                   ? `${item.sender.firstName || ''} ${item.sender.lastName || ''}`.trim()
                   : '';
 
+              const showActions = activeActionsMsgId === item._id;
+              const showEmoji = showEmojiPickerMsgId === item._id;
+
+              // Aggregate reaction counts
+              const reactionCounts: Record<string, number> = {};
+              (item.reactions || []).forEach((r: any) => {
+                if (r?.emoji) {
+                  reactionCounts[r.emoji] = (reactionCounts[r.emoji] || 0) + 1;
+                }
+              });
+              const reactionEntries = Object.entries(reactionCounts);
+
               return (
-                <View style={[styles.bubbleRow, isMe ? styles.rowMe : styles.rowOther]}>
-                  <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
-                    {/* If group chat and not me, show sender name */}
-                    {!isMe && !!activeGroup && !!senderName && (
-                      <Text style={styles.senderHeaderName}>{senderName}</Text>
-                    )}
+                <View style={[styles.bubbleWrapper, isMe ? styles.wrapperMe : styles.wrapperOther]}>
+                  {/* Floating Action Bar Pill (Matching user's screenshot: [Trash2] [EyeOff] [Smile] [CornerDownLeft]) */}
+                  {showActions && !item.isDeleted && (
+                    <View
+                      style={[
+                        styles.floatingActionBar,
+                        isMe ? styles.actionBarMe : styles.actionBarOther,
+                      ]}
+                    >
+                      {/* 1. Delete (Trash2) */}
+                      {(isMe || isPrivileged) && (
+                        <TouchableOpacity
+                          style={styles.actionIconBtn}
+                          onPress={() => handleDeleteMessage(item._id)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Trash2 size={16} color="#7B1E3A" />
+                        </TouchableOpacity>
+                      )}
 
-                    <Text style={[styles.bubbleText, isMe ? styles.textMe : styles.textOther]}>
-                      {item.content}
-                    </Text>
+                      {/* 2. Hide / Unhide (EyeOff) */}
+                      {isPrivileged && (
+                        <TouchableOpacity
+                          style={styles.actionIconBtn}
+                          onPress={() => handleToggleHideMessage(item._id)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          {item.isHidden ? (
+                            <Eye size={16} color="#C9A24D" />
+                          ) : (
+                            <EyeOff size={16} color="#7B1E3A" />
+                          )}
+                        </TouchableOpacity>
+                      )}
 
-                    <View style={styles.metaRow}>
-                      {isMe && <CheckCheck size={13} color={theme.colors.gold[300]} />}
-                      <Text style={[styles.timeText, isMe ? styles.timeMe : styles.timeOther]}>
-                        {formatTime(item.createdAt)}
-                      </Text>
+                      {/* 3. React (Smile) */}
+                      <TouchableOpacity
+                        style={[
+                          styles.actionIconBtn,
+                          showEmoji && styles.actionIconBtnActive,
+                        ]}
+                        onPress={() =>
+                          setShowEmojiPickerMsgId(showEmoji ? null : item._id)
+                        }
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Smile size={16} color="#C9A24D" />
+                      </TouchableOpacity>
+
+                      {/* 4. Reply (CornerDownLeft) */}
+                      <TouchableOpacity
+                        style={styles.actionIconBtn}
+                        onPress={() => {
+                          setReplyingTo(item);
+                          setActiveActionsMsgId(null);
+                          setShowEmojiPickerMsgId(null);
+                        }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <CornerDownLeft size={16} color="#7B1E3A" />
+                      </TouchableOpacity>
                     </View>
-                  </View>
+                  )}
+
+                  {/* Emoji Picker row */}
+                  {showEmoji && !item.isDeleted && (
+                    <View
+                      style={[
+                        styles.emojiPickerPill,
+                        isMe ? styles.actionBarMe : styles.actionBarOther,
+                      ]}
+                    >
+                      {['👍', '❤️', '😂', '😮', '😢', '🙏'].map((emoji) => (
+                        <TouchableOpacity
+                          key={emoji}
+                          style={styles.emojiBtn}
+                          onPress={() => handleReactToMessage(item._id, emoji)}
+                        >
+                          <Text style={styles.emojiText}>{emoji}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => {
+                      if (!item.isDeleted) {
+                        setActiveActionsMsgId(showActions ? null : item._id);
+                        setShowEmojiPickerMsgId(null);
+                      }
+                    }}
+                    style={[styles.bubbleRow, isMe ? styles.rowMe : styles.rowOther]}
+                  >
+                    <View
+                      style={[
+                        styles.bubble,
+                        isMe ? styles.bubbleMe : styles.bubbleOther,
+                        item.isHidden && styles.bubbleHidden,
+                        item.isDeleted && styles.bubbleDeleted,
+                      ]}
+                    >
+                      {/* Quoted Reply if message was a reply */}
+                      {item.replyTo && (
+                        <View
+                          style={[
+                            styles.quotedBox,
+                            isMe ? styles.quotedBoxMe : styles.quotedBoxOther,
+                          ]}
+                        >
+                          <Text style={styles.quotedAuthor} numberOfLines={1}>
+                            {item.replyTo.sender?.firstName || 'مستخدم'}
+                          </Text>
+                          <Text style={styles.quotedText} numberOfLines={2}>
+                            {item.replyTo.content || 'مرفق'}
+                          </Text>
+                        </View>
+                      )}
+
+                      {/* If group chat and not me, show sender name */}
+                      {!isMe && !!activeGroup && !!senderName && (
+                        <Text style={styles.senderHeaderName}>{senderName}</Text>
+                      )}
+
+                      <Text
+                        style={[
+                          styles.bubbleText,
+                          isMe ? styles.textMe : styles.textOther,
+                          item.isDeleted && styles.textDeleted,
+                          item.isHidden && styles.textHidden,
+                        ]}
+                      >
+                        {item.content}
+                      </Text>
+
+                      {item.isHidden && !item.isDeleted && (
+                        <Text style={styles.hiddenNoticeText}>(مخفي للمراجعة الإدارية)</Text>
+                      )}
+
+                      <View style={styles.metaRow}>
+                        {isMe && (
+                          <CheckCheck
+                            size={13}
+                            color={
+                              item.isRead || item.status === 'read'
+                                ? '#38BDF8'
+                                : theme.colors.gold[300]
+                            }
+                          />
+                        )}
+                        <Text style={[styles.timeText, isMe ? styles.timeMe : styles.timeOther]}>
+                          {formatTime(item.createdAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Reaction chips at bottom of bubble */}
+                  {reactionEntries.length > 0 && (
+                    <View
+                      style={[
+                        styles.reactionContainer,
+                        isMe ? styles.reactionContainerMe : styles.reactionContainerOther,
+                      ]}
+                    >
+                      {reactionEntries.map(([emoji, count]) => (
+                        <View key={emoji} style={styles.reactionChip}>
+                          <Text style={styles.reactionChipText}>
+                            {emoji} {count > 1 ? count : ''}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
               );
             }}
           />
+        )}
+
+        {/* Reply Bar preview above input */}
+        {replyingTo && (
+          <View style={styles.replyingBar}>
+            <View style={styles.replyingContent}>
+              <CornerDownLeft size={14} color={theme.colors.brand[500]} />
+              <Text style={styles.replyingText} numberOfLines={1}>
+                الرد على{' '}
+                <Text style={styles.replyingAuthor}>
+                  {typeof replyingTo.sender === 'object'
+                    ? `${replyingTo.sender.firstName || ''} ${replyingTo.sender.lastName || ''}`.trim() || 'المستخدم'
+                    : 'المستخدم'}
+                </Text>
+                : {replyingTo.content || 'مرفق'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setReplyingTo(null)}
+              style={styles.cancelReplyBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={15} color={theme.colors.text.muted} />
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Input Bar */}
@@ -646,6 +1363,18 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
               colors={[theme.colors.brand[500]]}
             />
           }
+          ListHeaderComponent={
+            isPrivileged ? (
+              <TouchableOpacity
+                style={styles.createGroupHeaderBtn}
+                onPress={openCreateGroup}
+                activeOpacity={0.85}
+              >
+                <Plus size={16} color="#FFFFFF" />
+                <Text style={styles.createGroupHeaderBtnText}>إضافة مجموعة / قناة جديدة</Text>
+              </TouchableOpacity>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Layers size={44} color={theme.colors.brand[300]} />
@@ -653,6 +1382,16 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
               <Text style={styles.emptySubtitle}>
                 لا توجد قنوات رسمية مسندة لحسابك حالياً.
               </Text>
+              {isPrivileged && (
+                <TouchableOpacity
+                  style={styles.emptyActionBtn}
+                  onPress={openCreateGroup}
+                  activeOpacity={0.8}
+                >
+                  <Plus size={16} color="#FFFFFF" />
+                  <Text style={styles.emptyActionBtnText}>إنشاء أول مجموعة الآن</Text>
+                </TouchableOpacity>
+              )}
             </View>
           }
           renderItem={({ item }) => {
@@ -689,6 +1428,32 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
                     {item.lastMessage || item.description || 'مجموعة رسمية للمؤسسة'}
                   </Text>
                 </View>
+
+                {/* Administration Action Buttons (Edit, Delete) */}
+                {isPrivileged && (
+                  <View style={styles.groupCardActionGroup}>
+                    <TouchableOpacity
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        openEditGroup(item);
+                      }}
+                      style={styles.groupCardActionBtn}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Edit3 size={15} color={theme.colors.gold[600]} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleDeleteGroup(item.channelId, item.title);
+                      }}
+                      style={styles.groupCardActionBtn}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Trash2 size={15} color="#BE123C" />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </TouchableOpacity>
             );
           }}
@@ -760,6 +1525,431 @@ export const ConversationView: React.FC<ConversationViewProps> = ({
           }}
         />
       )}
+
+      {/* =========================================================================
+          MODAL: CREATE GROUP CHANNEL (Administration)
+      ========================================================================= */}
+      <Modal
+        visible={createGroupModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCreateGroupModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>إضافة مجموعة / قناة جديدة</Text>
+              <TouchableOpacity
+                onPress={() => setCreateGroupModalVisible(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={20} color={theme.colors.text.secondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.inputLabel}>نوع المجموعة / القناة</Text>
+              <View style={styles.audienceChipsContainer}>
+                {[
+                  { id: 'custom', label: 'مجموعة مخصصة' },
+                  { id: 'class', label: 'قسم كامل' },
+                  { id: 'class_group', label: 'فوج قسم' },
+                  { id: 'class_parents', label: 'أولياء قسم' },
+                ].map((t) => (
+                  <TouchableOpacity
+                    key={t.id}
+                    style={[
+                      styles.audienceChip,
+                      groupFormType === t.id && styles.audienceChipSelected,
+                    ]}
+                    onPress={() => {
+                      setGroupFormType(t.id);
+                      if (t.id === 'class_parents') setGroupFormAudience(['all']);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.audienceChipText,
+                        groupFormType === t.id && styles.audienceChipTextSelected,
+                      ]}
+                    >
+                      {t.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {groupFormType !== 'custom' && (
+                <>
+                  <Text style={styles.inputLabel}>اختر القسم الدراسي *</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.classChipsScroll}
+                  >
+                    {availableClasses.map((cls) => {
+                      const isSel = String(cls._id) === String(groupFormClassId);
+                      return (
+                        <TouchableOpacity
+                          key={cls._id}
+                          style={[
+                            styles.audienceChip,
+                            isSel && styles.audienceChipSelected,
+                          ]}
+                          onPress={() => handleSelectClass(cls._id)}
+                        >
+                          <Text
+                            style={[
+                              styles.audienceChipText,
+                              isSel && styles.audienceChipTextSelected,
+                            ]}
+                          >
+                            {cls.name} {cls.division ? `(${cls.division})` : ''}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </>
+              )}
+
+              {groupFormType === 'class_group' && (
+                <>
+                  <Text style={styles.inputLabel}>اختر الفوج الدراسي *</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.classChipsScroll}
+                  >
+                    {availableClassGroups
+                      .filter((g) => !groupFormClassId || String(g.class?._id || g.class) === String(groupFormClassId))
+                      .map((grp) => {
+                        const isSel = String(grp._id) === String(groupFormGroupId);
+                        return (
+                          <TouchableOpacity
+                            key={grp._id}
+                            style={[
+                              styles.audienceChip,
+                              isSel && styles.audienceChipSelected,
+                            ]}
+                            onPress={() => handleSelectClassGroup(grp._id)}
+                          >
+                            <Text
+                              style={[
+                                styles.audienceChipText,
+                                isSel && styles.audienceChipTextSelected,
+                              ]}
+                            >
+                              {grp.name} {grp.class?.name ? `(${grp.class.name})` : ''}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                  </ScrollView>
+                </>
+              )}
+
+              <Text style={styles.inputLabel}>اسم المجموعة *</Text>
+              <TextInput
+                style={styles.modalTextInput}
+                placeholder="مثال: إعلانات الإدارة والأساتذة"
+                placeholderTextColor={theme.colors.text.muted}
+                value={groupFormTitle}
+                onChangeText={setGroupFormTitle}
+                textAlign="right"
+              />
+
+              <Text style={styles.inputLabel}>وصف المجموعة (اختياري)</Text>
+              <TextInput
+                style={[styles.modalTextInput, styles.modalTextArea]}
+                placeholder="اكتب نبذة أو هدف هذه المجموعة..."
+                placeholderTextColor={theme.colors.text.muted}
+                value={groupFormDesc}
+                onChangeText={setGroupFormDesc}
+                multiline
+                numberOfLines={3}
+                textAlign="right"
+              />
+
+              <Text style={styles.inputLabel}>الجمهور المستهدف</Text>
+              <View style={styles.audienceChipsContainer}>
+                {[
+                  { id: 'all', label: 'الجميع' },
+                  { id: 'teachers', label: 'الأساتذة' },
+                  { id: 'students', label: 'الطلاب' },
+                  { id: 'parents', label: 'أولياء الأمور' },
+                  { id: 'supervisors', label: 'المشرفين والإدارة' },
+                ].map((aud) => {
+                  const isSelected = groupFormAudience.includes(aud.id);
+                  return (
+                    <TouchableOpacity
+                      key={aud.id}
+                      style={[
+                        styles.audienceChip,
+                        isSelected && styles.audienceChipSelected,
+                      ]}
+                      onPress={() => toggleAudienceTag(aud.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.audienceChipText,
+                          isSelected && styles.audienceChipTextSelected,
+                        ]}
+                      >
+                        {aud.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setCreateGroupModalVisible(false)}
+              >
+                <Text style={styles.modalCancelBtnText}>إلغاء</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalSubmitBtn,
+                  (!groupFormTitle.trim() || isSubmittingGroup) && styles.modalSubmitBtnDisabled,
+                ]}
+                onPress={handleCreateGroup}
+                disabled={!groupFormTitle.trim() || isSubmittingGroup}
+              >
+                {isSubmittingGroup ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalSubmitBtnText}>إنشاء المجموعة</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* =========================================================================
+          MODAL: EDIT GROUP CHANNEL (Administration)
+      ========================================================================= */}
+      <Modal
+        visible={editGroupModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setEditGroupModalVisible(false);
+          setSelectedGroupForEdit(null);
+        }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>تعديل بيانات المجموعة</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setEditGroupModalVisible(false);
+                  setSelectedGroupForEdit(null);
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={20} color={theme.colors.text.secondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.inputLabel}>نوع المجموعة / القناة</Text>
+              <View style={styles.audienceChipsContainer}>
+                {[
+                  { id: 'custom', label: 'مجموعة مخصصة' },
+                  { id: 'class', label: 'قسم كامل' },
+                  { id: 'class_group', label: 'فوج قسم' },
+                  { id: 'class_parents', label: 'أولياء قسم' },
+                ].map((t) => (
+                  <TouchableOpacity
+                    key={t.id}
+                    style={[
+                      styles.audienceChip,
+                      groupFormType === t.id && styles.audienceChipSelected,
+                    ]}
+                    onPress={() => {
+                      setGroupFormType(t.id);
+                      if (t.id === 'class_parents') setGroupFormAudience(['all']);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.audienceChipText,
+                        groupFormType === t.id && styles.audienceChipTextSelected,
+                      ]}
+                    >
+                      {t.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {groupFormType !== 'custom' && (
+                <>
+                  <Text style={styles.inputLabel}>اختر القسم الدراسي *</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.classChipsScroll}
+                  >
+                    {availableClasses.map((cls) => {
+                      const isSel = String(cls._id) === String(groupFormClassId);
+                      return (
+                        <TouchableOpacity
+                          key={cls._id}
+                          style={[
+                            styles.audienceChip,
+                            isSel && styles.audienceChipSelected,
+                          ]}
+                          onPress={() => handleSelectClass(cls._id)}
+                        >
+                          <Text
+                            style={[
+                              styles.audienceChipText,
+                              isSel && styles.audienceChipTextSelected,
+                            ]}
+                          >
+                            {cls.name} {cls.division ? `(${cls.division})` : ''}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </>
+              )}
+
+              {groupFormType === 'class_group' && (
+                <>
+                  <Text style={styles.inputLabel}>اختر الفوج الدراسي *</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.classChipsScroll}
+                  >
+                    {availableClassGroups
+                      .filter((g) => !groupFormClassId || String(g.class?._id || g.class) === String(groupFormClassId))
+                      .map((grp) => {
+                        const isSel = String(grp._id) === String(groupFormGroupId);
+                        return (
+                          <TouchableOpacity
+                            key={grp._id}
+                            style={[
+                              styles.audienceChip,
+                              isSel && styles.audienceChipSelected,
+                            ]}
+                            onPress={() => handleSelectClassGroup(grp._id)}
+                          >
+                            <Text
+                              style={[
+                                styles.audienceChipText,
+                                isSel && styles.audienceChipTextSelected,
+                              ]}
+                            >
+                              {grp.name} {grp.class?.name ? `(${grp.class.name})` : ''}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                  </ScrollView>
+                </>
+              )}
+
+              <Text style={styles.inputLabel}>اسم المجموعة *</Text>
+              <TextInput
+                style={styles.modalTextInput}
+                placeholder="اسم المجموعة"
+                placeholderTextColor={theme.colors.text.muted}
+                value={groupFormTitle}
+                onChangeText={setGroupFormTitle}
+                textAlign="right"
+              />
+
+              <Text style={styles.inputLabel}>وصف المجموعة</Text>
+              <TextInput
+                style={[styles.modalTextInput, styles.modalTextArea]}
+                placeholder="وصف المجموعة..."
+                placeholderTextColor={theme.colors.text.muted}
+                value={groupFormDesc}
+                onChangeText={setGroupFormDesc}
+                multiline
+                numberOfLines={3}
+                textAlign="right"
+              />
+
+              <Text style={styles.inputLabel}>الجمهور المستهدف</Text>
+              <View style={styles.audienceChipsContainer}>
+                {[
+                  { id: 'all', label: 'الجميع' },
+                  { id: 'teachers', label: 'الأساتذة' },
+                  { id: 'students', label: 'الطلاب' },
+                  { id: 'parents', label: 'أولياء الأمور' },
+                  { id: 'supervisors', label: 'المشرفين والإدارة' },
+                ].map((aud) => {
+                  const isSelected = groupFormAudience.includes(aud.id);
+                  return (
+                    <TouchableOpacity
+                      key={aud.id}
+                      style={[
+                        styles.audienceChip,
+                        isSelected && styles.audienceChipSelected,
+                      ]}
+                      onPress={() => toggleAudienceTag(aud.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.audienceChipText,
+                          isSelected && styles.audienceChipTextSelected,
+                        ]}
+                      >
+                        {aud.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => {
+                  setEditGroupModalVisible(false);
+                  setSelectedGroupForEdit(null);
+                }}
+              >
+                <Text style={styles.modalCancelBtnText}>إلغاء</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalSubmitBtn,
+                  (!groupFormTitle.trim() || isSubmittingGroup) && styles.modalSubmitBtnDisabled,
+                ]}
+                onPress={handleUpdateGroup}
+                disabled={!groupFormTitle.trim() || isSubmittingGroup}
+              >
+                {isSubmittingGroup ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalSubmitBtnText}>حفظ التغييرات</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -1014,6 +2204,177 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 8,
   },
+  bubbleWrapper: {
+    marginVertical: 4,
+    paddingHorizontal: 8,
+    width: '100%',
+  },
+  wrapperMe: {
+    alignItems: 'flex-start',
+  },
+  wrapperOther: {
+    alignItems: 'flex-end',
+  },
+  floatingActionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: '#FFFDF9',
+    borderWidth: 1,
+    borderColor: '#C9A24D',
+    borderRadius: 22,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  actionBarMe: {
+    alignSelf: 'flex-start',
+  },
+  actionBarOther: {
+    alignSelf: 'flex-end',
+  },
+  actionIconBtn: {
+    padding: 3,
+  },
+  actionIconBtnActive: {
+    backgroundColor: 'rgba(201, 162, 77, 0.2)',
+    borderRadius: 6,
+  },
+  emojiPickerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFFDF9',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.4)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  emojiBtn: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  emojiText: {
+    fontSize: 16,
+  },
+  quotedBox: {
+    borderRightWidth: 3,
+    borderRightColor: '#C9A24D',
+    paddingRight: 8,
+    paddingLeft: 4,
+    paddingVertical: 3,
+    marginBottom: 6,
+    borderRadius: 4,
+  },
+  quotedBoxMe: {
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+  },
+  quotedBoxOther: {
+    backgroundColor: 'rgba(201, 162, 77, 0.12)',
+  },
+  quotedAuthor: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#C9A24D',
+    textAlign: 'right',
+  },
+  quotedText: {
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.85)',
+    textAlign: 'right',
+  },
+  bubbleHidden: {
+    opacity: 0.75,
+    borderWidth: 1,
+    borderColor: '#D97706',
+  },
+  bubbleDeleted: {
+    opacity: 0.6,
+  },
+  textDeleted: {
+    fontStyle: 'italic',
+    color: '#94A3B8',
+  },
+  textHidden: {
+    fontStyle: 'italic',
+  },
+  hiddenNoticeText: {
+    fontSize: 9,
+    color: '#D97706',
+    marginTop: 2,
+    textAlign: 'right',
+  },
+  reactionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: -4,
+    marginBottom: 2,
+  },
+  reactionContainerMe: {
+    alignSelf: 'flex-start',
+    marginLeft: 6,
+  },
+  reactionContainerOther: {
+    alignSelf: 'flex-end',
+    marginRight: 6,
+  },
+  reactionChip: {
+    backgroundColor: '#FFFDF9',
+    borderWidth: 1,
+    borderColor: '#C9A24D',
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  reactionChipText: {
+    fontSize: 11,
+  },
+  replyingBar: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFDF9',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(201, 162, 77, 0.3)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  replyingContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  replyingText: {
+    fontSize: 11,
+    color: theme.colors.text.primary,
+    textAlign: 'right',
+  },
+  replyingAuthor: {
+    fontWeight: '700',
+    color: theme.colors.brand[500],
+  },
+  cancelReplyBtn: {
+    padding: 4,
+  },
   bubbleRow: {
     width: '100%',
     flexDirection: 'row',
@@ -1153,5 +2514,166 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  classChipsScroll: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  createGroupHeaderBtn: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.brand[500],
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: theme.colors.brand[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  createGroupHeaderBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  groupCardActionGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 6,
+  },
+  groupCardActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: theme.colors.text.primary,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.text.secondary,
+    marginBottom: 6,
+    marginTop: 10,
+    textAlign: 'right',
+  },
+  modalTextInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: theme.colors.text.primary,
+  },
+  modalTextArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  audienceChipsContainer: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  audienceChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  audienceChipSelected: {
+    backgroundColor: theme.colors.brand[50],
+    borderColor: theme.colors.brand[500],
+  },
+  audienceChipText: {
+    fontSize: 12,
+    color: theme.colors.text.secondary,
+    fontWeight: '600',
+  },
+  audienceChipTextSelected: {
+    color: theme.colors.brand[600],
+    fontWeight: '700',
+  },
+  modalFooter: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'flex-start',
+    gap: 12,
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  modalCancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
+  },
+  modalCancelBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.text.secondary,
+  },
+  modalSubmitBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: theme.colors.brand[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalSubmitBtnDisabled: {
+    opacity: 0.5,
+  },
+  modalSubmitBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

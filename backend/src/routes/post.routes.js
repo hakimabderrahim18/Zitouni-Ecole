@@ -63,7 +63,7 @@ router.patch('/:id/comments/:commentId/hide', toggleHideComment);
 // 8. Post Moderation (Edit, Hide, Pin, Lock Comments, Delete, Ban User)
 router.put('/:id', editPost);
 router.patch('/:id/hide', toggleHidePost);
-router.post('/:id/ban-user', authorize('admin', 'school', 'general_supervisor'), banUserFromComments);
+router.post('/:id/ban-user', authorize('admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher'), banUserFromComments);
 router.put(
   '/:id/pin',
   authorize('admin', 'school', 'teacher', 'general_supervisor', 'pedagogical_supervisor'),

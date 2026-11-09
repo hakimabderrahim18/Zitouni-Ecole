@@ -202,6 +202,63 @@ export const SchoolFeedView: React.FC<SchoolFeedViewProps> = () => {
     }
   };
 
+  // Toggle Hide Comment
+  const handleToggleHideComment = async (postId: string, commentId: string) => {
+    try {
+      const res = await apiClient.patch(`/api/posts/${postId}/comments/${commentId}/hide`);
+      setPosts((prev) =>
+        prev.map((p) => (p._id === postId ? { ...p, comments: res.data.comments } : p))
+      );
+      notifyUser('نجاح', res.data.message || 'تم تحديث حالة التعليق.');
+    } catch (err: any) {
+      notifyUser('خطأ', err.response?.data?.message || 'فشل تغيير حالة التعليق.');
+    }
+  };
+
+  // Ban User From Comments
+  const handleBanUserFromComments = async (postId: string, targetUserId: string, userName?: string) => {
+    const post = posts.find((p) => p._id === postId);
+    const isBanned = post?.bannedUsersFromComments?.some((id) => String(id) === String(targetUserId));
+    const actionText = isBanned ? 'إلغاء حظر' : 'حظر';
+    const message = isBanned
+      ? `هل أنت متأكد من إلغاء حظر ${userName || 'هذا المستخدم'} من التعليق على هذا المنشور؟`
+      : `هل أنت متأكد من حظر ${userName || 'هذا المستخدم'} من التعليق على هذا المنشور؟`;
+
+    const executeBan = async () => {
+      try {
+        const res = await apiClient.post(`/api/posts/${postId}/ban-user`, { targetUserId });
+        setPosts((prev) =>
+          prev.map((p) =>
+            p._id === postId
+              ? {
+                  ...p,
+                  bannedUsersFromComments: res.data.bannedUsers || res.data.post?.bannedUsersFromComments,
+                }
+              : p
+          )
+        );
+        notifyUser('نجاح', res.data.message || `تم ${actionText} المستخدم بنجاح.`);
+      } catch (err: any) {
+        notifyUser('خطأ', err.response?.data?.message || `فشل ${actionText} المستخدم.`);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) {
+        executeBan();
+      }
+    } else {
+      Alert.alert(`${actionText} المستخدم`, message, [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: actionText,
+          style: isBanned ? 'default' : 'destructive',
+          onPress: executeBan,
+        },
+      ]);
+    }
+  };
+
   // Handle Post Created
   const handlePostCreated = (newPost: PostItem) => {
     setPosts((prev) => [newPost, ...prev]);
@@ -334,6 +391,8 @@ export const SchoolFeedView: React.FC<SchoolFeedViewProps> = () => {
                 onReact={handleReact}
                 onConfirmRead={handleConfirmRead}
                 onDeleteComment={handleDeleteComment}
+                onToggleHideComment={handleToggleHideComment}
+                onBanUserFromComments={handleBanUserFromComments}
               />
             ))}
           </View>

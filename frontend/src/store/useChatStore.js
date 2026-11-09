@@ -15,29 +15,55 @@ export const useChatStore = create((set, get) => ({
   isConnecting: false,
 
   connectSocket: (userId) => {
-    if (get().socket) return;
+    if (get().socket?.connected) return;
+
+    if (get().socket) {
+      get().socket.disconnect();
+    }
 
     set({ isConnecting: true });
     const socket = io('/', {
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       path: '/socket.io',
+      reconnection: true,
+      reconnectionAttempts: 15,
+      reconnectionDelay: 1000,
     });
 
     socket.on('connect', () => {
       console.log('Connected to WebSocket server');
-      socket.emit('register_user', userId);
+      if (userId) {
+        socket.emit('register_user', String(userId));
+      }
+      // Re-join active direct conversation if any
+      const activePartner = get().activeChatPartner;
+      if (activePartner && userId) {
+        socket.emit('join_conversation', {
+          senderId: String(userId),
+          receiverId: String(activePartner._id || activePartner.id),
+        });
+      }
+      // Re-join active group channel if any
+      const activeGroup = get().activeGroup;
+      if (activeGroup?.channelId) {
+        socket.emit('join_group_channel', String(activeGroup.channelId));
+      }
       set({ socket, isConnecting: false });
     });
 
     socket.on('receive_direct_message', (message) => {
       const activePartner = get().activeChatPartner;
+      const msgSenderId = String(message.sender?._id || message.sender || '');
+      const msgReceiverId = String(message.receiver?._id || message.receiver || '');
+      const partnerId = String(activePartner?._id || activePartner?.id || '');
+
       if (
         get().chatMode === 'direct' &&
         activePartner &&
-        (message.sender === activePartner._id || message.receiver === activePartner._id)
+        (msgSenderId === partnerId || msgReceiverId === partnerId)
       ) {
         set((state) => {
-          if (state.messages.some((m) => m._id === message._id)) return {};
+          if (state.messages.some((m) => String(m._id) === String(message._id))) return {};
           return { messages: [...state.messages, message] };
         });
       }
@@ -46,26 +72,104 @@ export const useChatStore = create((set, get) => ({
 
     socket.on('receive_group_message', (message) => {
       const activeGroup = get().activeGroup;
+      const groupChannelId = String(message.groupChannelId || '');
+      const currentChannelId = String(activeGroup?.channelId || '');
+
       if (
         get().chatMode === 'group' &&
         activeGroup &&
-        message.groupChannelId === activeGroup.channelId
+        groupChannelId === currentChannelId
       ) {
         set((state) => {
-          if (state.messages.some((m) => m._id === message._id)) return {};
+          if (state.messages.some((m) => String(m._id) === String(message._id))) return {};
           return { messages: [...state.messages, message] };
         });
       }
       get().fetchGroups();
     });
 
+    socket.on('message_reaction_updated', ({ messageId, reactions }) => {
+      set((state) => ({
+        messages: state.messages.map((m) =>
+          String(m._id) === String(messageId) ? { ...m, reactions } : m
+        ),
+      }));
+    });
+
+    socket.on('message_seen_updated', ({ messageId, seenBy, readAt }) => {
+      set((state) => ({
+        messages: state.messages.map((m) =>
+          String(m._id) === String(messageId)
+            ? { ...m, seenBy, status: 'read', isRead: true, readAt }
+            : m
+        ),
+      }));
+    });
+
+    socket.on('conversation_messages_seen', ({ readerId, readAt }) => {
+      set((state) => ({
+        messages: state.messages.map((m) => {
+          const sId = String(m.sender?._id || m.sender);
+          if (sId !== String(readerId)) {
+            return { ...m, isRead: true, status: 'read', readAt };
+          }
+          return m;
+        }),
+      }));
+    });
+
+    socket.on('group_messages_seen', ({ channelId, readerId, seenAt }) => {
+      set((state) => ({
+        messages: state.messages.map((m) => {
+          if (m.conversationType === 'group' && String(m.groupChannelId) === String(channelId)) {
+            const seenList = m.seenBy || [];
+            if (!seenList.some((s) => String(s.user?._id || s.user) === String(readerId))) {
+              return {
+                ...m,
+                seenBy: [...seenList, { user: readerId, seenAt }],
+              };
+            }
+          }
+          return m;
+        }),
+      }));
+    });
+
+    socket.on('message_moderated', ({ messageId, isHidden, isDeleted, content }) => {
+      set((state) => ({
+        messages: state.messages.map((m) => {
+          if (String(m._id) !== String(messageId)) return m;
+          const updated = { ...m };
+          if (typeof isHidden === 'boolean') updated.isHidden = isHidden;
+          if (typeof isDeleted === 'boolean') updated.isDeleted = isDeleted;
+          if (content) updated.content = content;
+          return updated;
+        }),
+      }));
+    });
+
+    socket.on('group_channel_created', () => {
+      get().fetchGroups();
+    });
+
+    socket.on('group_channel_updated', () => {
+      get().fetchGroups();
+    });
+
+    socket.on('group_channel_deleted', ({ channelId }) => {
+      get().fetchGroups();
+      if (get().activeGroup?.channelId === channelId) {
+        set({ activeGroup: null, messages: [] });
+      }
+    });
+
     socket.on('new_notification', (notification) => {
       useNotificationStore.getState().addNotification(notification);
     });
 
-    socket.on('disconnect', () => {
-      console.log('Disconnected from WebSocket server');
-      set({ socket: null });
+    socket.on('disconnect', (reason) => {
+      console.log('Disconnected from WebSocket server:', reason);
+      set({ isConnecting: false });
     });
   },
 
@@ -82,27 +186,43 @@ export const useChatStore = create((set, get) => ({
   },
 
   setActiveChatPartner: (partner) => {
+    const prevPartner = get().activeChatPartner;
+    const socket = get().socket;
+    const currentUser = JSON.parse(localStorage.getItem('zitouni_user') || '{}');
+    const currentUserId = currentUser.id || currentUser._id;
+
+    if (socket && prevPartner && currentUserId) {
+      socket.emit('leave_conversation', {
+        senderId: String(currentUserId),
+        receiverId: String(prevPartner._id || prevPartner.id),
+      });
+    }
+
     set({ activeChatPartner: partner, activeGroup: null, chatMode: 'direct', messages: [] });
     if (partner) {
-      get().fetchMessageHistory(partner._id);
-      const socket = get().socket;
-      const currentUser = JSON.parse(localStorage.getItem('zitouni_user'));
-      if (socket && currentUser) {
+      get().fetchMessageHistory(partner._id || partner.id);
+      if (socket && currentUserId) {
         socket.emit('join_conversation', {
-          senderId: currentUser.id,
-          receiverId: partner._id,
+          senderId: String(currentUserId),
+          receiverId: String(partner._id || partner.id),
         });
       }
     }
   },
 
   setActiveGroup: (group) => {
+    const prevGroup = get().activeGroup;
+    const socket = get().socket;
+
+    if (socket && prevGroup?.channelId) {
+      socket.emit('leave_group_channel', String(prevGroup.channelId));
+    }
+
     set({ activeGroup: group, activeChatPartner: null, chatMode: 'group', messages: [] });
-    if (group) {
+    if (group?.channelId) {
       get().fetchGroupMessages(group.channelId);
-      const socket = get().socket;
       if (socket) {
-        socket.emit('join_group_channel', group.channelId);
+        socket.emit('join_group_channel', String(group.channelId));
       }
     }
   },
@@ -241,6 +361,42 @@ export const useChatStore = create((set, get) => ({
       }));
     } catch (error) {
       console.error('Error deleting message:', error);
+    }
+  },
+
+  createGroupChannel: async (groupData) => {
+    try {
+      const response = await axios.post('/api/messages/groups', groupData);
+      get().fetchGroups();
+      return response.data;
+    } catch (error) {
+      console.error('Error creating group channel:', error);
+      throw error;
+    }
+  },
+
+  updateGroupChannel: async (channelId, groupData) => {
+    try {
+      const response = await axios.put(`/api/messages/groups/${channelId}`, groupData);
+      get().fetchGroups();
+      return response.data;
+    } catch (error) {
+      console.error('Error updating group channel:', error);
+      throw error;
+    }
+  },
+
+  deleteGroupChannel: async (channelId) => {
+    try {
+      const response = await axios.delete(`/api/messages/groups/${channelId}`);
+      get().fetchGroups();
+      if (get().activeGroup?.channelId === channelId) {
+        set({ activeGroup: null, messages: [] });
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting group channel:', error);
+      throw error;
     }
   },
 }));

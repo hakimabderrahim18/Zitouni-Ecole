@@ -268,7 +268,12 @@ export default function Feed() {
       const res = await axios.post(`${API_URL}/posts/${postId}/ban-user`, { targetUserId }, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      alert(res.data.message || 'تم حظر المستخدم من التعليق على هذا المنشور بنجاح.');
+      alert(res.data.message || 'تم تحديث حالة حظر المستخدم.');
+      if (res.data.bannedUsers) {
+        setPosts(prev =>
+          prev.map(p => (p._id === postId ? { ...p, bannedUsersFromComments: res.data.bannedUsers } : p))
+        );
+      }
     } catch (err) {
       console.error('Error banning user', err);
       alert(err.response?.data?.message || 'تعذر حظر المستخدم من التعليقات.');
@@ -453,8 +458,8 @@ export default function Feed() {
             const isDisliked = post.userReaction === 'dislike';
             const commentCount = post.comments?.length || 0;
             const commentsOpen = openComments[post._id];
-            const isOwner = post.publisher?._id === user?.id;
-            const isPrivileged = ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor'].includes(user?.role);
+            const isOwner = (post.publisher?._id || post.publisher)?.toString() === (user?.id || user?._id)?.toString();
+            const isPrivileged = ['admin', 'school', 'general_supervisor', 'pedagogical_supervisor', 'teacher'].includes(user?.role);
             const canModerate = isOwner || isPrivileged;
 
             return (
@@ -911,21 +916,27 @@ export default function Feed() {
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[10px] text-[#2B2022]/70 font-sans inline-flex items-center gap-1">
-                                    <Clock className="w-2.5 h-2.5 text-[#C9A24D]" />
-                                    <span>{formatShortTime(c.createdAt)}</span>
-                                  </span>
-                                  
                                   {/* Comment Moderation Actions */}
-                                  {canModerate && (
-                                    <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1">
+                                    {canModerate && (c.user?._id || c.user) !== user?._id && (
                                       <button
-                                        onClick={() => handleToggleHideComment(post._id, c._id)}
-                                        className="p-1 text-slate-400 hover:text-amber-700 rounded-md hover:bg-slate-100 transition-colors"
-                                        title={c.isHidden ? "إلغاء إخفاء التعليق" : "إخفاء التعليق"}
+                                        onClick={() => handleBanUserFromComments(post._id, c.user?._id || c.user, c.userName)}
+                                        className={`p-1 rounded-md transition-colors ${
+                                          post.bannedUsersFromComments?.some(id => String(id) === String(c.user?._id || c.user))
+                                            ? 'text-rose-700 bg-rose-50 hover:bg-rose-100'
+                                            : 'text-slate-400 hover:text-rose-900 hover:bg-slate-100'
+                                        }`}
+                                        title={
+                                          post.bannedUsersFromComments?.some(id => String(id) === String(c.user?._id || c.user))
+                                            ? "إلغاء حظر المستخدم من التعليق"
+                                            : "حظر المستخدم من التعليق على المنشور"
+                                        }
                                       >
-                                        <EyeOff className="w-3.5 h-3.5" />
+                                        <UserX className="w-3.5 h-3.5" />
                                       </button>
+                                    )}
+
+                                    {(canModerate || (c.user?._id || c.user) === user?._id) && (
                                       <button
                                         onClick={() => handleDeleteComment(post._id, c._id)}
                                         className="p-1 text-slate-400 hover:text-rose-700 rounded-md hover:bg-slate-100 transition-colors"
@@ -933,17 +944,27 @@ export default function Feed() {
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
-                                      {['admin', 'school', 'general_supervisor'].includes(user?.role) && (
-                                        <button
-                                          onClick={() => handleBanUserFromComments(post._id, c.user?._id || c.user, c.userName)}
-                                          className="p-1 text-slate-400 hover:text-rose-900 rounded-md hover:bg-slate-100 transition-colors"
-                                          title="حظر المستخدم من التعليق على المنشور"
-                                        >
-                                          <UserX className="w-3.5 h-3.5" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
+                                    )}
+
+                                    {canModerate && (
+                                      <button
+                                        onClick={() => handleToggleHideComment(post._id, c._id)}
+                                        className={`p-1 rounded-md transition-colors ${
+                                          c.isHidden
+                                            ? 'text-amber-600 bg-amber-50 hover:bg-amber-100'
+                                            : 'text-slate-400 hover:text-amber-700 hover:bg-slate-100'
+                                        }`}
+                                        title={c.isHidden ? "إلغاء إخفاء التعليق" : "إخفاء التعليق"}
+                                      >
+                                        {c.isHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  <span className="text-[10px] text-[#2B2022]/70 font-sans inline-flex items-center gap-1">
+                                    <Clock className="w-2.5 h-2.5 text-[#C9A24D]" />
+                                    <span>{formatShortTime(c.createdAt)}</span>
+                                  </span>
                                 </div>
                               </div>
                               <p className="text-xs text-[#2B2022] mt-1 leading-relaxed font-sans">{c.content}</p>

@@ -74,6 +74,8 @@ export interface PostItem {
   isHidden?: boolean;
   isImportant?: boolean;
   commentsLocked?: boolean;
+  bannedUsersFromComments?: string[];
+  isUserBannedFromComments?: boolean;
   scheduledPublishAt?: string | null;
   attachments?: PostAttachment[];
   pedagogicalLinks?: PedagogicalLink[];
