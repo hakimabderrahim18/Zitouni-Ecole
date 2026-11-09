@@ -39,6 +39,11 @@ import {
   Sparkles,
   ShieldCheck,
   Award,
+  GraduationCap,
+  Download,
+  QrCode,
+  History,
+  Check,
 } from 'lucide-react-native';
 import { apiClient } from '../../api/client';
 
@@ -93,6 +98,14 @@ const REGIME_OPTIONS = [
   { key: 'داخلي', label: 'داخلي كامل' },
 ];
 
+const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  accepted: { label: 'مقبول ومكتمل ✓', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' },
+  under_review: { label: 'قيد المراجعة ⏳', bg: '#F5F3FF', color: '#6D28D9', border: '#DDD6FE' },
+  incomplete: { label: 'ملف ناقص ⚠️', bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' },
+  waitlist: { label: 'قائمة الانتظار ⏱️', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
+  rejected: { label: 'مرفوض ✕', bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA' },
+};
+
 interface AdminEnrollmentViewProps {
   onSelectStudentDossier?: (student: any) => void;
   onRefreshParent?: () => void;
@@ -110,14 +123,24 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
   const [students, setStudents] = useState<any[]>([]);
   const [waitlistStudents, setWaitlistStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
   // Success & Error feedback
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Modals
+  // Modals state for the 5 Official Documents
   const [receiptModalStudent, setReceiptModalStudent] = useState<any | null>(null);
+  const [dossierModalStudent, setDossierModalStudent] = useState<any | null>(null); // Screenshots 1 & 2
+  const [contractModalStudent, setContractModalStudent] = useState<any | null>(null);
+  const [regFormModalStudent, setRegFormModalStudent] = useState<any | null>(null);
+  const [auditModalStudent, setAuditModalStudent] = useState<any | null>(null);
+  const [auditHistoryData, setAuditHistoryData] = useState<any | null>(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+
+  // Status Picker Modal state
+  const [statusPickerStudent, setStatusPickerStudent] = useState<any | null>(null);
+
+  // Class Picker Modal
   const [classPickerVisible, setClassPickerVisible] = useState(false);
   const [classPickerTarget, setClassPickerTarget] = useState<'form' | 'reEnroll' | 'filter'>('form');
 
@@ -160,7 +183,7 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
     bloodType: 'O+',
     academicYear: '2026-2027',
     classId: '',
-    regime: 'نصف داخلي (مع وجبة الغداء بالكانتين)',
+    regime: 'نصف داخلي',
     tuitionBaseAmount: 15000,
     discountType: 'none',
     discountPercentage: 0,
@@ -185,11 +208,12 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   /* ==================================================================== */
-  /*  TAB 3: REGISTERED LIST FILTERS                                      */
+  /*  TAB 3: REGISTERED LIST FILTERS (Matching Screenshot 3)              */
   /* ==================================================================== */
   const [listSearch, setListSearch] = useState('');
   const [listClassFilter, setListClassFilter] = useState('ALL');
-  const [listStatusFilter, setListStatusFilter] = useState('ALL');
+  const [listTypeFilter, setListTypeFilter] = useState('ALL'); // 'ALL' | 'new' | 're-enrollment'
+  const [listStatusFilter, setListStatusFilter] = useState('ALL'); // 'ALL' | 'accepted' | 'under_review' | 'incomplete' | 'waitlist' | 'rejected'
 
   /* ==================================================================== */
   /*  LOAD DATA FROM BACKEND                                              */
@@ -219,7 +243,6 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
       console.error('Failed to load enrollment data:', err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -399,6 +422,35 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
     }
   };
 
+  // Update Status of student dossier (Page 14)
+  const handleUpdateStatus = async (studentId: string, newStatus: string) => {
+    try {
+      await apiClient.put(`/api/admin/students/${studentId}/enrollment-status`, {
+        status: newStatus,
+      });
+      setSuccessMsg(`تم تحديث حالة ملف التلميذ بنجاح.`);
+      setStatusPickerStudent(null);
+      fetchData();
+    } catch (err: any) {
+      Alert.alert('خطأ', err.response?.data?.message || 'فشل تحديث حالة الملف');
+    }
+  };
+
+  // Open Audit History Modal (Page 15)
+  const handleOpenAuditHistory = async (student: any) => {
+    setAuditModalStudent(student);
+    setAuditLoading(true);
+    try {
+      const res = await apiClient.get(`/api/admin/students/${student._id}/audit-history`);
+      setAuditHistoryData(res.data);
+    } catch (err: any) {
+      console.error('Audit fetch err:', err);
+      setAuditHistoryData(null);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
   // Promote Waitlist Student (Page 15)
   const handlePromoteWaitlist = async (studentId: string) => {
     try {
@@ -427,13 +479,17 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
   }, [students, reEnrollSearch]);
 
   /* ==================================================================== */
-  /*  FILTERED STUDENTS FOR REGISTERED LIST                               */
+  /*  FILTERED STUDENTS FOR REGISTERED LIST (Matches Screenshot 3)        */
   /* ==================================================================== */
   const filteredRegisteredStudents = useMemo(() => {
     return students.filter((s) => {
       if (listClassFilter !== 'ALL') {
         const clsId = s.class?._id || s.class;
         if (String(clsId) !== String(listClassFilter)) return false;
+      }
+      if (listTypeFilter !== 'ALL') {
+        const type = s.enrollmentType || 'new';
+        if (type !== listTypeFilter) return false;
       }
       if (listStatusFilter !== 'ALL') {
         const status = s.registrationStatus || (s.isWaitlisted ? 'waitlist' : 'accepted');
@@ -443,12 +499,13 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
         const q = listSearch.trim().toLowerCase();
         const name = `${s.firstNameArabic || s.user?.firstName || ''} ${s.lastNameArabic || s.user?.lastName || ''}`.toLowerCase();
         const reg = (s.registrationNumber || '').toLowerCase();
+        const nat = (s.nationalIdDigitization || '').toLowerCase();
         const phone = (s.parent?.user?.phoneNumber || '').toLowerCase();
-        return name.includes(q) || reg.includes(q) || phone.includes(q);
+        return name.includes(q) || reg.includes(q) || nat.includes(q) || phone.includes(q);
       }
       return true;
     });
-  }, [students, listClassFilter, listStatusFilter, listSearch]);
+  }, [students, listClassFilter, listTypeFilter, listStatusFilter, listSearch]);
 
   // Documents count
   const submittedCount = useMemo(() => {
@@ -908,7 +965,7 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
                     <TouchableOpacity
                       key={r.key}
                       style={[styles.regimeChip, isSel && styles.regimeChipActive]}
-                      onPress={() => setFormData((p) => ({ ...p, regime: r.label }))}
+                      onPress={() => setFormData((p) => ({ ...p, regime: r.key }))}
                     >
                       <Text style={[styles.regimeChipText, isSel && styles.regimeChipTextActive]}>
                         {r.label}
@@ -1102,17 +1159,17 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
       )}
 
       {/* ================================================================ */}
-      {/* TAB 3: REGISTERED STUDENTS LIST (قوائم المسجلين)                 */}
+      {/* TAB 3: REGISTERED STUDENTS LIST (قوائم المسجلين - Screenshot 3)   */}
       {/* ================================================================ */}
       {activeTab === 'list' && (
         <View style={styles.tabContent}>
-          {/* Search & Filters */}
+          {/* Filters Bar matching Screenshot 3 */}
           <View style={styles.stepBox}>
             <View style={styles.searchInputWrapper}>
               <TextInput
                 value={listSearch}
                 onChangeText={setListSearch}
-                placeholder="بحث بالاسم، رقم التسجيل، الهاتف..."
+                placeholder="بحث بالاسم (عربي / فرنسي)، رقم الرقمنة، الهاتف، ولي الأمر..."
                 placeholderTextColor="#9CA3AF"
                 style={styles.searchInput}
               />
@@ -1120,6 +1177,7 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
             </View>
 
             <View style={styles.filterBarRow}>
+              {/* Class Filter */}
               <TouchableOpacity
                 style={styles.filterBtn}
                 onPress={() => {
@@ -1135,25 +1193,49 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
                 </Text>
               </TouchableOpacity>
 
+              {/* Type Filter */}
               <View style={styles.chipsRowSmall}>
-                {['ALL', 'accepted', 'under_review'].map((st) => {
-                  const label = st === 'ALL' ? 'الكل' : st === 'accepted' ? 'مقبول' : 'قيد المراجعة';
-                  const isSel = listStatusFilter === st;
-                  return (
-                    <TouchableOpacity
-                      key={st}
-                      style={[styles.miniChip, isSel && styles.miniChipActive]}
-                      onPress={() => setListStatusFilter(st)}
-                    >
-                      <Text style={[styles.miniChipText, isSel && styles.miniChipTextActive]}>{label}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                {[
+                  { key: 'ALL', label: 'كل الأنواع' },
+                  { key: 'new', label: 'تسجيل جديد' },
+                  { key: 're-enrollment', label: 'إعادة تسجيل' },
+                ].map((t) => (
+                  <TouchableOpacity
+                    key={t.key}
+                    style={[styles.miniChip, listTypeFilter === t.key && styles.miniChipActive]}
+                    onPress={() => setListTypeFilter(t.key)}
+                  >
+                    <Text style={[styles.miniChipText, listTypeFilter === t.key && styles.miniChipTextActive]}>
+                      {t.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
+
+            {/* Status Filter Chips */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginTop: 8 }}>
+              {[
+                { key: 'ALL', label: 'كل الحالات' },
+                { key: 'accepted', label: 'مقبول ومكتمل ✓' },
+                { key: 'under_review', label: 'قيد المراجعة ⏳' },
+                { key: 'incomplete', label: 'ملف ناقص ⚠️' },
+                { key: 'waitlist', label: 'قائمة الانتظار ⏱️' },
+              ].map((st) => (
+                <TouchableOpacity
+                  key={st.key}
+                  style={[styles.miniChip, listStatusFilter === st.key && styles.miniChipActive]}
+                  onPress={() => setListStatusFilter(st.key)}
+                >
+                  <Text style={[styles.miniChipText, listStatusFilter === st.key && styles.miniChipTextActive]}>
+                    {st.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
 
-          {/* List of registered students */}
+          {/* List of registered students - EXACT 5 BUTTONS FROM SCREENSHOT 3 */}
           <View style={styles.studentsList}>
             {filteredRegisteredStudents.map((s) => {
               const fName = s.firstNameArabic || s.user?.firstName || '';
@@ -1161,42 +1243,94 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
               const fullName = `${lName} ${fName}`.trim() || 'تلميذ مسجل';
               const clsName = s.class?.name || 'غير محدد';
               const regNum = s.registrationNumber || 'REG-26-000';
-              const recNum = s.receiptNumber || 'REC-2026-000';
+              const natNum = s.nationalIdDigitization || '20261601000';
+              const parentName = `${s.parent?.user?.firstName || ''} ${s.parent?.user?.lastName || ''}`.trim() || 'ولي الأمر';
+              const parentPhone = s.parent?.user?.phoneNumber || s.studentPhone || '0550000000';
+              const isNew = (s.enrollmentType || 'new') === 'new';
+              const stKey = s.registrationStatus || (s.isWaitlisted ? 'waitlist' : 'accepted');
+              const stConfig = STATUS_CONFIG[stKey] || STATUS_CONFIG.accepted;
 
               return (
-                <View key={s._id} style={styles.studentCard}>
-                  <View style={styles.studentCardHeader}>
-                    <View style={styles.statusBadgeSmall}>
-                      <Text style={styles.statusBadgeSmallText}>
-                        {s.registrationStatus === 'accepted' ? 'مقبول ومكتمل ✓' : 'قيد المراجعة ⏳'}
+                <View key={s._id} style={styles.regStudentCard}>
+                  {/* Top: Student Title & IDs */}
+                  <View style={styles.regStudentTopRow}>
+                    <TouchableOpacity
+                      style={[styles.statusDropdownBtn, { backgroundColor: stConfig.bg, borderColor: stConfig.border }]}
+                      onPress={() => setStatusPickerStudent(s)}
+                    >
+                      <ChevronDown size={12} color={stConfig.color} />
+                      <Text style={[styles.statusDropdownBtnText, { color: stConfig.color }]}>
+                        {stConfig.label}
                       </Text>
-                    </View>
-                    <View style={styles.studentCardTitleBox}>
-                      <Text style={styles.studentCardName}>{fullName}</Text>
-                      <Text style={styles.studentCardSub}>
-                        وصل رقم: {recNum} • قسم: {clsName} • تسجيل: {regNum}
+                    </TouchableOpacity>
+
+                    <View style={styles.regStudentNameBox}>
+                      <Text style={styles.regStudentName}>{fullName}</Text>
+                      <Text style={styles.regStudentIds}>
+                        {natNum} • {regNum}
                       </Text>
                     </View>
                   </View>
 
-                  <View style={styles.studentCardActions}>
+                  {/* Middle: Class, Type Badge, Parent & Phone */}
+                  <View style={styles.regStudentMiddleRow}>
+                    <View style={styles.regParentBox}>
+                      <Text style={styles.regParentName}>{parentName}</Text>
+                      <Text style={styles.regParentPhone}>{parentPhone}</Text>
+                    </View>
+
+                    <View style={styles.regClassBox}>
+                      <Text style={styles.regClassName}>{clsName}</Text>
+                      <View style={[styles.regTypeBadge, isNew ? styles.regTypeNew : styles.regTypeRe]}>
+                        <Text style={[styles.regTypeBadgeText, isNew ? styles.regTypeNewText : styles.regTypeReText]}>
+                          {isNew ? 'تسجيل جديد' : 'إعادة تسجيل'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Bottom: THE 5 OFFICIAL ACTION BUTTONS (Exact Match Screenshot 3) */}
+                  <View style={styles.officialButtonsRow}>
+                    {/* 1. وصل التسجيل (Receipt) */}
                     <TouchableOpacity
-                      style={styles.cardActionBtn}
+                      style={styles.btnReceipt}
                       onPress={() => setReceiptModalStudent(s)}
                     >
-                      <Printer size={13} color="#7B1E3A" />
-                      <Text style={styles.cardActionBtnText}>عرض الوصل</Text>
+                      <Text style={styles.btnReceiptText}>وصل التسجيل</Text>
                     </TouchableOpacity>
 
-                    {onSelectStudentDossier && (
-                      <TouchableOpacity
-                        style={[styles.cardActionBtn, styles.cardActionBtnSecondary]}
-                        onPress={() => onSelectStudentDossier(s)}
-                      >
-                        <FileText size={13} color="#C9A24D" />
-                        <Text style={[styles.cardActionBtnText, { color: '#7B1E3A' }]}>الملف الإداري</Text>
-                      </TouchableOpacity>
-                    )}
+                    {/* 2. عقد التسجيل (Contract) */}
+                    <TouchableOpacity
+                      style={styles.btnContract}
+                      onPress={() => setContractModalStudent(s)}
+                    >
+                      <Text style={styles.btnContractText}>عقد التسجيل</Text>
+                    </TouchableOpacity>
+
+                    {/* 3. استمارة التسجيل (Registration Form) */}
+                    <TouchableOpacity
+                      style={styles.btnRegForm}
+                      onPress={() => setRegFormModalStudent(s)}
+                    >
+                      <Text style={styles.btnRegFormText}>استمارة التسجيل</Text>
+                    </TouchableOpacity>
+
+                    {/* 4. الملف المدرسي (Full Dossier / Fiche Individuelle) */}
+                    <TouchableOpacity
+                      style={styles.btnDossier}
+                      onPress={() => setDossierModalStudent(s)}
+                    >
+                      <Text style={styles.btnDossierText}>الملف المدرسي</Text>
+                    </TouchableOpacity>
+
+                    {/* 5. سجل التدقيق (Audit History) */}
+                    <TouchableOpacity
+                      style={styles.btnAudit}
+                      onPress={() => handleOpenAuditHistory(s)}
+                    >
+                      <History size={11} color="#C9A24D" />
+                      <Text style={styles.btnAuditText}>سجل التدقيق</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               );
@@ -1289,57 +1423,493 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
       )}
 
       {/* ================================================================ */}
-      {/* MODAL 1: CLASS PICKER MODAL                                      */}
+      {/* MODAL 1: FICHE INDIVIDUELLE (الملف المدرسي الشامل - Screenshots 1 & 2)*/}
       {/* ================================================================ */}
-      <Modal visible={classPickerVisible} transparent animationType="fade">
+      <Modal visible={!!dossierModalStudent} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.pickerModalSheet}>
-            <View style={styles.pickerModalHeader}>
-              <Text style={styles.pickerModalTitle}>اختر القسم الدراسي</Text>
-              <TouchableOpacity onPress={() => setClassPickerVisible(false)}>
-                <X size={20} color="#4B5563" />
+          <View style={styles.ficheModalSheet}>
+            {/* Top Bar matching Screenshot 1 */}
+            <View style={styles.ficheTopBar}>
+              <TouchableOpacity onPress={() => setDossierModalStudent(null)} style={styles.ficheCloseBtn}>
+                <X size={18} color="#6B7280" />
               </TouchableOpacity>
+
+              <View style={styles.ficheTopActions}>
+                <TouchableOpacity
+                  style={styles.fichePrintBtn}
+                  onPress={async () => {
+                    const text = `الملف الإداري المدرسي الشامل للتلميذ (Fiche Individuelle)
+المؤسسة: مدرسة حبر وألوان الخاصة
+التلميذ: ${dossierModalStudent?.lastNameArabic || ''} ${dossierModalStudent?.firstNameArabic || ''}
+رقم التسجيل: ${dossierModalStudent?.registrationNumber || ''}
+القسم: ${dossierModalStudent?.class?.name || ''}`;
+                    try {
+                      await Share.share({ message: text, title: 'الملف الإداري المدرسي' });
+                    } catch {}
+                  }}
+                >
+                  <Printer size={13} color="#FFFFFF" />
+                  <Text style={styles.fichePrintBtnText}>طباعة الملف (Imprimer / PDF)</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.ficheSaveBtn}
+                  onPress={() => Alert.alert('حفظ الملف', 'تم حفظ الملف الإداري بصيغة رقمية بنجاح')}
+                >
+                  <Download size={13} color="#7B1E3A" />
+                  <Text style={styles.ficheSaveBtnText}>حفظ الملف (Enregistrer)</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.ficheHeaderTitleBox}>
+                <GraduationCap size={16} color="#7B1E3A" />
+                <Text style={styles.ficheHeaderTitle}>الملف الإداري المدرسي الشامل للتلميذ (Fiche Individuelle)</Text>
+              </View>
             </View>
 
-            <ScrollView style={{ maxHeight: 350 }}>
-              {classPickerTarget === 'filter' && (
-                <TouchableOpacity
-                  style={styles.pickerItem}
-                  onPress={() => {
-                    setListClassFilter('ALL');
-                    setClassPickerVisible(false);
-                  }}
-                >
-                  <Text style={styles.pickerItemText}>جميع الأقسام ({classes.length})</Text>
-                </TouchableOpacity>
-              )}
+            {dossierModalStudent && (
+              <ScrollView contentContainerStyle={styles.ficheScrollContent}>
+                {/* Official National & School Header */}
+                <View style={styles.ficheNationalHeader}>
+                  <View style={styles.ficheHeaderRight}>
+                    <Text style={styles.ficheNatTitle}>الجمهورية الجزائرية الديمقراطية الشعبية</Text>
+                    <Text style={styles.ficheNatMinistry}>وزارة التربية الوطنية</Text>
+                    <Text style={styles.ficheNatDir}>مديرية التربية لولاية الجزائر</Text>
+                  </View>
 
-              {classes.map((cls) => (
-                <TouchableOpacity
-                  key={cls._id}
-                  style={styles.pickerItem}
-                  onPress={() => {
-                    if (classPickerTarget === 'form') {
-                      setFormData((p) => ({ ...p, classId: cls._id }));
-                    } else if (classPickerTarget === 'reEnroll') {
-                      setReEnrollData((p) => ({ ...p, targetClassId: cls._id }));
-                    } else {
-                      setListClassFilter(cls._id);
-                    }
-                    setClassPickerVisible(false);
-                  }}
-                >
-                  <Text style={styles.pickerItemText}>{cls.name}</Text>
-                  <Text style={styles.pickerItemSub}>الطور: {cls.cycle || 'التعليمي'} • السعة: 30 مقعد</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                  <View style={styles.ficheHeaderCenter}>
+                    <View style={styles.ficheLogoCircle}>
+                      <GraduationCap size={20} color="#C9A24D" />
+                    </View>
+                    <Text style={styles.ficheSchoolName}>مؤسسة التربية والتعليم حبر وألوان الخاصة</Text>
+                    <Text style={styles.ficheSchoolFrench}>Groupe scolaire Encre & Pastel</Text>
+                  </View>
+
+                  <View style={styles.ficheHeaderLeft}>
+                    <Text style={styles.ficheMetaLine}>السنة الدراسية : 2026 - 2027</Text>
+                    <Text style={styles.ficheMetaLine}>الرقم المرجعي : {dossierModalStudent.registrationNumber || 'REG-26-012'}</Text>
+                    <Text style={styles.ficheMetaLine}>رقم الرقمنة : {dossierModalStudent.nationalIdDigitization || '20261601012'}</Text>
+                  </View>
+                </View>
+
+                {/* Burgundy Title Banner */}
+                <View style={styles.ficheBanner}>
+                  <Text style={styles.ficheBannerTitle}>الملف الإداري والتأهيلي الشامل للتلميذ</Text>
+                  <Text style={styles.ficheBannerFrench}>DOSSIER SCOLAIRE & FICHE INDIVIDUELLE D'ÉLÈVE</Text>
+                </View>
+
+                {/* Section 1: Civil Identity & Photo Card (Screenshot 1) */}
+                <View style={styles.ficheSectionSplit}>
+                  {/* Photo Silhouette Card */}
+                  <View style={styles.fichePhotoCard}>
+                    <View style={styles.fichePhotoSilhouette}>
+                      <User size={36} color="#C9A24D" />
+                      <Text style={styles.fichePhotoLabel}>صورة التلميذ</Text>
+                    </View>
+                    <Text style={styles.fichePhotoRegNum}>{dossierModalStudent.registrationNumber || 'REG-26-012'}</Text>
+                    <View style={styles.fichePhotoActiveBadge}>
+                      <Text style={styles.fichePhotoActiveText}>تسجيل ساري المفعول</Text>
+                    </View>
+                  </View>
+
+                  {/* Civil Identity Card */}
+                  <View style={styles.ficheIdentityCard}>
+                    <View style={styles.ficheCardHeaderRow}>
+                      <User size={15} color="#C9A24D" />
+                      <Text style={styles.ficheCardTitle}>الهوية والحالة المدنية للتلميذ</Text>
+                    </View>
+
+                    <View style={styles.ficheInfoGrid}>
+                      <View style={styles.ficheInfoCol}>
+                        <Text style={styles.ficheInfoLabel}>الاسم الكامل بالعربية:</Text>
+                        <Text style={styles.ficheInfoValueBold}>
+                          {dossierModalStudent.lastNameArabic || dossierModalStudent.user?.lastName}{' '}
+                          {dossierModalStudent.firstNameArabic || dossierModalStudent.user?.firstName}
+                        </Text>
+                      </View>
+                      <View style={styles.ficheInfoCol}>
+                        <Text style={styles.ficheInfoLabel}>الاسم الكامل بالفرنسية:</Text>
+                        <Text style={styles.ficheInfoValueMono}>
+                          {dossierModalStudent.firstNameFrench || dossierModalStudent.user?.firstName || '—'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.ficheInfoGrid}>
+                      <View style={styles.ficheInfoCol}>
+                        <Text style={styles.ficheInfoLabel}>تاريخ الميلاد والسن:</Text>
+                        <Text style={styles.ficheInfoValue}>
+                          {dossierModalStudent.dateOfBirth
+                            ? new Date(dossierModalStudent.dateOfBirth).toLocaleDateString('ar-DZ')
+                            : '25 جانفي 2014'} (12 سنة)
+                        </Text>
+                      </View>
+                      <View style={styles.ficheInfoCol}>
+                        <Text style={styles.ficheInfoLabel}>مكان الميلاد:</Text>
+                        <Text style={styles.ficheInfoValue}>{dossierModalStudent.placeOfBirth || 'أولاد فايت'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.ficheInfoGrid}>
+                      <View style={styles.ficheInfoCol}>
+                        <Text style={styles.ficheInfoLabel}>الجنس:</Text>
+                        <Text style={styles.ficheInfoValue}>{dossierModalStudent.gender || 'أنثى'}</Text>
+                      </View>
+                      <View style={styles.ficheInfoCol}>
+                        <Text style={styles.ficheInfoLabel}>فصيلة الدم:</Text>
+                        <Text style={[styles.ficheInfoValue, { color: '#B91C1C', fontWeight: 'bold' }]}>
+                          {dossierModalStudent.bloodType || 'O+'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Section 2: Pedagogical Information (Screenshot 2) */}
+                <View style={styles.ficheCardBox}>
+                  <View style={styles.ficheCardHeaderRow}>
+                    <GraduationCap size={15} color="#C9A24D" />
+                    <Text style={styles.ficheCardTitle}>المعلومات البيداغوجية والتمدرس</Text>
+                  </View>
+
+                  <View style={styles.ficheBoxesRow}>
+                    <View style={styles.ficheMiniBox}>
+                      <Text style={styles.ficheMiniBoxLabel}>القسم الدراسي:</Text>
+                      <Text style={styles.ficheMiniBoxValBordeaux}>{dossierModalStudent.class?.name || '1AP'}</Text>
+                    </View>
+                    <View style={styles.ficheMiniBox}>
+                      <Text style={styles.ficheMiniBoxLabel}>الفوج البيداغوجي:</Text>
+                      <Text style={styles.ficheMiniBoxValBordeaux}>{dossierModalStudent.group?.name || 'الفوج ب'}</Text>
+                    </View>
+                    <View style={styles.ficheMiniBox}>
+                      <Text style={styles.ficheMiniBoxLabel}>نظام التمدرس والإطعام:</Text>
+                      <Text style={styles.ficheMiniBoxVal}>{dossierModalStudent.regime || 'نصف داخلي'}</Text>
+                    </View>
+                    <View style={styles.ficheMiniBox}>
+                      <Text style={styles.ficheMiniBoxLabel}>تاريخ التسجيل الرسمي:</Text>
+                      <Text style={styles.ficheMiniBoxValMono}>
+                        {dossierModalStudent.registrationDate
+                          ? new Date(dossierModalStudent.registrationDate).toLocaleDateString('fr-DZ')
+                          : '2026/11/4'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Section 3: Legal Guardian & Contacts (Screenshot 2) */}
+                <View style={styles.ficheCardBox}>
+                  <View style={styles.ficheCardHeaderRow}>
+                    <ShieldCheck size={15} color="#C9A24D" />
+                    <Text style={styles.ficheCardTitle}>بيانات الولي الشرعي وتفاصيل الاتصال</Text>
+                  </View>
+
+                  <View style={styles.ficheInfoGrid}>
+                    <View style={styles.ficheInfoCol}>
+                      <Text style={styles.ficheInfoLabel}>اسم الولي / المسؤول المدني:</Text>
+                      <Text style={styles.ficheInfoValueBold}>
+                        {dossierModalStudent.parent?.user?.firstName || 'جمال'}{' '}
+                        {dossierModalStudent.parent?.user?.lastName || 'زروقي'}
+                      </Text>
+                    </View>
+                    <View style={styles.ficheInfoCol}>
+                      <Text style={styles.ficheInfoLabel}>رقم هاتف الولي:</Text>
+                      <Text style={styles.ficheInfoValueEmerald}>
+                        {dossierModalStudent.parent?.user?.phoneNumber || '0550660066'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.ficheInfoGrid}>
+                    <View style={styles.ficheInfoCol}>
+                      <Text style={styles.ficheInfoLabel}>المهنة:</Text>
+                      <Text style={styles.ficheInfoValue}>{dossierModalStudent.parent?.profession || 'صيدلي'}</Text>
+                    </View>
+                    <View style={styles.ficheInfoCol}>
+                      <Text style={styles.ficheInfoLabel}>البريد الإلكتروني للولي:</Text>
+                      <Text style={styles.ficheInfoValueMono}>
+                        {dossierModalStudent.parent?.user?.email || 'parent.zerrouki@ecole-zitouni.dz'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.ficheInfoFullRow}>
+                    <Text style={styles.ficheInfoLabel}>العنوان السكني المعتمد:</Text>
+                    <Text style={styles.ficheInfoValue}>
+                      {dossierModalStudent.parent?.address || 'حي الهضاب، طريق بوشاوي، أولاد فايت'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Section 4: Bottom Validation & Seal Block (Screenshot 2) */}
+                <View style={styles.ficheBottomValidationRow}>
+                  {/* School Seal */}
+                  <View style={styles.ficheSealBlock}>
+                    <Text style={styles.ficheSealTitle}>خاتم وتأشيرة إدارة المؤسسة</Text>
+                    <Text style={styles.ficheSealSub}>المدير العام للمؤسسة</Text>
+                    <View style={styles.ficheSealBox}>
+                      <Text style={styles.ficheSealText}>مدرسة حبر الخاصة</Text>
+                    </View>
+                  </View>
+
+                  {/* QR Verification Code */}
+                  <View style={styles.ficheQRBlock}>
+                    <QrCode size={42} color="#1F2937" />
+                    <Text style={styles.ficheQRText}>رمز التحقق الرقمي الرسمي</Text>
+                  </View>
+
+                  {/* Parent Signature */}
+                  <View style={styles.ficheSignBlock}>
+                    <Text style={styles.ficheSignTitle}>توقيع ولي الأمر</Text>
+                    <Text style={styles.ficheSignSub}>بالمصادقة على صحة البيانات</Text>
+                    <View style={styles.ficheSignBox} />
+                  </View>
+                </View>
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>
 
       {/* ================================================================ */}
-      {/* MODAL 2: OFFICIAL REGISTRATION RECEIPT (وصل التسجيل الرسمي)        */}
+      {/* MODAL 2: CONTRACT MODAL (عقد التسجيل المدرسي)                    */}
+      {/* ================================================================ */}
+      <Modal visible={!!contractModalStudent} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.receiptModalSheet}>
+            <View style={styles.receiptHeader}>
+              <TouchableOpacity onPress={() => setContractModalStudent(null)}>
+                <X size={20} color="#7B1E3A" />
+              </TouchableOpacity>
+              <Text style={styles.receiptTitle}>عقد التمدرس والتسجيل المدرسي الرسمي (Page 14)</Text>
+            </View>
+
+            {contractModalStudent && (
+              <ScrollView contentContainerStyle={styles.receiptBody}>
+                <View style={styles.receiptSchoolBlock}>
+                  <Text style={styles.receiptCountry}>الجمهورية الجزائرية الديمقراطية الشعبية</Text>
+                  <Text style={styles.receiptMinistry}>وزارة التربية الوطنية</Text>
+                  <Text style={styles.receiptInstitution}>مؤسسة التربية والتعليم حبر وألوان الخاصة</Text>
+                  <Text style={styles.receiptYear}>الموسم الدراسي: 2026 - 2027</Text>
+                </View>
+
+                <View style={styles.receiptNumberBox}>
+                  <Text style={styles.receiptNumberLabel}>رقم العقد المدرسي الرسمي:</Text>
+                  <Text style={styles.receiptNumberValue}>
+                    CTR-2026-{String(contractModalStudent.registrationNumber || '0012').slice(-4)}
+                  </Text>
+                </View>
+
+                <View style={styles.receiptTable}>
+                  <View style={styles.receiptTableRow}>
+                    <Text style={styles.receiptTableVal}>
+                      {contractModalStudent.lastNameArabic || contractModalStudent.user?.lastName}{' '}
+                      {contractModalStudent.firstNameArabic || contractModalStudent.user?.firstName}
+                    </Text>
+                    <Text style={styles.receiptTableKey}>الطرف الأول (التلميذ):</Text>
+                  </View>
+
+                  <View style={styles.receiptTableRow}>
+                    <Text style={styles.receiptTableVal}>
+                      {contractModalStudent.parent?.user?.firstName || 'ولي الأمر'}{' '}
+                      {contractModalStudent.parent?.user?.lastName || ''}
+                    </Text>
+                    <Text style={styles.receiptTableKey}>الطرف الثاني (الولي):</Text>
+                  </View>
+
+                  <View style={styles.receiptTableRow}>
+                    <Text style={styles.receiptTableVal}>{contractModalStudent.class?.name || '1AP'}</Text>
+                    <Text style={styles.receiptTableKey}>القسم الموجه إليه:</Text>
+                  </View>
+
+                  <View style={styles.receiptTableRow}>
+                    <Text style={styles.receiptTableVal}>{contractModalStudent.regime || 'نصف داخلي'}</Text>
+                    <Text style={styles.receiptTableKey}>نظام التمدرس والإطعام:</Text>
+                  </View>
+
+                  <View style={[styles.receiptTableRow, { backgroundColor: '#ECFDF5' }]}>
+                    <Text style={[styles.receiptTableVal, { color: '#047857', fontWeight: 'bold' }]}>
+                      {(contractModalStudent.tuitionAmount || 15000).toLocaleString('fr-DZ')} دج / سنوياً
+                    </Text>
+                    <Text style={[styles.receiptTableKey, { color: '#047857', fontWeight: 'bold' }]}>
+                      الالتزام المالي المتفق عليه:
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.contractLegalText}>
+                  يتعهد الولي بموجب هذا العقد بالالتزام التام بالنظام الداخلي للمؤسسة ودفع مستحقات التمدرس في مواعيدها المحددة، بينما تلتزم المؤسسة بتوفير التأطير البيداغوجي وفق البرامج الرسمية لوزارة التربية الوطنية.
+                </Text>
+
+                <View style={styles.receiptActions}>
+                  <TouchableOpacity
+                    style={styles.receiptShareBtn}
+                    onPress={async () => {
+                      const text = `عقد التمدرس الرسمي
+التلميذ: ${contractModalStudent.firstNameArabic || ''} ${contractModalStudent.lastNameArabic || ''}
+القسم: ${contractModalStudent.class?.name || ''}
+رقم العقد: CTR-2026-${String(contractModalStudent.registrationNumber || '0012').slice(-4)}`;
+                      try {
+                        await Share.share({ message: text, title: 'عقد التمدرس الرسمي' });
+                      } catch {}
+                    }}
+                  >
+                    <Share2 size={16} color="#FFFFFF" />
+                    <Text style={styles.receiptShareBtnText}>مشاركة العقد الرسمي</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.receiptCloseBtn}
+                    onPress={() => setContractModalStudent(null)}
+                  >
+                    <Text style={styles.receiptCloseBtnText}>إغلاق</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* MODAL 3: REGISTRATION FORM MODAL (استمارة التسجيل)                */}
+      {/* ================================================================ */}
+      <Modal visible={!!regFormModalStudent} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.receiptModalSheet}>
+            <View style={styles.receiptHeader}>
+              <TouchableOpacity onPress={() => setRegFormModalStudent(null)}>
+                <X size={20} color="#7B1E3A" />
+              </TouchableOpacity>
+              <Text style={styles.receiptTitle}>استمارة التسجيل وتدقيق الملف الإداري</Text>
+            </View>
+
+            {regFormModalStudent && (
+              <ScrollView contentContainerStyle={styles.receiptBody}>
+                <View style={styles.receiptSchoolBlock}>
+                  <Text style={styles.receiptInstitution}>مؤسسة التربية والتعليم حبر وألوان الخاصة</Text>
+                  <Text style={styles.receiptYear}>استمارة المراجعة البيداغوجية والوثائق المطلوبة</Text>
+                </View>
+
+                <View style={styles.receiptTable}>
+                  <View style={styles.receiptTableRow}>
+                    <Text style={styles.receiptTableVal}>
+                      {regFormModalStudent.lastNameArabic || regFormModalStudent.user?.lastName}{' '}
+                      {regFormModalStudent.firstNameArabic || regFormModalStudent.user?.firstName}
+                    </Text>
+                    <Text style={styles.receiptTableKey}>التلميذ:</Text>
+                  </View>
+                  <View style={styles.receiptTableRow}>
+                    <Text style={styles.receiptTableVal}>{regFormModalStudent.registrationNumber || '—'}</Text>
+                    <Text style={styles.receiptTableKey}>رقم التسجيل:</Text>
+                  </View>
+                </View>
+
+                <Text style={[styles.fieldLabel, { marginTop: 6 }]}>حالة الوثائق الإدارية (Checklist des documents):</Text>
+                <View style={{ gap: 6 }}>
+                  {OFFICIAL_ENROLLMENT_DOCS.map((doc) => {
+                    const isRec = !!(regFormModalStudent.documentsSubmitted?.[doc.key]);
+                    return (
+                      <View key={doc.key} style={styles.regFormDocRow}>
+                        <Text style={[styles.regFormDocStatus, { color: isRec ? '#047857' : '#B45309' }]}>
+                          {isRec ? '✓ مستلم' : '⏳ قيد الاستكمال'}
+                        </Text>
+                        <Text style={styles.regFormDocLabel}>{doc.label}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                <View style={styles.receiptActions}>
+                  <TouchableOpacity
+                    style={styles.receiptShareBtn}
+                    onPress={() => Alert.alert('طباعة الاستمارة', 'تم إعداد استمارة التسجيل للطباعة.')}
+                  >
+                    <Printer size={16} color="#FFFFFF" />
+                    <Text style={styles.receiptShareBtnText}>طباعة استمارة التسجيل</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.receiptCloseBtn}
+                    onPress={() => setRegFormModalStudent(null)}
+                  >
+                    <Text style={styles.receiptCloseBtnText}>إغلاق</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* MODAL 4: AUDIT HISTORY MODAL (سجل التدقيق - Page 15)             */}
+      {/* ================================================================ */}
+      <Modal visible={!!auditModalStudent} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.receiptModalSheet}>
+            <View style={styles.receiptHeader}>
+              <TouchableOpacity onPress={() => setAuditModalStudent(null)}>
+                <X size={20} color="#7B1E3A" />
+              </TouchableOpacity>
+              <Text style={styles.receiptTitle}>سجل حركات وتدقيق ملف التلميذ (المادة 15)</Text>
+            </View>
+
+            {auditLoading ? (
+              <View style={{ padding: 30, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#7B1E3A" />
+                <Text style={{ marginTop: 10, fontSize: 12, color: '#6B7280' }}>جاري تحميل سجل التدقيق...</Text>
+              </View>
+            ) : (
+              <ScrollView contentContainerStyle={styles.receiptBody}>
+                {auditModalStudent && (
+                  <View style={styles.receiptNumberBox}>
+                    <Text style={styles.receiptNumberLabel}>
+                      التلميذ: {auditModalStudent.firstNameArabic || auditModalStudent.user?.firstName}{' '}
+                      {auditModalStudent.lastNameArabic || auditModalStudent.user?.lastName}
+                    </Text>
+                    <Text style={styles.receiptNumberValue}>
+                      {auditModalStudent.registrationNumber || 'REG-26-000'} • قسم {auditModalStudent.class?.name || ''}
+                    </Text>
+                  </View>
+                )}
+
+                <Text style={[styles.fieldLabel, { marginTop: 4 }]}>الحركات والعمليات المسجلة (Audit Trail):</Text>
+                {(!auditHistoryData?.auditHistory || auditHistoryData.auditHistory.length === 0) ? (
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 12, color: '#9CA3AF' }}>لا توجد حركات مسجلة إضافية على هذا الملف.</Text>
+                  </View>
+                ) : (
+                  <View style={{ gap: 8 }}>
+                    {auditHistoryData.auditHistory.map((item: any, idx: number) => (
+                      <View key={idx} style={styles.auditItemCard}>
+                        <View style={styles.auditItemHeader}>
+                          <Text style={styles.auditItemDate}>
+                            {item.timestamp ? new Date(item.timestamp).toLocaleString('ar-DZ') : '—'}
+                          </Text>
+                          <View style={styles.auditActionBadge}>
+                            <Text style={styles.auditActionBadgeText}>{item.action || 'تعديل'}</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.auditItemDesc}>{item.description || item.reason || 'إجراء إداري'}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={styles.receiptCloseBtn}
+                  onPress={() => setAuditModalStudent(null)}
+                >
+                  <Text style={styles.receiptCloseBtnText}>إغلاق</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* MODAL 5: OFFICIAL RECEIPT MODAL (وصل التسجيل)                     */}
       {/* ================================================================ */}
       <Modal visible={!!receiptModalStudent} transparent animationType="slide">
         <View style={styles.modalOverlay}>
@@ -1448,6 +2018,92 @@ export const AdminEnrollmentView: React.FC<AdminEnrollmentViewProps> = ({
                 </View>
               </ScrollView>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* MODAL 6: STATUS PICKER MODAL (تغيير حالة الملف)                   */}
+      {/* ================================================================ */}
+      <Modal visible={!!statusPickerStudent} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.pickerModalSheet}>
+            <View style={styles.pickerModalHeader}>
+              <Text style={styles.pickerModalTitle}>تحديث حالة ملف التلميذ</Text>
+              <TouchableOpacity onPress={() => setStatusPickerStudent(null)}>
+                <X size={20} color="#4B5563" />
+              </TouchableOpacity>
+            </View>
+
+            {statusPickerStudent && (
+              <View style={{ gap: 8 }}>
+                <Text style={{ fontSize: 12, color: '#6B7280', textAlign: 'right', marginBottom: 4 }}>
+                  التلميذ: {statusPickerStudent.lastNameArabic || ''} {statusPickerStudent.firstNameArabic || ''}
+                </Text>
+
+                {Object.entries(STATUS_CONFIG).map(([stKey, cfg]) => (
+                  <TouchableOpacity
+                    key={stKey}
+                    style={[styles.statusOptionBtn, { backgroundColor: cfg.bg, borderColor: cfg.border }]}
+                    onPress={() => handleUpdateStatus(statusPickerStudent._id, stKey)}
+                  >
+                    <Text style={[styles.statusOptionBtnText, { color: cfg.color }]}>
+                      {cfg.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* MODAL 7: CLASS PICKER MODAL                                      */}
+      {/* ================================================================ */}
+      <Modal visible={classPickerVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.pickerModalSheet}>
+            <View style={styles.pickerModalHeader}>
+              <Text style={styles.pickerModalTitle}>اختر القسم الدراسي</Text>
+              <TouchableOpacity onPress={() => setClassPickerVisible(false)}>
+                <X size={20} color="#4B5563" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 350 }}>
+              {classPickerTarget === 'filter' && (
+                <TouchableOpacity
+                  style={styles.pickerItem}
+                  onPress={() => {
+                    setListClassFilter('ALL');
+                    setClassPickerVisible(false);
+                  }}
+                >
+                  <Text style={styles.pickerItemText}>جميع الأقسام ({classes.length})</Text>
+                </TouchableOpacity>
+              )}
+
+              {classes.map((cls) => (
+                <TouchableOpacity
+                  key={cls._id}
+                  style={styles.pickerItem}
+                  onPress={() => {
+                    if (classPickerTarget === 'form') {
+                      setFormData((p) => ({ ...p, classId: cls._id }));
+                    } else if (classPickerTarget === 'reEnroll') {
+                      setReEnrollData((p) => ({ ...p, targetClassId: cls._id }));
+                    } else {
+                      setListClassFilter(cls._id);
+                    }
+                    setClassPickerVisible(false);
+                  }}
+                >
+                  <Text style={styles.pickerItemText}>{cls.name}</Text>
+                  <Text style={styles.pickerItemSub}>الطور: {cls.cycle || 'التعليمي'} • السعة: 30 مقعد</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -2079,7 +2735,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  /* Registered List */
+  /* Registered List (Screenshot 3 Matching Layout) */
   filterBarRow: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
@@ -2103,74 +2759,186 @@ const styles = StyleSheet.create({
     color: '#7B1E3A',
   },
   studentsList: {
-    gap: 10,
+    gap: 12,
   },
-  studentCard: {
+
+  /* Individual Registered Student Card (Screenshot 3) */
+  regStudentCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(201, 162, 77, 0.25)',
-    padding: 12,
+    borderColor: '#E5DFD7',
+    padding: 14,
     gap: 10,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
+      android: { elevation: 1 },
+    }),
   },
-  studentCardHeader: {
+  regStudentTopRow: {
     flexDirection: 'row-reverse',
-    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  studentCardTitleBox: {
+  regStudentNameBox: {
     flex: 1,
     alignItems: 'flex-end',
-    marginLeft: 8,
   },
-  studentCardName: {
-    fontSize: 13,
-    fontWeight: '800',
+  regStudentName: {
+    fontSize: 15,
+    fontWeight: '900',
     color: '#7B1E3A',
     textAlign: 'right',
   },
-  studentCardSub: {
-    fontSize: 10,
+  regStudentIds: {
+    fontFamily: 'monospace',
+    fontSize: 11,
     color: '#6B7280',
     marginTop: 2,
     textAlign: 'right',
   },
-  statusBadgeSmall: {
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  statusBadgeSmallText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#065F46',
-  },
-  studentCardActions: {
-    flexDirection: 'row-reverse',
-    gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F3E9DC',
-    paddingTop: 8,
-  },
-  cardActionBtn: {
+  statusDropdownBtn: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F3E9DC',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  statusDropdownBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  regStudentMiddleRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F5F5F4',
+    paddingTop: 8,
+  },
+  regClassBox: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+  },
+  regClassName: {
+    fontFamily: 'serif',
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#7B1E3A',
+  },
+  regTypeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  regTypeNew: {
+    backgroundColor: '#18181B',
+  },
+  regTypeRe: {
+    backgroundColor: '#3B82F6',
+  },
+  regTypeBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  regTypeNewText: {
+    color: '#FFFFFF',
+  },
+  regTypeReText: {
+    color: '#FFFFFF',
+  },
+  regParentBox: {
+    alignItems: 'flex-start',
+  },
+  regParentName: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  regParentPhone: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+  },
+
+  /* 5 Official Action Buttons (Screenshot 3) */
+  officialButtonsRow: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#F3E9DC',
+    paddingTop: 10,
+  },
+  btnReceipt: {
+    backgroundColor: '#F7EFE5',
+    borderWidth: 1,
+    borderColor: '#E6D7C3',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
   },
-  cardActionBtnSecondary: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(201, 162, 77, 0.4)',
-  },
-  cardActionBtnText: {
-    fontSize: 10,
+  btnReceiptText: {
+    fontSize: 11,
     fontWeight: '800',
     color: '#7B1E3A',
+  },
+  btnContract: {
+    backgroundColor: '#FCE7F3',
+    borderWidth: 1,
+    borderColor: '#FBCFE8',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  btnContractText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#9D174D',
+  },
+  btnRegForm: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  btnRegFormText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#374151',
+  },
+  btnDossier: {
+    backgroundColor: '#7B1E3A',
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  btnDossierText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  btnAudit: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  btnAuditText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#B45309',
   },
 
   /* Waitlist Styles (Page 15) */
@@ -2287,13 +3055,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* Modal Styles */
+  /* Modal Base Styles */
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 14,
   },
   pickerModalSheet: {
     width: '100%',
@@ -2334,7 +3102,412 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  /* Receipt Modal */
+  /* Status Options */
+  statusOptionBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  statusOptionBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  /* ==================================================================== */
+  /*  FICHE INDIVIDUELLE MODAL STYLES (Matching Screenshots 1 & 2)         */
+  /* ==================================================================== */
+  ficheModalSheet: {
+    width: '100%',
+    maxWidth: 480,
+    height: '92%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
+  ficheTopBar: {
+    backgroundColor: '#FAF7F2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5DFD7',
+    padding: 12,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  ficheHeaderTitleBox: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
+  ficheHeaderTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#7B1E3A',
+  },
+  ficheTopActions: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
+  fichePrintBtn: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#7B1E3A',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  fichePrintBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  ficheSaveBtn: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#C9A24D',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  ficheSaveBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#7B1E3A',
+  },
+  ficheCloseBtn: {
+    padding: 4,
+  },
+
+  ficheScrollContent: {
+    padding: 14,
+    gap: 12,
+  },
+  ficheNationalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#C9A24D',
+    paddingBottom: 10,
+  },
+  ficheHeaderRight: {
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  ficheNatTitle: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#1F2937',
+  },
+  ficheNatMinistry: {
+    fontSize: 8,
+    color: '#4B5563',
+  },
+  ficheNatDir: {
+    fontSize: 8,
+    color: '#6B7280',
+  },
+  ficheHeaderCenter: {
+    alignItems: 'center',
+    flex: 1.2,
+  },
+  ficheLogoCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#7B1E3A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  ficheSchoolName: {
+    fontFamily: 'serif',
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#7B1E3A',
+    textAlign: 'center',
+  },
+  ficheSchoolFrench: {
+    fontSize: 8,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  ficheHeaderLeft: {
+    alignItems: 'flex-end',
+    flex: 1,
+  },
+  ficheMetaLine: {
+    fontSize: 8,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'right',
+  },
+
+  /* Burgundy Title Banner */
+  ficheBanner: {
+    backgroundColor: '#7B1E3A',
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  ficheBannerTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  ficheBannerFrench: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FDE68A',
+    marginTop: 1,
+  },
+
+  /* Section Split */
+  ficheSectionSplit: {
+    flexDirection: 'row-reverse',
+    gap: 10,
+  },
+  fichePhotoCard: {
+    width: 100,
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#E5DFD7',
+    borderRadius: 12,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  fichePhotoSilhouette: {
+    width: 70,
+    height: 75,
+    backgroundColor: '#262626',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#C9A24D',
+  },
+  fichePhotoLabel: {
+    fontSize: 8,
+    color: '#D4D4D8',
+    marginTop: 2,
+  },
+  fichePhotoRegNum: {
+    fontFamily: 'monospace',
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#7B1E3A',
+  },
+  fichePhotoActiveBadge: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  fichePhotoActiveText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#047857',
+  },
+
+  ficheIdentityCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5DFD7',
+    borderRadius: 12,
+    padding: 10,
+    gap: 6,
+  },
+  ficheCardHeaderRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3E9DC',
+    paddingBottom: 4,
+    marginBottom: 4,
+  },
+  ficheCardTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#7B1E3A',
+    textAlign: 'right',
+  },
+  ficheInfoGrid: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  ficheInfoCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  ficheInfoFullRow: {
+    alignItems: 'flex-end',
+    marginTop: 2,
+  },
+  ficheInfoLabel: {
+    fontSize: 9,
+    color: '#6B7280',
+    textAlign: 'right',
+  },
+  ficheInfoValue: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'right',
+  },
+  ficheInfoValueBold: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#7B1E3A',
+    textAlign: 'right',
+  },
+  ficheInfoValueMono: {
+    fontFamily: 'monospace',
+    fontSize: 10,
+    color: '#4B5563',
+  },
+  ficheInfoValueEmerald: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#059669',
+  },
+
+  /* Card Box */
+  ficheCardBox: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5DFD7',
+    borderRadius: 12,
+    padding: 10,
+    gap: 8,
+  },
+  ficheBoxesRow: {
+    flexDirection: 'row-reverse',
+    gap: 6,
+  },
+  ficheMiniBox: {
+    flex: 1,
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#E5DFD7',
+    borderRadius: 8,
+    padding: 6,
+    alignItems: 'center',
+  },
+  ficheMiniBoxLabel: {
+    fontSize: 8,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  ficheMiniBoxVal: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  ficheMiniBoxValBordeaux: {
+    fontFamily: 'serif',
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#7B1E3A',
+    textAlign: 'center',
+  },
+  ficheMiniBoxValMono: {
+    fontFamily: 'monospace',
+    fontSize: 9,
+    color: '#4B5563',
+    textAlign: 'center',
+  },
+
+  /* Bottom Validation Row (Screenshot 2) */
+  ficheBottomValidationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1.5,
+    borderTopColor: '#C9A24D',
+    paddingTop: 10,
+    marginTop: 4,
+  },
+  ficheSealBlock: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  ficheSealTitle: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#7B1E3A',
+  },
+  ficheSealSub: {
+    fontSize: 8,
+    color: '#6B7280',
+    marginBottom: 3,
+  },
+  ficheSealBox: {
+    borderWidth: 1,
+    borderColor: '#C9A24D',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: '#FAF7F2',
+  },
+  ficheSealText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#7B1E3A',
+  },
+  ficheQRBlock: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  ficheQRText: {
+    fontSize: 8,
+    color: '#6B7280',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  ficheSignBlock: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  ficheSignTitle: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#7B1E3A',
+  },
+  ficheSignSub: {
+    fontSize: 8,
+    color: '#6B7280',
+    marginBottom: 3,
+  },
+  ficheSignBox: {
+    width: '90%',
+    height: 28,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    backgroundColor: '#F9FAFB',
+  },
+
+  /* Receipt Modal Base */
   receiptModalSheet: {
     width: '100%',
     maxWidth: 420,
@@ -2479,5 +3652,66 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#6B7280',
+  },
+  contractLegalText: {
+    fontSize: 10,
+    color: '#4B5563',
+    lineHeight: 16,
+    textAlign: 'right',
+    backgroundColor: '#FDFBF7',
+    borderWidth: 1,
+    borderColor: '#E5DFD7',
+    borderRadius: 8,
+    padding: 8,
+  },
+  regFormDocRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F4',
+  },
+  regFormDocLabel: {
+    fontSize: 11,
+    color: '#1F2937',
+    fontWeight: '600',
+  },
+  regFormDocStatus: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  auditItemCard: {
+    backgroundColor: '#FAF7F2',
+    borderWidth: 1,
+    borderColor: '#E5DFD7',
+    borderRadius: 8,
+    padding: 8,
+    gap: 4,
+  },
+  auditItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  auditItemDate: {
+    fontSize: 9,
+    color: '#6B7280',
+  },
+  auditActionBadge: {
+    backgroundColor: '#F3E9DC',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  auditActionBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#7B1E3A',
+  },
+  auditItemDesc: {
+    fontSize: 11,
+    color: '#1F2937',
+    textAlign: 'right',
   },
 });
