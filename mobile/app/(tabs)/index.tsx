@@ -71,6 +71,7 @@ import { ReceptionistDashboardView } from '../../src/components/dashboards/Recep
 import { SchoolFeedView } from '../../src/components/feed/SchoolFeedView';
 import { ConversationView } from '../../src/components/chat/ConversationView';
 import { AdminAccountsView } from '../../src/components/admin/AdminAccountsView';
+import { AdminEnrollmentView } from '../../src/components/admin/AdminEnrollmentView';
 import { TeacherDossierModal } from '../../src/components/admin/TeacherDossierModal';
 import {
   StudentDetailsModal,
@@ -1980,66 +1981,17 @@ function AdminDashboardView({
           )}
 
           {/* ============================================================ */}
-          {/* ROUTE 6: INSCRIPTIONS (التسجيلات والملفات المدرسية)            */}
+          {/* ROUTE 6: INSCRIPTIONS (منظومة التسجيل وإعادة التسجيل المدرسية) */}
           {/* ============================================================ */}
           {currentRoute === 'inscriptions' && (
-            <View style={styles.usersContainer}>
-              <View style={styles.usersHeaderRow}>
-                <View>
-                  <Text style={styles.sectionTitle}>التسجيلات والملفات المدرسية</Text>
-                  <Text style={styles.sectionSubtitle}>
-                    متابعة طلبات التسجيل، استخراج الوصولات، والملفات المكتملة
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.addUserButton}
-                  onPress={() => setShowCreateEnrollmentModal(true)}
-                >
-                  <Plus size={15} color="#FFFFFF" />
-                  <Text style={styles.addUserButtonText}>تسجيل تلميذ جديد</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.kpiRow}>
-                <View style={styles.kpiCard}>
-                  <Text style={[styles.kpiLabel, { color: '#047857' }]}>الملفات المقبولة</Text>
-                  <Text style={[styles.kpiValue, { color: '#047857' }]}>
-                    {studentsList.filter((s) => s.registrationStatus === 'accepted').length || studentsList.length}
-                  </Text>
-                </View>
-                <View style={styles.kpiCard}>
-                  <Text style={[styles.kpiLabel, { color: '#B45309' }]}>ملفات قيد المعالجة</Text>
-                  <Text style={[styles.kpiValue, { color: '#B45309' }]}>0</Text>
-                </View>
-                <View style={styles.kpiCard}>
-                  <Text style={[styles.kpiLabel, { color: theme.colors.brand[500] }]}>قائمة الانتظار</Text>
-                  <Text style={[styles.kpiValue, { color: theme.colors.brand[500] }]}>0</Text>
-                </View>
-              </View>
-
-              <View style={styles.usersList}>
-                {studentsList.slice(0, 15).map((s) => (
-                  <View key={s._id} style={styles.userCard}>
-                    <View style={styles.userCardRight}>
-                      <View style={styles.userAvatar}>
-                        <FileText size={18} color="#FFFFFF" />
-                      </View>
-                      <View style={styles.userInfo}>
-                        <Text style={styles.userName}>
-                          {s.firstNameArabic || s.user?.firstName} {s.lastNameArabic || s.user?.lastName}
-                        </Text>
-                        <Text style={styles.userSubDetails}>
-                          وصل رقم: {s.receiptNumber || 'REC-2026-000'} • قسم: {s.class?.name || 'غير محدد'}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={[styles.statusBadge, styles.statusPaid]}>
-                      <Text style={[styles.statusBadgeText, styles.statusPaidText]}>ملف مكتمل</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
+            <AdminEnrollmentView
+              onSelectStudentDossier={(student) => {
+                setSelectedStudentForDossier(student);
+              }}
+              onRefreshParent={() => {
+                loadData();
+              }}
+            />
           )}
 
           {/* ============================================================ */}

@@ -815,6 +815,16 @@ const getDashboardStats = async (req, res, next) => {
   }
 };
 
+// Helper to safely normalize student regime for MongoDB enum ['externe', 'demi-pension', 'interne', 'خارجي', 'نصف داخلي', 'داخلي']
+const normalizeRegime = (val) => {
+  if (!val) return 'نصف داخلي';
+  if (typeof val === 'string') {
+    if (val.includes('خارجي') || val.toLowerCase().includes('externe')) return 'خارجي';
+    if (val.includes('داخلي كامل') || val === 'داخلي' || val.toLowerCase().includes('interne')) return 'داخلي';
+  }
+  return 'نصف داخلي';
+};
+
 // Official Student Enrollment API (creates student, parent, matricule, national ID, receipt)
 const createEnrollment = async (req, res, next) => {
   const {
@@ -975,7 +985,7 @@ const createEnrollment = async (req, res, next) => {
       class: classId,
       group: groupId || null,
       parent: parentProfile._id,
-      regime: regime || 'نصف داخلي',
+      regime: normalizeRegime(regime),
       tuitionPaid: true,
       tuitionBaseAmount: baseAmount,
       discountType: discountType || 'none',
@@ -1128,7 +1138,7 @@ const reEnrollStudent = async (req, res, next) => {
     student.academicYear = academicYear;
     student.class = targetClassId;
     student.group = targetGroupId || null;
-    student.regime = regime;
+    student.regime = normalizeRegime(regime);
     student.tuitionBaseAmount = baseAmount;
     student.discountType = discountType;
     student.discountPercentage = discPct;
@@ -1493,6 +1503,30 @@ const getTeachers = async (req, res, next) => {
   }
 };
 
+// Safe Date Parser that handles DD/MM/YYYY, YYYY-MM-DD, and ISO timestamps without RangeError
+const parseSafeDate = (val) => {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return null;
+    // Handle DD/MM/YYYY or DD-MM-YYYY
+    if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(trimmed)) {
+      const parts = trimmed.split(/[\/\-]/);
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const d = new Date(trimmed);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+};
+
+const isArabicText = (str) => typeof str === 'string' && /[\u0600-\u06FF]/.test(str);
+
 // Update a User account and their role-specific profile
 const updateUser = async (req, res, next) => {
   const { userId } = req.params;
@@ -1504,17 +1538,37 @@ const updateUser = async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    user.email = email || user.email;
-    user.firstName = firstName || user.firstName;
-    user.lastName = lastName || user.lastName;
-    user.phoneNumber = phoneNumber || user.phoneNumber;
+    if (email && email !== user.email) {
+      const emailExists = await User.findOne({ email, _id: { $ne: user._id } });
+      if (emailExists) {
+        return res.status(400).json({ message: 'البريد الإلكتروني مستخدم بالفعل من قبل حساب آخر.' });
+      }
+      user.email = email;
+    }
+
+    if (firstName) {
+      user.firstName = firstName;
+      if (isArabicText(firstName)) user.firstNameArabic = firstName;
+      else user.firstNameFrench = firstName;
+    }
+
+    if (lastName) {
+      user.lastName = lastName;
+      if (isArabicText(lastName)) user.lastNameArabic = lastName;
+      else user.lastNameFrench = lastName;
+    }
+
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
     if (role) user.role = role;
 
     // Keep enforced password rules in sync when identifying data changes.
     if (user.role === 'parent' && phoneNumber) {
       user.password = String(phoneNumber);
     } else if (user.role === 'student' && details && details.dateOfBirth) {
-      user.password = new Date(details.dateOfBirth).toISOString().split('T')[0];
+      const safeDob = parseSafeDate(details.dateOfBirth);
+      if (safeDob) {
+        user.password = safeDob.toISOString().split('T')[0];
+      }
     }
     await user.save();
 
@@ -1528,11 +1582,11 @@ const updateUser = async (req, res, next) => {
         if (details.classes) teacher.classes = details.classes;
         if (details.groups) teacher.groups = details.groups;
         if (Array.isArray(details.assignments)) teacher.assignments = details.assignments;
-        if (details.hiringDate !== undefined) teacher.hiringDate = details.hiringDate ? new Date(details.hiringDate) : null;
+        if (details.hiringDate !== undefined) teacher.hiringDate = parseSafeDate(details.hiringDate);
         if (details.contractType) teacher.contractType = details.contractType;
         if (details.contractDuration) teacher.contractDuration = details.contractDuration;
-        if (details.contractStartDate !== undefined) teacher.contractStartDate = details.contractStartDate ? new Date(details.contractStartDate) : null;
-        if (details.contractEndDate !== undefined) teacher.contractEndDate = details.contractEndDate ? new Date(details.contractEndDate) : null;
+        if (details.contractStartDate !== undefined) teacher.contractStartDate = parseSafeDate(details.contractStartDate);
+        if (details.contractEndDate !== undefined) teacher.contractEndDate = parseSafeDate(details.contractEndDate);
         if (details.baseSalary !== undefined) teacher.baseSalary = Number(details.baseSalary) || 0;
         if (details.assignedHours !== undefined) teacher.assignedHours = Number(details.assignedHours) || 18;
         if (details.assignedTasks) teacher.assignedTasks = details.assignedTasks;
@@ -1547,7 +1601,7 @@ const updateUser = async (req, res, next) => {
         if (details.lastNameArabic) user.lastNameArabic = details.lastNameArabic;
         if (details.jobTitle) user.jobTitle = details.jobTitle;
         if (details.baseSalary !== undefined) user.baseSalary = Number(details.baseSalary) || 0;
-        if (details.hiringDate !== undefined) user.hiringDate = details.hiringDate ? new Date(details.hiringDate) : null;
+        if (details.hiringDate !== undefined) user.hiringDate = parseSafeDate(details.hiringDate);
         if (details.contractType) user.contractType = details.contractType;
         if (details.professionalStatus) {
           user.professionalStatus = details.professionalStatus;
@@ -1573,26 +1627,44 @@ const updateUser = async (req, res, next) => {
       }
     } else if (user.role === 'student') {
       const student = await Student.findOne({ user: user._id });
-      if (student && details) {
-        student.registrationNumber = details.registrationNumber || student.registrationNumber;
-        student.class = details.classId || student.class;
-        student.group = details.groupId || student.group;
-        student.dateOfBirth = details.dateOfBirth || student.dateOfBirth;
+      if (student) {
+        if (firstName) {
+          if (isArabicText(firstName)) student.firstNameArabic = firstName;
+          else student.firstNameFrench = firstName;
+        }
+        if (lastName) {
+          if (isArabicText(lastName)) student.lastNameArabic = lastName;
+          else student.lastNameFrench = lastName;
+        }
+        if (phoneNumber !== undefined) student.studentPhone = phoneNumber;
 
-        if (details.parentId && details.parentId !== student.parent?.toString()) {
-          const oldParent = await Parent.findById(student.parent);
-          if (oldParent) {
-            oldParent.children = oldParent.children.filter(cid => cid.toString() !== student._id.toString());
-            await oldParent.save();
+        if (details) {
+          if (details.registrationNumber) student.registrationNumber = details.registrationNumber;
+          if (details.classId) student.class = details.classId;
+          if (details.groupId) student.group = details.groupId;
+          
+          if (details.dateOfBirth) {
+            const safeDob = parseSafeDate(details.dateOfBirth);
+            if (safeDob) student.dateOfBirth = safeDob;
           }
 
-          const newParentUser = await User.findById(details.parentId);
-          if (newParentUser) {
-            const newParentProfile = await Parent.findOne({ user: newParentUser._id });
-            if (newParentProfile) {
+          if (details.parentId && details.parentId !== student.parent?.toString()) {
+            let newParentProfile = await Parent.findById(details.parentId);
+            if (!newParentProfile) {
+              newParentProfile = await Parent.findOne({ user: details.parentId });
+            }
+
+            if (newParentProfile && newParentProfile._id.toString() !== student.parent?.toString()) {
+              const oldParent = await Parent.findById(student.parent);
+              if (oldParent) {
+                oldParent.children = (oldParent.children || []).filter(cid => cid.toString() !== student._id.toString());
+                await oldParent.save();
+              }
               student.parent = newParentProfile._id;
-              newParentProfile.children.push(student._id);
-              await newParentProfile.save();
+              if (!newParentProfile.children.some(cid => cid.toString() === student._id.toString())) {
+                newParentProfile.children.push(student._id);
+                await newParentProfile.save();
+              }
             }
           }
         }
@@ -1600,9 +1672,13 @@ const updateUser = async (req, res, next) => {
       }
     } else if (user.role === 'parent') {
       const parent = await Parent.findOne({ user: user._id });
-      if (parent && details) {
-        parent.profession = details.profession || parent.profession;
-        parent.address = details.address || parent.address;
+      if (parent) {
+        if (firstName && isArabicText(firstName)) parent.firstNameArabic = firstName;
+        if (lastName && isArabicText(lastName)) parent.lastNameArabic = lastName;
+        if (details) {
+          if (details.profession) parent.profession = details.profession;
+          if (details.address) parent.address = details.address;
+        }
         await parent.save();
       }
     } else if (user.role === 'general_supervisor' || user.role === 'pedagogical_supervisor') {

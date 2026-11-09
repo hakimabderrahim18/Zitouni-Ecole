@@ -297,16 +297,16 @@ export const StudentEditModal: React.FC<StudentEditModalProps> = ({
   useEffect(() => {
     if (visible && student) {
       const u = student.user || {};
-      setFirstName(u.firstName || student.firstNameArabic || '');
-      setLastName(u.lastName || student.lastNameArabic || '');
+      setFirstName(student.firstNameArabic || u.firstNameArabic || u.firstName || '');
+      setLastName(student.lastNameArabic || u.lastNameArabic || u.lastName || '');
       setEmail(u.email || '');
-      setPhoneNumber(u.phoneNumber || '');
+      setPhoneNumber(u.phoneNumber || student.studentPhone || student.parentPhoneNumber || '');
     }
   }, [visible, student]);
 
   if (!visible || !student) return null;
 
-  const userId = student.user?._id || student.user?.id || student.user;
+  const userId = student.user?._id || student.user?.id || (typeof student.user === 'string' ? student.user : student._id);
 
   const handleSave = async () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {

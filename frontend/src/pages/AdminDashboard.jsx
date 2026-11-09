@@ -652,44 +652,52 @@ export default function AdminDashboard() {
 
   // Open Edit Modal
   const handleOpenEdit = (u) => {
-    const inferredRole = u.role || (students.some(s => s.user?._id === u._id) ? 'student' : teachers.some(t => t.user?._id === u._id) ? 'teacher' : parents.some(p => (p.user === u._id || p.user?._id === u._id)) ? 'parent' : '');
+    if (!u) return;
+    const inferredRole = u.role || (students.some(s => (s.user?._id || s.user) === u._id) ? 'student' : teachers.some(t => (t.user?._id || t.user) === u._id) ? 'teacher' : parents.some(p => (p._id === u._id || p.user === u._id || p.user?._id === u._id)) ? 'parent' : '');
     const userWithRole = { ...u, role: inferredRole };
     setEditingUser(userWithRole);
     
     let details = {};
     if (inferredRole === 'teacher') {
-      const teacherProfile = teachers.find(t => t.user?._id === u._id);
+      const teacherProfile = teachers.find(t => (t.user?._id || t.user) === u._id);
       details = {
         subjects: teacherProfile?.subjects || [],
-        classes: teacherProfile?.classes?.map(c => c._id) || [],
-        groups: teacherProfile?.groups?.map(g => g._id) || [],
+        classes: teacherProfile?.classes?.map(c => c._id || c) || [],
+        groups: teacherProfile?.groups?.map(g => g._id || g) || [],
         assignments: teacherProfile?.assignments?.map((a) => ({ module: a.module || '', room: a.room || '' })) || [],
       };
     } else if (inferredRole === 'student') {
-      const studentProfile = students.find(s => s.user?._id === u._id);
+      const studentProfile = students.find(s => (s.user?._id || s.user) === u._id || s._id === u._id);
+      let formattedDob = '';
+      if (studentProfile?.dateOfBirth) {
+        try {
+          const d = new Date(studentProfile.dateOfBirth);
+          if (!isNaN(d.getTime())) formattedDob = d.toISOString().split('T')[0];
+        } catch {}
+      }
       details = {
         registrationNumber: studentProfile?.registrationNumber || '',
-        classId: studentProfile?.class?._id || '',
-        groupId: studentProfile?.group?._id || '',
-        parentId: studentProfile?.parent?.user?._id || '',
-        dateOfBirth: studentProfile?.dateOfBirth ? studentProfile.dateOfBirth.split('T')[0] : '',
+        classId: studentProfile?.class?._id || studentProfile?.class || '',
+        groupId: studentProfile?.group?._id || studentProfile?.group || '',
+        parentId: studentProfile?.parent?.user?._id || studentProfile?.parent?._id || studentProfile?.parent || '',
+        dateOfBirth: formattedDob,
       };
     } else if (inferredRole === 'parent') {
-      const parentProfile = parents.find(p => p.user === u._id || p.user?._id === u._id);
+      const parentProfile = parents.find(p => p._id === u._id || p.user === u._id || p.user?._id === u._id);
       details = {
         profession: parentProfile?.profession || '',
         address: parentProfile?.address || '',
       };
-    } else if (u.role === 'general_supervisor' || u.role === 'pedagogical_supervisor') {
+    } else if (inferredRole === 'general_supervisor' || inferredRole === 'pedagogical_supervisor') {
       details = { officeLocation: u.details?.officeLocation || 'Bureau principal' };
-    } else if (u.role === 'receptionist') {
+    } else if (inferredRole === 'receptionist') {
       details = { deskNumber: u.details?.deskNumber || 'Accueil Principal', workShift: u.details?.workShift || '07:30 - 16:30' };
     }
 
     setEditingDetails({
-      email: u.email,
-      firstName: u.firstName,
-      lastName: u.lastName,
+      email: u.email || '',
+      firstName: u.firstNameArabic || u.firstName || '',
+      lastName: u.lastNameArabic || u.lastName || '',
       phoneNumber: u.phoneNumber || '',
       ...details
     });
@@ -699,12 +707,15 @@ export default function AdminDashboard() {
   // Submit Edit
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    if (!editingUser) return;
     try {
+      const userId = editingUser._id || editingUser.id || editingUser.user?._id || editingUser.user;
       const payload = {
         email: editingDetails.email,
         firstName: editingDetails.firstName,
         lastName: editingDetails.lastName,
         phoneNumber: editingDetails.phoneNumber,
+        role: editingUser.role,
         details: {}
       };
 
@@ -736,8 +747,8 @@ export default function AdminDashboard() {
         payload.details = { deskNumber: editingDetails.deskNumber, workShift: editingDetails.workShift };
       }
 
-      await axios.put(`/api/admin/users/${editingUser._id}`, payload);
-      alert("Utilisateur mis à jour !");
+      await axios.put(`/api/admin/users/${userId}`, payload);
+      alert("تم حفظ التعديلات بنجاح !");
       setIsEditModalOpen(false);
       setEditingUser(null);
       fetchData();
@@ -3992,7 +4003,6 @@ export default function AdminDashboard() {
                       <label className="text-[10px] uppercase text-slate-400 font-semibold">Classe</label>
                       <select
                         value={editingDetails.classId}
-                        required
                         onChange={(e) => setEditingDetails({ ...editingDetails, classId: e.target.value, groupId: '' })}
                         className="w-full bg-slate-900 border border-luxury-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
                       >
@@ -4007,7 +4017,6 @@ export default function AdminDashboard() {
                       <label className="text-[10px] uppercase text-slate-400 font-semibold">Groupe</label>
                       <select
                         value={editingDetails.groupId}
-                        required
                         onChange={(e) => setEditingDetails({ ...editingDetails, groupId: e.target.value })}
                         className="w-full bg-slate-900 border border-luxury-border rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
                       >
@@ -4024,7 +4033,6 @@ export default function AdminDashboard() {
                       <label className="text-[10px] uppercase text-slate-400 font-semibold">N° Inscription</label>
                       <input
                         type="text"
-                        required
                         value={editingDetails.registrationNumber}
                         onChange={(e) => setEditingDetails({ ...editingDetails, registrationNumber: e.target.value })}
                         className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
@@ -4035,7 +4043,6 @@ export default function AdminDashboard() {
                       <label className="text-[10px] uppercase text-slate-400 font-semibold">Date de naissance</label>
                       <input
                         type="date"
-                        required
                         value={editingDetails.dateOfBirth}
                         onChange={(e) => setEditingDetails({ ...editingDetails, dateOfBirth: e.target.value })}
                         className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
@@ -4047,14 +4054,18 @@ export default function AdminDashboard() {
                     <label className="text-[10px] uppercase text-slate-400 font-semibold">Parent Rattaché</label>
                     <select
                       value={editingDetails.parentId}
-                      required
                       onChange={(e) => setEditingDetails({ ...editingDetails, parentId: e.target.value })}
                       className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
                     >
                       <option value="">Sélectionner le Parent</option>
-                      {parents.map(p => (
-                        <option key={p._id} value={p._id}>{p.firstName} {p.lastName} ({p.email})</option>
-                      ))}
+                      {parents.map(p => {
+                        const pid = p._id || p.id || p.user?._id || p.user;
+                        const pName = `${p.firstName || p.user?.firstName || ''} ${p.lastName || p.user?.lastName || ''}`.trim() || p.username;
+                        const pEmail = p.email || p.user?.email || '';
+                        return (
+                          <option key={pid} value={pid}>{pName} {pEmail ? `(${pEmail})` : ''}</option>
+                        );
+                      })}
                     </select>
                   </div>
                 </div>
