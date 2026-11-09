@@ -652,10 +652,12 @@ export default function AdminDashboard() {
 
   // Open Edit Modal
   const handleOpenEdit = (u) => {
-    setEditingUser(u);
+    const inferredRole = u.role || (students.some(s => s.user?._id === u._id) ? 'student' : teachers.some(t => t.user?._id === u._id) ? 'teacher' : parents.some(p => (p.user === u._id || p.user?._id === u._id)) ? 'parent' : '');
+    const userWithRole = { ...u, role: inferredRole };
+    setEditingUser(userWithRole);
     
     let details = {};
-    if (u.role === 'teacher') {
+    if (inferredRole === 'teacher') {
       const teacherProfile = teachers.find(t => t.user?._id === u._id);
       details = {
         subjects: teacherProfile?.subjects || [],
@@ -663,7 +665,7 @@ export default function AdminDashboard() {
         groups: teacherProfile?.groups?.map(g => g._id) || [],
         assignments: teacherProfile?.assignments?.map((a) => ({ module: a.module || '', room: a.room || '' })) || [],
       };
-    } else if (u.role === 'student') {
+    } else if (inferredRole === 'student') {
       const studentProfile = students.find(s => s.user?._id === u._id);
       details = {
         registrationNumber: studentProfile?.registrationNumber || '',
@@ -672,7 +674,7 @@ export default function AdminDashboard() {
         parentId: studentProfile?.parent?.user?._id || '',
         dateOfBirth: studentProfile?.dateOfBirth ? studentProfile.dateOfBirth.split('T')[0] : '',
       };
-    } else if (u.role === 'parent') {
+    } else if (inferredRole === 'parent') {
       const parentProfile = parents.find(p => p.user === u._id || p.user?._id === u._id);
       details = {
         profession: parentProfile?.profession || '',
@@ -3767,8 +3769,19 @@ export default function AdminDashboard() {
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-bold text-white border-b border-luxury-border/30 pb-3">
-              تعديل le compte ({editingUser.role})
+            <h3 className="text-lg font-bold text-white border-b border-luxury-border/30 pb-3 flex items-center justify-between">
+              <span>
+                {editingUser.role === 'student'
+                  ? 'تعديل حساب التلميذ'
+                  : editingUser.role === 'teacher'
+                  ? 'تعديل حساب الأستاذ'
+                  : editingUser.role === 'parent'
+                  ? 'تعديل حساب ولي الأمر'
+                  : `تعديل الحساب (${editingUser.role || ''})`}
+              </span>
+              <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-luxury-border">
+                {editingUser.role || 'user'}
+              </span>
             </h3>
 
             <form onSubmit={handleEditSubmit} className="space-y-4">

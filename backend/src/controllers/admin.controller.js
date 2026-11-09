@@ -93,12 +93,63 @@ const createUser = async (req, res, next) => {
     let profile = null;
 
     if (role === 'teacher') {
+      const parsedSubjects = (details && details.subjects) || [];
+      const spec = (details && details.specialization) || parsedSubjects[0] || 'تعليم عام';
+      const profStatus = (details && details.professionalStatus) || 'active';
+      const bSalary = Number(details?.baseSalary) || 0;
+      const hDate = details?.hiringDate ? new Date(details.hiringDate) : null;
+      const cStart = details?.contractStartDate ? new Date(details.contractStartDate) : null;
+      const cEnd = details?.contractEndDate ? new Date(details.contractEndDate) : null;
+
+      // Update User fields with Article 23 legal data
+      user.firstNameArabic = details?.firstNameArabic || '';
+      user.lastNameArabic = details?.lastNameArabic || '';
+      user.jobTitle = details?.jobTitle || 'أستاذ';
+      user.baseSalary = bSalary;
+      user.hiringDate = hDate;
+      user.contractType = details?.contractType || 'CDI';
+      user.contractDuration = details?.contractDuration || '1 سنة';
+      user.contractStartDate = cStart;
+      user.contractEndDate = cEnd;
+      user.professionalStatus = profStatus;
+      user.isActive = profStatus === 'active';
+      await user.save();
+
       profile = await Teacher.create({
         user: user._id,
-        subjects: (details && details.subjects) || [],
+        subjects: parsedSubjects,
+        specialization: spec,
+        cycle: (details && details.cycle) || 'primary',
         classes: (details && details.classes) || [],
         groups: (details && details.groups) || [],
         assignments: (details && Array.isArray(details.assignments)) ? details.assignments : [],
+        hiringDate: hDate,
+        contractType: details?.contractType || 'CDI',
+        contractDuration: details?.contractDuration || '1 سنة',
+        contractStartDate: cStart,
+        contractEndDate: cEnd,
+        baseSalary: bSalary,
+        assignedHours: Number(details?.assignedHours) || 18,
+        assignedTasks: details?.assignedTasks || 'تدريس، تنسيق بيداغوجي، متابعة الفروض والامتحانات',
+        professionalStatus: profStatus,
+        checklist: {
+          cv: !!details?.checklist?.cv,
+          diploma: !!details?.checklist?.diploma,
+          medicalCertificate: !!details?.checklist?.medicalCertificate,
+          idPhotos: !!details?.checklist?.idPhotos,
+          criminalRecord: !!details?.checklist?.criminalRecord,
+          workContract: !!details?.checklist?.workContract,
+          experienceCert: !!details?.checklist?.experienceCert,
+        },
+        auditTrail: [
+          {
+            action: 'إنشاء ملف أستاذ رسمي وتوثيق بيانات المادة 23',
+            details: `تسجيل أستاذ جديد في النظام: ${firstName} ${lastName} مع ربط الأقسام والأفواج وتحديد الوضعية والبيانات التعاقدية`,
+            performedBy: req.user ? `${req.user.firstName} ${req.user.lastName}` : 'إدارة النظام',
+            performedByRole: req.user?.role || 'admin',
+            timestamp: new Date(),
+          },
+        ],
       });
       if (details && details.groups && details.groups.length > 0) {
         await Group.updateMany(
@@ -1376,12 +1427,12 @@ const getStudents = async (req, res, next) => {
     }
 
     const students = await Student.find(filter)
-      .populate('user', 'firstName lastName email phoneNumber isActive')
+      .populate('user', 'firstName lastName firstNameArabic lastNameArabic email phoneNumber isActive role')
       .populate('class', 'name level')
       .populate('group', 'name')
       .populate({
         path: 'parent',
-        populate: { path: 'user', select: 'firstName lastName email phoneNumber' }
+        populate: { path: 'user', select: 'firstName lastName firstNameArabic lastNameArabic email phoneNumber role' }
       })
       .sort({ createdAt: -1 });
 
@@ -1471,11 +1522,38 @@ const updateUser = async (req, res, next) => {
       const teacher = await Teacher.findOne({ user: user._id });
       if (teacher && details) {
         const oldGroups = teacher.groups || [];
-        teacher.subjects = details.subjects || teacher.subjects;
-        teacher.classes = details.classes || teacher.classes;
-        teacher.groups = details.groups || teacher.groups;
+        if (details.subjects) teacher.subjects = details.subjects;
+        if (details.specialization) teacher.specialization = details.specialization;
+        if (details.cycle) teacher.cycle = details.cycle;
+        if (details.classes) teacher.classes = details.classes;
+        if (details.groups) teacher.groups = details.groups;
         if (Array.isArray(details.assignments)) teacher.assignments = details.assignments;
+        if (details.hiringDate !== undefined) teacher.hiringDate = details.hiringDate ? new Date(details.hiringDate) : null;
+        if (details.contractType) teacher.contractType = details.contractType;
+        if (details.contractDuration) teacher.contractDuration = details.contractDuration;
+        if (details.contractStartDate !== undefined) teacher.contractStartDate = details.contractStartDate ? new Date(details.contractStartDate) : null;
+        if (details.contractEndDate !== undefined) teacher.contractEndDate = details.contractEndDate ? new Date(details.contractEndDate) : null;
+        if (details.baseSalary !== undefined) teacher.baseSalary = Number(details.baseSalary) || 0;
+        if (details.assignedHours !== undefined) teacher.assignedHours = Number(details.assignedHours) || 18;
+        if (details.assignedTasks) teacher.assignedTasks = details.assignedTasks;
+        if (details.professionalStatus) teacher.professionalStatus = details.professionalStatus;
+        if (details.checklist) {
+          teacher.checklist = { ...teacher.checklist, ...details.checklist };
+        }
         await teacher.save();
+
+        // Update user fields
+        if (details.firstNameArabic) user.firstNameArabic = details.firstNameArabic;
+        if (details.lastNameArabic) user.lastNameArabic = details.lastNameArabic;
+        if (details.jobTitle) user.jobTitle = details.jobTitle;
+        if (details.baseSalary !== undefined) user.baseSalary = Number(details.baseSalary) || 0;
+        if (details.hiringDate !== undefined) user.hiringDate = details.hiringDate ? new Date(details.hiringDate) : null;
+        if (details.contractType) user.contractType = details.contractType;
+        if (details.professionalStatus) {
+          user.professionalStatus = details.professionalStatus;
+          user.isActive = details.professionalStatus === 'active';
+        }
+        await user.save();
 
         // Bidirectional sync for Group.teachers on update
         const removedGroups = oldGroups.filter(g => !details.groups.includes(g.toString()));
@@ -1485,7 +1563,7 @@ const updateUser = async (req, res, next) => {
             { $pull: { teachers: teacher._id } }
           );
         }
-        const addedGroups = details.groups.filter(g => !oldGroups.map(og => og.toString()).includes(g.toString()));
+        const addedGroups = (details.groups || []).filter(g => !oldGroups.map(og => og.toString()).includes(g.toString()));
         if (addedGroups.length > 0) {
           await Group.updateMany(
             { _id: { $in: addedGroups } },
@@ -1669,10 +1747,10 @@ const formatDate = (value) => (value ? new Date(value).toISOString().split('T')[
 const exportStudents = async (req, res, next) => {
   try {
     const students = await Student.find()
-      .populate('user', 'firstName lastName email phoneNumber isActive')
+      .populate('user', 'firstName lastName firstNameArabic lastNameArabic email phoneNumber isActive role')
       .populate('class', 'name')
       .populate('group', 'name')
-      .populate({ path: 'parent', populate: { path: 'user', select: 'firstName lastName email phoneNumber' } })
+      .populate({ path: 'parent', populate: { path: 'user', select: 'firstName lastName firstNameArabic lastNameArabic email phoneNumber role' } })
       .sort({ createdAt: -1 });
 
     const rows = students.map((s) => ({

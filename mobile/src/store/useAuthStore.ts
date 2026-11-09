@@ -54,8 +54,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             set({ user: res.data.user });
             await storage.setUser(res.data.user);
           }
-        } catch {
-          // Token expired or invalid
+        } catch (err: any) {
+          if (err?.response?.status === 401) {
+            console.log('[Auth] Token expired or invalid, clearing session');
+            await storage.clearAll();
+            set({ user: null, isAuthenticated: false });
+          }
         }
       }
     } finally {

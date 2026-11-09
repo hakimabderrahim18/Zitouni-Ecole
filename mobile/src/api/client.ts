@@ -1,19 +1,50 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { storage } from '../utils/secureStore';
 
-const resolveBaseUrl = (): string => {
-  const envUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (envUrl) {
-    if (Platform.OS === 'android' && envUrl.includes('localhost')) {
-      return envUrl.replace('localhost', '10.0.2.2');
+// Extracts host IP dynamically from Expo packager/Metro when running on physical device or emulator
+const getExpoHostIp = (): string | null => {
+  try {
+    const hostUri =
+      Constants.expoConfig?.hostUri ||
+      (Constants as any)?.manifest2?.extra?.expoClient?.hostUri ||
+      (Constants as any)?.manifest?.debuggerHost ||
+      (Constants as any)?.manifest?.hostUri;
+
+    if (hostUri && typeof hostUri === 'string') {
+      const ip = hostUri.split(':')[0];
+      if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
+        return ip;
+      }
     }
+  } catch {
+    // Ignore error
+  }
+  return null;
+};
+
+const resolveBaseUrl = (): string => {
+  // 1. In Web browser, use env or localhost
+  if (Platform.OS === 'web') {
+    return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5055';
+  }
+
+  // 2. If running via Expo Go / Metro on physical device or emulator,
+  // hostUri will automatically point to the computer's LAN IP (e.g. 192.168.1.36)
+  const expoHost = getExpoHostIp();
+  if (expoHost) {
+    return `http://${expoHost}:5055`;
+  }
+
+  // 3. If explicit environment variable is set and not localhost, use it
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
     return envUrl;
   }
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:5055';
-  }
-  return 'http://localhost:5055';
+
+  // 4. Default LAN IP of the host machine for physical devices on same Wi-Fi
+  return 'http://192.168.1.36:5055';
 };
 
 export const API_BASE_URL = resolveBaseUrl();

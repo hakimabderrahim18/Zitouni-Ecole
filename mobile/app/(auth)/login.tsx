@@ -21,7 +21,7 @@ import {
   Sparkles,
   MapPin,
 } from 'lucide-react-native';
-import { apiClient } from '../../src/api/client';
+import { apiClient, API_BASE_URL } from '../../src/api/client';
 import { storage } from '../../src/utils/secureStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { Input } from '../../src/components/common/Input';
@@ -257,7 +257,7 @@ export default function LoginScreen() {
         <View style={styles.footer}>
           <ShieldCheck size={16} color={theme.colors.gold[500]} />
           <Text style={styles.footerText}>
-            متصل مباشرة بالخادم المحلي http://localhost:5055
+            متصل مباشرة بالخادم: {API_BASE_URL}
           </Text>
         </View>
       </ScrollView>

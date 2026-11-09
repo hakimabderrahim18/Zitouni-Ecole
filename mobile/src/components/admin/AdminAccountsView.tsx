@@ -40,6 +40,12 @@ import {
   User,
   Info,
   RefreshCw,
+  Award,
+  CreditCard,
+  FileCheck2,
+  CheckCircle2,
+  Circle,
+  FilePlus,
 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { theme } from '../../theme/tokens';
@@ -59,13 +65,44 @@ export interface AdminAccountsViewProps {
 
 const ROLE_OPTIONS = [
   { value: 'student', label: 'تلميذ (Student)', icon: GraduationCap },
-  { value: 'teacher', label: 'أستاذ (Teacher)', icon: Briefcase },
+  { value: 'teacher', label: 'أستاذ وموظف (المادة 23)', icon: Briefcase },
   { value: 'parent', label: 'ولي أمر (Parent)', icon: Users },
   { value: 'general_supervisor', label: 'مشرف عام (Superviseur Général)', icon: Shield },
   { value: 'pedagogical_supervisor', label: 'مشرف تربوي (Superviseur Pédagogique)', icon: ShieldAlert },
   { value: 'receptionist', label: 'موظف الاستقبال (Réceptionniste)', icon: Clock },
   { value: 'school', label: 'إدارة المدرسة (School)', icon: Layers },
   { value: 'admin', label: 'مدير النظام (Admin)', icon: UserCheck },
+];
+
+const TEACHER_JOB_TITLES = [
+  'أستاذ التعليم الابتدائي (Professeur Ens. Primaire)',
+  'أستاذ التعليم المتوسط (Professeur Ens. Moyen)',
+  'أستاذ التعليم الثانوي (Professeur Ens. Secondaire)',
+  'أستاذ رئيسي (Professeur Principal)',
+  'أستاذ مكوّن (Professeur Formateur)',
+  'منسق مادة (Coordinateur de matière)',
+  'مساعد تربوي (Assistant pédagogique)',
+];
+
+const TEACHER_CYCLES = [
+  { id: 'primary', label: 'التعليم الابتدائي' },
+  { id: 'middle', label: 'التعليم المتوسط' },
+  { id: 'secondary', label: 'التعليم الثانوي' },
+  { id: 'all', label: 'جميع الأطوار' },
+];
+
+const CONTRACT_TYPES = [
+  { id: 'CDI', label: 'عقد غير محدد المدة (CDI)' },
+  { id: 'CDD', label: 'عقد محدد المدة (CDD)' },
+  { id: 'مؤقت', label: 'مؤقت / استخلاف' },
+  { id: 'تربص', label: 'فترة تربص / تجربة' },
+];
+
+const PROFESSIONAL_STATUSES = [
+  { id: 'active', label: 'نشط (Actif)', color: '#059669', bg: 'rgba(16, 185, 129, 0.12)' },
+  { id: 'suspended', label: 'موقوف (Suspendu)', color: '#D97706', bg: 'rgba(245, 158, 11, 0.12)' },
+  { id: 'resigned', label: 'مستقيل (Démissionnaire)', color: '#DC2626', bg: 'rgba(239, 68, 68, 0.12)' },
+  { id: 'terminated', label: 'منتهية (Terminé)', color: '#6B7280', bg: 'rgba(107, 114, 128, 0.12)' },
 ];
 
 export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
@@ -91,13 +128,53 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
   // ==========================================
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [firstNameArabic, setFirstNameArabic] = useState('');
+  const [lastNameArabic, setLastNameArabic] = useState('');
   const [role, setRole] = useState('student');
   const [isRolePickerOpen, setIsRolePickerOpen] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Student specific
+  // ------------------------------------------
+  // Article 23 Teacher Specific States (البنود الـ 15)
+  // ------------------------------------------
+  const [teacherJobTitle, setTeacherJobTitle] = useState('أستاذ التعليم الابتدائي (Professeur Ens. Primaire)');
+  const [isJobTitlePickerOpen, setIsJobTitlePickerOpen] = useState(false);
+  const [teacherProfessionalStatus, setTeacherProfessionalStatus] = useState('active');
+  const [teacherSpecialization, setTeacherSpecialization] = useState('رياضيات');
+  const [teacherCycle, setTeacherCycle] = useState('primary');
+  const [teacherAssignedHours, setTeacherAssignedHours] = useState('18');
+  const [teacherAssignedTasks, setTeacherAssignedTasks] = useState('تدريس، تنسيق بيداغوجي، متابعة الفروض والامتحانات');
+  const [teacherSubjects, setTeacherSubjects] = useState<string[]>(['رياضيات']);
+  const [teacherClasses, setTeacherClasses] = useState<string[]>([]);
+  const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
+  const [teacherAssignments, setTeacherAssignments] = useState<Array<{ module: string; room: string }>>([
+    { module: 'رياضيات', room: 'قاعة 101' },
+  ]);
+
+  // Contractual & Financial Data (البنود 6، 7، 8، 9، 10)
+  const [teacherHiringDate, setTeacherHiringDate] = useState('2026-09-01');
+  const [teacherContractType, setTeacherContractType] = useState('CDI');
+  const [teacherContractDuration, setTeacherContractDuration] = useState('1 سنة');
+  const [teacherContractStartDate, setTeacherContractStartDate] = useState('2026-09-01');
+  const [teacherContractEndDate, setTeacherContractEndDate] = useState('');
+  const [teacherBaseSalary, setTeacherBaseSalary] = useState('64000');
+
+  // Checklist of 7 legal documents (البند 13 للمادة 23)
+  const [teacherChecklist, setTeacherChecklist] = useState({
+    cv: false,
+    diploma: true,
+    medicalCertificate: false,
+    idPhotos: true,
+    criminalRecord: false,
+    workContract: false,
+    experienceCert: false,
+  });
+
+  // ------------------------------------------
+  // Student Specific States
+  // ------------------------------------------
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState('');
@@ -107,22 +184,22 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
   const [isParentPickerOpen, setIsParentPickerOpen] = useState(false);
   const [parentModalSearch, setParentModalSearch] = useState('');
 
-  // Teacher specific
-  const [teacherSubjects, setTeacherSubjects] = useState<string[]>([]);
-  const [teacherClasses, setTeacherClasses] = useState<string[]>([]);
-  const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
-  const [teacherAssignments, setTeacherAssignments] = useState<Array<{ module: string; room: string }>>([]);
-
-  // Parent specific
+  // ------------------------------------------
+  // Parent Specific States
+  // ------------------------------------------
   const [parentProfession, setParentProfession] = useState('');
   const [parentAddress, setParentAddress] = useState('');
   const [parentChildren, setParentChildren] = useState<string[]>([]);
   const [studentLinkSearch, setStudentLinkSearch] = useState('');
 
-  // Supervisor specific
+  // ------------------------------------------
+  // Supervisor Specific States
+  // ------------------------------------------
   const [officeLocation, setOfficeLocation] = useState('Bureau principal - الطابق الأول');
 
-  // Receptionist specific
+  // ------------------------------------------
+  // Receptionist Specific States
+  // ------------------------------------------
   const [deskNumber, setDeskNumber] = useState('Accueil Principal');
   const [workShift, setWorkShift] = useState('07:30 - 16:30');
 
@@ -150,8 +227,14 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
   const [editingUser, setEditingUser] = useState<any>(null);
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
+  const [editFirstNameArabic, setEditFirstNameArabic] = useState('');
+  const [editLastNameArabic, setEditLastNameArabic] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhoneNumber, setEditPhoneNumber] = useState('');
+  const [editJobTitle, setEditJobTitle] = useState('');
+  const [editBaseSalary, setEditBaseSalary] = useState('');
+  const [editContractType, setEditContractType] = useState('CDI');
+  const [editProfessionalStatus, setEditProfessionalStatus] = useState('active');
   const [editOfficeLocation, setEditOfficeLocation] = useState('');
   const [editDeskNumber, setEditDeskNumber] = useState('');
   const [editWorkShift, setEditWorkShift] = useState('');
@@ -177,7 +260,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
       if (accountRoleFilter !== 'all' && u.role !== accountRoleFilter) return false;
       if (!accountSearch.trim()) return true;
       const q = accountSearch.toLowerCase().trim();
-      const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+      const fullName = `${u.firstName || ''} ${u.lastName || ''} ${u.firstNameArabic || ''} ${u.lastNameArabic || ''}`.toLowerCase();
       const emailMatch = (u.email || '').toLowerCase().includes(q);
       const phoneMatch = (u.phoneNumber || '').toLowerCase().includes(q);
       const roleMatch = (u.role || '').toLowerCase().includes(q);
@@ -185,15 +268,18 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
     });
   }, [systemUsers, accountRoleFilter, accountSearch]);
 
-  // ==========================================
+  // Count deposited documents in teacher checklist
+  const depositedChecklistCount = useMemo(() => {
+    return Object.values(teacherChecklist).filter(Boolean).length;
+  }, [teacherChecklist]);
+
   // Helper: Role Labels & Colors
-  // ==========================================
   const getRoleBadgeConfig = (r: string) => {
     switch (r) {
       case 'student':
         return { label: 'تلميذ', bg: 'rgba(59, 130, 246, 0.12)', text: '#1D4ED8', border: 'rgba(59, 130, 246, 0.25)' };
       case 'teacher':
-        return { label: 'أستاذ', bg: 'rgba(16, 185, 129, 0.12)', text: '#047857', border: 'rgba(16, 185, 129, 0.25)' };
+        return { label: 'أستاذ (المادة 23)', bg: 'rgba(16, 185, 129, 0.12)', text: '#047857', border: 'rgba(16, 185, 129, 0.25)' };
       case 'parent':
         return { label: 'ولي أمر', bg: 'rgba(139, 92, 246, 0.12)', text: '#6D28D9', border: 'rgba(139, 92, 246, 0.25)' };
       case 'general_supervisor':
@@ -211,9 +297,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
     }
   };
 
-  // ==========================================
   // Handler: Manual Refresh
-  // ==========================================
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -223,9 +307,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
     }
   };
 
-  // ==========================================
   // Handler: Pick Excel File
-  // ==========================================
   const handlePickExcel = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -245,9 +327,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
     }
   };
 
-  // ==========================================
   // Handler: Upload Excel
-  // ==========================================
   const handleUploadExcel = async () => {
     if (!excelFile) {
       Alert.alert('تنبيه', 'يرجى تحديد ملف Excel أولاً.');
@@ -283,9 +363,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
     }
   };
 
-  // ==========================================
   // Handler: Create User
-  // ==========================================
   const handleCreateUser = async () => {
     if (!firstName.trim() || !lastName.trim()) {
       Alert.alert('تنبيه', 'يرجى إدخال الاسم الأول واللقب.');
@@ -314,10 +392,26 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
         details.parentId = selectedParentId;
         details.dateOfBirth = dateOfBirth;
       } else if (role === 'teacher') {
+        // Full Article 23 Legal Dataset (البنود الـ 15)
+        details.firstNameArabic = firstNameArabic.trim() || firstName.trim();
+        details.lastNameArabic = lastNameArabic.trim() || lastName.trim();
+        details.jobTitle = teacherJobTitle;
+        details.specialization = teacherSpecialization.trim() || teacherSubjects[0] || 'تعليم عام';
+        details.cycle = teacherCycle;
+        details.assignedHours = Number(teacherAssignedHours) || 18;
+        details.assignedTasks = teacherAssignedTasks;
+        details.professionalStatus = teacherProfessionalStatus;
+        details.hiringDate = teacherHiringDate || null;
+        details.contractType = teacherContractType;
+        details.contractDuration = teacherContractDuration;
+        details.contractStartDate = teacherContractStartDate || null;
+        details.contractEndDate = teacherContractEndDate || null;
+        details.baseSalary = Number(teacherBaseSalary) || 0;
         details.subjects = teacherSubjects;
         details.classes = teacherClasses;
         details.groups = teacherGroups;
         details.assignments = teacherAssignments.filter((a) => a.module);
+        details.checklist = teacherChecklist;
       } else if (role === 'parent') {
         details.profession = parentProfession;
         details.address = parentAddress;
@@ -361,12 +455,14 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
         'تم بنجاح',
         `تم إنشاء الحساب بنجاح!\nاسم الدخول (Login): ${cleanPhone || username}\nكلمة المرور: ${
           role === 'student' ? dateOfBirth : cleanPhone || 'تلقائية'
-        }`
+        }${role === 'teacher' ? '\nتم توثيق الملف المهني (المادة 23) بنجاح.' : ''}`
       );
 
       // Reset form
       setFirstName('');
       setLastName('');
+      setFirstNameArabic('');
+      setLastNameArabic('');
       setPhoneNumber('');
       setEmail('');
       setPassword('');
@@ -374,10 +470,6 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
       setSelectedClassId('');
       setSelectedGroupId('');
       setSelectedParentId('');
-      setTeacherSubjects([]);
-      setTeacherClasses([]);
-      setTeacherGroups([]);
-      setTeacherAssignments([]);
       setParentProfession('');
       setParentAddress('');
       setParentChildren([]);
@@ -390,9 +482,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
     }
   };
 
-  // ==========================================
   // Handler: Toggle Account Status
-  // ==========================================
   const handleToggleStatus = async (user: any) => {
     setTogglingUserId(user._id);
     try {
@@ -407,9 +497,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
     }
   };
 
-  // ==========================================
   // Handler: Delete Account
-  // ==========================================
   const handleDeleteUser = (user: any) => {
     const confirmDelete = async () => {
       setDeletingUserId(user._id);
@@ -440,23 +528,25 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
     }
   };
 
-  // ==========================================
   // Handler: Open Edit Modal
-  // ==========================================
   const handleOpenEdit = (user: any) => {
     setEditingUser(user);
     setEditFirstName(user.firstName || '');
     setEditLastName(user.lastName || '');
+    setEditFirstNameArabic(user.firstNameArabic || '');
+    setEditLastNameArabic(user.lastNameArabic || '');
     setEditEmail(user.email || '');
     setEditPhoneNumber(user.phoneNumber || '');
+    setEditJobTitle(user.jobTitle || 'أستاذ');
+    setEditBaseSalary(String(user.baseSalary || 64000));
+    setEditContractType(user.contractType || 'CDI');
+    setEditProfessionalStatus(user.professionalStatus || (user.isActive ? 'active' : 'suspended'));
     setEditOfficeLocation(user.details?.officeLocation || 'Bureau principal');
     setEditDeskNumber(user.details?.deskNumber || 'Accueil Principal');
     setEditWorkShift(user.details?.workShift || '07:30 - 16:30');
   };
 
-  // ==========================================
   // Handler: Submit Edit
-  // ==========================================
   const handleSaveEdit = async () => {
     if (!editingUser) return;
     setIsUpdatingUser(true);
@@ -469,7 +559,16 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
         details: {},
       };
 
-      if (['general_supervisor', 'pedagogical_supervisor'].includes(editingUser.role)) {
+      if (editingUser.role === 'teacher') {
+        payload.details = {
+          firstNameArabic: editFirstNameArabic,
+          lastNameArabic: editLastNameArabic,
+          jobTitle: editJobTitle,
+          baseSalary: Number(editBaseSalary) || 0,
+          contractType: editContractType,
+          professionalStatus: editProfessionalStatus,
+        };
+      } else if (['general_supervisor', 'pedagogical_supervisor'].includes(editingUser.role)) {
         payload.details.officeLocation = editOfficeLocation;
       } else if (editingUser.role === 'receptionist') {
         payload.details.deskNumber = editDeskNumber;
@@ -564,7 +663,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
         keyboardShouldPersistTaps="handled"
       >
         {/* ========================================================================= */}
-        {/* CARD 1: + إنشاء حساب جديد (MATCHING RIGHT CARD IN SCREENSHOTS 1 & 2)       */}
+        {/* CARD 1: + إنشاء حساب جديد (CONTAINING ARTICLE 23 DOSSIER DATA FOR TEACHER) */}
         {/* ========================================================================= */}
         {(activeSegment === 'all' || activeSegment === 'register') && (
           <View style={styles.card}>
@@ -573,29 +672,55 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
               <Text style={styles.cardTitle}>إنشاء حساب جديد</Text>
             </View>
 
-            {/* Row 1: First Name & Last Name */}
+            {/* Row 1: First Name & Last Name (Fr / En) */}
             <View style={rowStyle}>
               <View style={styles.formCol}>
-                <Text style={styles.fieldLabel}>الاسم الأول</Text>
+                <Text style={styles.fieldLabel}>الاسم الأول (بالحروف اللاتينية)</Text>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="الاسم الأول"
+                  placeholder="مثال: Mohamed"
                   placeholderTextColor={theme.colors.text.subtle}
                   value={firstName}
                   onChangeText={setFirstName}
                 />
               </View>
               <View style={styles.formCol}>
-                <Text style={styles.fieldLabel}>اللقب</Text>
+                <Text style={styles.fieldLabel}>اللقب (بالحروف اللاتينية)</Text>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="اللقب"
+                  placeholder="مثال: Zitouni"
                   placeholderTextColor={theme.colors.text.subtle}
                   value={lastName}
                   onChangeText={setLastName}
                 />
               </View>
             </View>
+
+            {/* If Teacher: Row for Arabic Names */}
+            {role === 'teacher' && (
+              <View style={rowStyle}>
+                <View style={styles.formCol}>
+                  <Text style={styles.fieldLabel}>الاسم الأول (باللغة العربية) *</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="مثال: محمد"
+                    placeholderTextColor={theme.colors.text.subtle}
+                    value={firstNameArabic}
+                    onChangeText={setFirstNameArabic}
+                  />
+                </View>
+                <View style={styles.formCol}>
+                  <Text style={styles.fieldLabel}>اللقب (باللغة العربية) *</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="مثال: زيتوني"
+                    placeholderTextColor={theme.colors.text.subtle}
+                    value={lastNameArabic}
+                    onChangeText={setLastNameArabic}
+                  />
+                </View>
+              </View>
+            )}
 
             {/* Row 2: Account Type & Phone Login */}
             <View style={rowStyle}>
@@ -659,7 +784,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
               </View>
             </View>
 
-            {/* Password Section (Auto-derived notice matching screenshot) */}
+            {/* Password Section */}
             <View style={styles.formGroup}>
               <Text style={styles.fieldLabel}>كلمة المرور</Text>
               {role === 'teacher' || role === 'admin' || role === 'school' ? (
@@ -700,6 +825,439 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 </View>
               )}
             </View>
+
+            {/* ========================================================================= */}
+            {/* DYNAMIC ROLE SUB-SECTION: TEACHER & STAFF ARTICLE 23 (ALL 15 LEGAL ITEMS) */}
+            {/* ========================================================================= */}
+            {role === 'teacher' && (
+              <View style={styles.article23Container}>
+                {/* Official Article 23 Banner Header */}
+                <View style={styles.officialDossierBanner}>
+                  <View style={styles.bannerIconCluster}>
+                    <Award size={20} color={theme.colors.gold[500]} />
+                    <Text style={styles.bannerMainTitle}>
+                      الملف المهني الإلكتروني للأستاذ والموظف (المادة 23)
+                    </Text>
+                  </View>
+                  <Text style={styles.bannerSubTitle}>
+                    العناصر القانونية الـ 15 | الربط الآلي بالأقسام والأفواج | سرية البيانات
+                  </Text>
+                </View>
+
+                {/* 1. الوضعية الحالية (البند 14) */}
+                <View style={styles.subCard}>
+                  <View style={styles.subCardHeader}>
+                    <Shield size={16} color={theme.colors.brand[500]} />
+                    <Text style={styles.subCardTitle}>الوضعية الحالية للأستاذ (البند 14)</Text>
+                    <View style={styles.statusBadgePill}>
+                      <Text style={styles.statusBadgePillText}>
+                        {PROFESSIONAL_STATUSES.find((s) => s.id === teacherProfessionalStatus)?.label}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.chipGrid}>
+                    {PROFESSIONAL_STATUSES.map((st) => {
+                      const isSel = teacherProfessionalStatus === st.id;
+                      return (
+                        <TouchableOpacity
+                          key={st.id}
+                          style={[
+                            styles.statusSelectChip,
+                            isSel && { backgroundColor: st.color, borderColor: st.color },
+                          ]}
+                          onPress={() => setTeacherProfessionalStatus(st.id)}
+                          activeOpacity={0.8}
+                        >
+                          <Text style={[styles.statusSelectChipText, isSel && { color: '#FFF' }]}>
+                            {st.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {/* 2. الوظيفة المسندة (البند 2) */}
+                <View style={styles.subCard}>
+                  <View style={styles.subCardHeader}>
+                    <Briefcase size={16} color={theme.colors.brand[500]} />
+                    <Text style={styles.subCardTitle}>2. الوظيفة والصفة البيداغوجية المسندة (البند 2)</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.pickerSelector}
+                    onPress={() => setIsJobTitlePickerOpen(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.pickerSelectorText}>{teacherJobTitle}</Text>
+                    <ChevronDown size={16} color={theme.colors.text.secondary} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 3. التخصص والطور والساعات والمهام (البند 3 والبند 11) */}
+                <View style={styles.subCard}>
+                  <View style={styles.subCardHeader}>
+                    <GraduationCap size={16} color={theme.colors.brand[500]} />
+                    <Text style={styles.subCardTitle}>3. التخصص والطور والساعات المسندة | 11. المهام</Text>
+                    <View style={styles.greenBadge}>
+                      <Text style={styles.greenBadgeText}>ربط آلي معتمد</Text>
+                    </View>
+                  </View>
+
+                  <View style={rowStyle}>
+                    <View style={styles.formCol}>
+                      <Text style={styles.fieldLabel}>التخصص / المادة</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="مثال: رياضيات، لغة عربية، فيزياء"
+                        placeholderTextColor={theme.colors.text.subtle}
+                        value={teacherSpecialization}
+                        onChangeText={setTeacherSpecialization}
+                      />
+                    </View>
+
+                    <View style={styles.formCol}>
+                      <Text style={styles.fieldLabel}>11. الساعات المسندة أسبوعياً</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="مثال: 18"
+                        keyboardType="numeric"
+                        placeholderTextColor={theme.colors.text.subtle}
+                        value={teacherAssignedHours}
+                        onChangeText={setTeacherAssignedHours}
+                      />
+                    </View>
+                  </View>
+
+                  {/* الطور المعتمد */}
+                  <View style={styles.formGroup}>
+                    <Text style={styles.fieldLabel}>الطور المعتمد</Text>
+                    <View style={styles.chipGrid}>
+                      {TEACHER_CYCLES.map((cyc) => {
+                        const isSel = teacherCycle === cyc.id;
+                        return (
+                          <TouchableOpacity
+                            key={cyc.id}
+                            style={[styles.chipItem, isSel && styles.chipItemSelected]}
+                            onPress={() => setTeacherCycle(cyc.id)}
+                            activeOpacity={0.8}
+                          >
+                            <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>
+                              {cyc.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  {/* المهام البيداغوجية */}
+                  <View style={styles.formGroup}>
+                    <Text style={styles.fieldLabel}>المهام البيداغوجية</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="تدريس، تنسيق بيداغوجي، متابعة الفروض والامتحانات"
+                      placeholderTextColor={theme.colors.text.subtle}
+                      value={teacherAssignedTasks}
+                      onChangeText={setTeacherAssignedTasks}
+                    />
+                  </View>
+
+                  {/* Modules Checklist */}
+                  <View style={styles.formGroup}>
+                    <Text style={styles.fieldLabel}>المواد المدرَّسة (المعتمدة)</Text>
+                    <View style={styles.chipGrid}>
+                      {modulesList.map((m) => {
+                        const isSelected = teacherSubjects.includes(m.name);
+                        return (
+                          <TouchableOpacity
+                            key={m._id}
+                            style={[styles.chipItem, isSelected && styles.chipItemSelected]}
+                            onPress={() => {
+                              if (isSelected) {
+                                setTeacherSubjects((prev) => prev.filter((s) => s !== m.name));
+                              } else {
+                                setTeacherSubjects((prev) => [...prev, m.name]);
+                              }
+                            }}
+                          >
+                            <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                              {m.name}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  {/* Classes & Groups */}
+                  <View style={rowStyle}>
+                    <View style={styles.formCol}>
+                      <View style={styles.labelWithBadgeRow}>
+                        <Text style={styles.fieldLabel}>الأقسام المسندة (كلاسته - ربط تلقائي)</Text>
+                        <View style={styles.miniBadge}>
+                          <Text style={styles.miniBadgeText}>{teacherClasses.length} قسم</Text>
+                        </View>
+                      </View>
+                      <View style={styles.chipGrid}>
+                        {classesList.map((c) => {
+                          const isSelected = teacherClasses.includes(c._id);
+                          return (
+                            <TouchableOpacity
+                              key={c._id}
+                              style={[styles.chipItem, isSelected && styles.chipItemSelected]}
+                              onPress={() => {
+                                if (isSelected) {
+                                  setTeacherClasses((prev) => prev.filter((cid) => cid !== c._id));
+                                } else {
+                                  setTeacherClasses((prev) => [...prev, c._id]);
+                                }
+                              }}
+                            >
+                              <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                                {c.name}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+
+                    <View style={styles.formCol}>
+                      <View style={styles.labelWithBadgeRow}>
+                        <Text style={styles.fieldLabel}>الأفواج المسندة (أفواجه - ربط تلقائي)</Text>
+                        <View style={styles.miniBadge}>
+                          <Text style={styles.miniBadgeText}>{teacherGroups.length} فوج</Text>
+                        </View>
+                      </View>
+                      <View style={styles.chipGrid}>
+                        {groupsList
+                          .filter((g) => teacherClasses.includes(g.class?._id || g.class))
+                          .map((g) => {
+                            const isSelected = teacherGroups.includes(g._id);
+                            return (
+                              <TouchableOpacity
+                                key={g._id}
+                                style={[styles.chipItem, isSelected && styles.chipItemSelected]}
+                                onPress={() => {
+                                  if (isSelected) {
+                                    setTeacherGroups((prev) => prev.filter((gid) => gid !== g._id));
+                                  } else {
+                                    setTeacherGroups((prev) => [...prev, g._id]);
+                                  }
+                                }}
+                              >
+                                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                                  {g.name}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        {teacherClasses.length === 0 && (
+                          <Text style={styles.emptyNote}>اختر قسماً أولاً لعرض أفواجه.</Text>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Module and Room Assignments */}
+                  <View style={styles.formGroup}>
+                    <View style={styles.labelWithBadgeRow}>
+                      <Text style={styles.fieldLabel}>إسناد المادة والقاعة (Salle)</Text>
+                      <TouchableOpacity
+                        style={styles.miniAddBtn}
+                        onPress={() =>
+                          setTeacherAssignments((prev) => [...prev, { module: '', room: '' }])
+                        }
+                      >
+                        <Text style={styles.miniAddBtnText}>+ إضافة</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {teacherAssignments.map((a, idx) => (
+                      <View key={idx} style={styles.assignmentRow}>
+                        <TextInput
+                          style={[styles.textInput, { flex: 2 }]}
+                          placeholder="المادة"
+                          placeholderTextColor={theme.colors.text.subtle}
+                          value={a.module}
+                          onChangeText={(t) => {
+                            const copy = [...teacherAssignments];
+                            copy[idx].module = t;
+                            setTeacherAssignments(copy);
+                          }}
+                        />
+                        <TextInput
+                          style={[styles.textInput, { flex: 1 }]}
+                          placeholder="القاعة"
+                          placeholderTextColor={theme.colors.text.subtle}
+                          value={a.room}
+                          onChangeText={(t) => {
+                            const copy = [...teacherAssignments];
+                            copy[idx].room = t;
+                            setTeacherAssignments(copy);
+                          }}
+                        />
+                        <TouchableOpacity
+                          style={styles.assignmentRemoveBtn}
+                          onPress={() =>
+                            setTeacherAssignments((prev) => prev.filter((_, i) => i !== idx))
+                          }
+                        >
+                          <X size={16} color="#BE123C" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                {/* 4. البيانات التعاقدية والمالية (البنود 6، 7، 8، 9، 10 - مقيدة بالصلاحيات) */}
+                <View style={styles.subCard}>
+                  <View style={styles.subCardHeader}>
+                    <CreditCard size={16} color={theme.colors.brand[500]} />
+                    <Text style={styles.subCardTitle}>
+                      البيانات التعاقدية والمالية (البنود 6، 7، 8، 9، 10)
+                    </Text>
+                    <View style={styles.confidentialBadge}>
+                      <Lock size={12} color="#B45309" />
+                      <Text style={styles.confidentialBadgeText}>سرية إدارية</Text>
+                    </View>
+                  </View>
+
+                  <View style={rowStyle}>
+                    <View style={styles.formCol}>
+                      <Text style={styles.fieldLabel}>6. تاريخ التوظيف</Text>
+                      <View style={styles.inputWithIcon}>
+                        <Calendar size={16} color={theme.colors.text.muted} />
+                        <TextInput
+                          style={styles.inputInsideIcon}
+                          placeholder="YYYY-MM-DD (مثال: 2026-09-01)"
+                          placeholderTextColor={theme.colors.text.subtle}
+                          value={teacherHiringDate}
+                          onChangeText={setTeacherHiringDate}
+                        />
+                      </View>
+                    </View>
+
+                    <View style={styles.formCol}>
+                      <Text style={styles.fieldLabel}>8. مدة العقد</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="مثال: 1 سنة أو مفتوح"
+                        placeholderTextColor={theme.colors.text.subtle}
+                        value={teacherContractDuration}
+                        onChangeText={setTeacherContractDuration}
+                      />
+                    </View>
+                  </View>
+
+                  {/* نوع العقد */}
+                  <View style={styles.formGroup}>
+                    <Text style={styles.fieldLabel}>7. نوع العقد</Text>
+                    <View style={styles.chipGrid}>
+                      {CONTRACT_TYPES.map((ct) => {
+                        const isSel = teacherContractType === ct.id;
+                        return (
+                          <TouchableOpacity
+                            key={ct.id}
+                            style={[styles.chipItem, isSel && styles.chipItemSelected]}
+                            onPress={() => setTeacherContractType(ct.id)}
+                            activeOpacity={0.8}
+                          >
+                            <Text style={[styles.chipText, isSel && styles.chipTextSelected]}>
+                              {ct.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  {/* فترة سريان العقد */}
+                  <View style={rowStyle}>
+                    <View style={styles.formCol}>
+                      <Text style={styles.fieldLabel}>9. بداية سريان العقد</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor={theme.colors.text.subtle}
+                        value={teacherContractStartDate}
+                        onChangeText={setTeacherContractStartDate}
+                      />
+                    </View>
+                    <View style={styles.formCol}>
+                      <Text style={styles.fieldLabel}>9. نهاية سريان العقد</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="YYYY-MM-DD (أو فارغ لعقد مفتوح)"
+                        placeholderTextColor={theme.colors.text.subtle}
+                        value={teacherContractEndDate}
+                        onChangeText={setTeacherContractEndDate}
+                      />
+                    </View>
+                  </View>
+
+                  {/* 10. الراتب الأساسي (Luxury Gold Highlight matching Screenshot 3) */}
+                  <View style={styles.salaryHighlightBox}>
+                    <Text style={styles.salaryHighlightLabel}>10. الراتب الأساسي الشهري (دج):</Text>
+                    <TextInput
+                      style={styles.salaryHighlightInput}
+                      keyboardType="numeric"
+                      placeholder="64000"
+                      placeholderTextColor={theme.colors.text.subtle}
+                      value={teacherBaseSalary}
+                      onChangeText={setTeacherBaseSalary}
+                    />
+                    <Text style={styles.salaryHighlightCurrency}>دج / شهرياً</Text>
+                  </View>
+                </View>
+
+                {/* 5. الوثائق المهنية وقائمة التدقيق (Checklist - البند 13 للمادة 23) */}
+                <View style={styles.subCard}>
+                  <View style={styles.subCardHeader}>
+                    <FileCheck2 size={16} color={theme.colors.brand[500]} />
+                    <Text style={styles.subCardTitle}>
+                      13. الوثائق المهنية وقائمة التدقيق (Checklist - المادة 23)
+                    </Text>
+                    <View style={styles.bordeauxBadge}>
+                      <Text style={styles.bordeauxBadgeText}>مكتمل: {depositedChecklistCount} من 7</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.checklistGrid}>
+                    {[
+                      { key: 'cv', label: 'السيرة الذاتية (CV)' },
+                      { key: 'diploma', label: 'الشهادات والمؤهلات العلمية (Diplômes & Qualifications)' },
+                      { key: 'medicalCertificate', label: 'الشهادة الطبية (Certificat Médical)' },
+                      { key: 'idPhotos', label: "الصور الشمسية (Photos d'identité - ص ش)" },
+                      { key: 'criminalRecord', label: 'شهادة السوابق العدلية (Casier Judiciaire - ش س 2)' },
+                      { key: 'workContract', label: 'عقد العمل الموقع (Contrat de travail)' },
+                      { key: 'experienceCert', label: 'شهادة العمل السابقة / شهادات الخبرة' },
+                    ].map((doc) => {
+                      const isChecked = (teacherChecklist as any)[doc.key];
+                      return (
+                        <TouchableOpacity
+                          key={doc.key}
+                          style={[styles.checklistItemRow, isChecked && styles.checklistItemRowChecked]}
+                          onPress={() =>
+                            setTeacherChecklist((prev) => ({
+                              ...prev,
+                              [doc.key]: !isChecked,
+                            }))
+                          }
+                          activeOpacity={0.8}
+                        >
+                          <View style={[styles.checkboxBox, isChecked && styles.checkboxBoxSelected]}>
+                            {isChecked && <Check size={12} color="#FFF" />}
+                          </View>
+                          <Text style={[styles.checklistDocText, isChecked && styles.checklistDocTextChecked]}>
+                            {doc.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              </View>
+            )}
 
             {/* ========================================== */}
             {/* Dynamic Role Sub-section: Student          */}
@@ -786,154 +1344,6 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                       <ChevronDown size={16} color={theme.colors.text.secondary} />
                     </TouchableOpacity>
                   </View>
-                </View>
-              </View>
-            )}
-
-            {/* ========================================== */}
-            {/* Dynamic Role Sub-section: Teacher          */}
-            {/* ========================================== */}
-            {role === 'teacher' && (
-              <View style={styles.subCard}>
-                <View style={styles.subCardHeader}>
-                  <Briefcase size={16} color={theme.colors.brand[500]} />
-                  <Text style={styles.subCardTitle}>تفاصيل الأستاذ والمهام</Text>
-                </View>
-
-                {/* Modules Checklist */}
-                <View style={styles.formGroup}>
-                  <Text style={styles.fieldLabel}>المواد المدرَّسة (اختر من القائمة)</Text>
-                  <View style={styles.chipGrid}>
-                    {modulesList.map((m) => {
-                      const isSelected = teacherSubjects.includes(m.name);
-                      return (
-                        <TouchableOpacity
-                          key={m._id}
-                          style={[styles.chipItem, isSelected && styles.chipItemSelected]}
-                          onPress={() => {
-                            if (isSelected) {
-                              setTeacherSubjects((prev) => prev.filter((s) => s !== m.name));
-                            } else {
-                              setTeacherSubjects((prev) => [...prev, m.name]);
-                            }
-                          }}
-                        >
-                          <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                            {m.name}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Classes & Groups */}
-                <View style={rowStyle}>
-                  <View style={styles.formCol}>
-                    <Text style={styles.fieldLabel}>الأقسام المرتبطة</Text>
-                    <View style={styles.chipGrid}>
-                      {classesList.map((c) => {
-                        const isSelected = teacherClasses.includes(c._id);
-                        return (
-                          <TouchableOpacity
-                            key={c._id}
-                            style={[styles.chipItem, isSelected && styles.chipItemSelected]}
-                            onPress={() => {
-                              if (isSelected) {
-                                setTeacherClasses((prev) => prev.filter((cid) => cid !== c._id));
-                              } else {
-                                setTeacherClasses((prev) => [...prev, c._id]);
-                              }
-                            }}
-                          >
-                            <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                              {c.name}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </View>
-
-                  <View style={styles.formCol}>
-                    <Text style={styles.fieldLabel}>الأفواج المرتبطة</Text>
-                    <View style={styles.chipGrid}>
-                      {groupsList
-                        .filter((g) => teacherClasses.includes(g.class?._id || g.class))
-                        .map((g) => {
-                          const isSelected = teacherGroups.includes(g._id);
-                          return (
-                            <TouchableOpacity
-                              key={g._id}
-                              style={[styles.chipItem, isSelected && styles.chipItemSelected]}
-                              onPress={() => {
-                                if (isSelected) {
-                                  setTeacherGroups((prev) => prev.filter((gid) => gid !== g._id));
-                                } else {
-                                  setTeacherGroups((prev) => [...prev, g._id]);
-                                }
-                              }}
-                            >
-                              <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                                {g.name}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      {teacherClasses.length === 0 && (
-                        <Text style={styles.emptyNote}>اختر قسماً أولاً لعرض أفواجه.</Text>
-                      )}
-                    </View>
-                  </View>
-                </View>
-
-                {/* Module and Room Assignments */}
-                <View style={styles.formGroup}>
-                  <View style={styles.labelWithBadgeRow}>
-                    <Text style={styles.fieldLabel}>إسناد المادة والقاعة (Salle)</Text>
-                    <TouchableOpacity
-                      style={styles.miniAddBtn}
-                      onPress={() =>
-                        setTeacherAssignments((prev) => [...prev, { module: '', room: '' }])
-                      }
-                    >
-                      <Text style={styles.miniAddBtnText}>+ إضافة</Text>
-                    </TouchableOpacity>
-                  </View>
-                  {teacherAssignments.map((a, idx) => (
-                    <View key={idx} style={styles.assignmentRow}>
-                      <TextInput
-                        style={[styles.textInput, { flex: 2 }]}
-                        placeholder="المادة"
-                        placeholderTextColor={theme.colors.text.subtle}
-                        value={a.module}
-                        onChangeText={(t) => {
-                          const copy = [...teacherAssignments];
-                          copy[idx].module = t;
-                          setTeacherAssignments(copy);
-                        }}
-                      />
-                      <TextInput
-                        style={[styles.textInput, { flex: 1 }]}
-                        placeholder="القاعة"
-                        placeholderTextColor={theme.colors.text.subtle}
-                        value={a.room}
-                        onChangeText={(t) => {
-                          const copy = [...teacherAssignments];
-                          copy[idx].room = t;
-                          setTeacherAssignments(copy);
-                        }}
-                      />
-                      <TouchableOpacity
-                        style={styles.assignmentRemoveBtn}
-                        onPress={() =>
-                          setTeacherAssignments((prev) => prev.filter((_, i) => i !== idx))
-                        }
-                      >
-                        <X size={16} color="#BE123C" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
                 </View>
               </View>
             )}
@@ -1302,9 +1712,10 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                         <View style={styles.userNameBlock}>
                           <Text style={styles.userNameText}>
                             {u.firstName} {u.lastName}
+                            {u.firstNameArabic ? ` (${u.firstNameArabic} ${u.lastNameArabic})` : ''}
                           </Text>
                           <Text style={styles.userSubText}>
-                            {u.email || u.phoneNumber}
+                            {u.email || u.phoneNumber} {u.jobTitle ? `• ${u.jobTitle}` : ''}
                           </Text>
                         </View>
                         <View style={[styles.roleBadgePill, { backgroundColor: badgeCfg.bg, borderColor: badgeCfg.border }]}>
@@ -1316,7 +1727,6 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
 
                       {/* Bottom Action Buttons Bar */}
                       <View style={styles.userCardActionsBar}>
-                        {/* Right cluster in RTL: Action buttons */}
                         <View style={styles.userActionsRow}>
                           {/* Dossier Button: Article 23 (Teacher/Staff) or School Dossier (Student) */}
                           {isTeacherOrStaff && onOpenTeacherDossier && (
@@ -1445,7 +1855,43 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
       </Modal>
 
       {/* ========================================================================= */}
-      {/* MODAL 2: Class Picker                                                     */}
+      {/* MODAL 2: Job Title Picker (الوظيفة المسندة)                               */}
+      {/* ========================================================================= */}
+      <Modal visible={isJobTitlePickerOpen} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalDialog}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>اختر الوظيفة والصفة البيداغوجية</Text>
+              <TouchableOpacity onPress={() => setIsJobTitlePickerOpen(false)}>
+                <X size={20} color={theme.colors.text.muted} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ maxHeight: 380 }}>
+              {TEACHER_JOB_TITLES.map((title) => {
+                const isSel = teacherJobTitle === title;
+                return (
+                  <TouchableOpacity
+                    key={title}
+                    style={[styles.pickerItem, isSel && styles.pickerItemSelected]}
+                    onPress={() => {
+                      setTeacherJobTitle(title);
+                      setIsJobTitlePickerOpen(false);
+                    }}
+                  >
+                    <Text style={[styles.pickerItemText, isSel && styles.pickerItemTextSelected]}>
+                      {title}
+                    </Text>
+                    {isSel && <Check size={16} color={theme.colors.brand[500]} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ========================================================================= */}
+      {/* MODAL 3: Class Picker                                                     */}
       {/* ========================================================================= */}
       <Modal visible={isClassPickerOpen} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
@@ -1479,7 +1925,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
       </Modal>
 
       {/* ========================================================================= */}
-      {/* MODAL 3: Group Picker                                                     */}
+      {/* MODAL 4: Group Picker                                                     */}
       {/* ========================================================================= */}
       <Modal visible={isGroupPickerOpen} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
@@ -1517,7 +1963,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
       </Modal>
 
       {/* ========================================================================= */}
-      {/* MODAL 4: Parent Picker with Live Search                                   */}
+      {/* MODAL 5: Parent Picker with Live Search                                   */}
       {/* ========================================================================= */}
       <Modal visible={isParentPickerOpen} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
@@ -1579,7 +2025,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
       </Modal>
 
       {/* ========================================================================= */}
-      {/* MODAL 5: Edit User Modal                                                  */}
+      {/* MODAL 6: Edit User Modal (Supporting Article 23 fields for teachers)       */}
       {/* ========================================================================= */}
       <Modal visible={!!editingUser} transparent animationType="fade">
         <KeyboardAvoidingView
@@ -1599,10 +2045,10 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ maxHeight: 440 }} showsVerticalScrollIndicator={false}>
               <View style={rowStyle}>
                 <View style={styles.formCol}>
-                  <Text style={styles.fieldLabel}>الاسم الأول</Text>
+                  <Text style={styles.fieldLabel}>الاسم الأول (لاتيني)</Text>
                   <TextInput
                     style={styles.textInput}
                     value={editFirstName}
@@ -1610,7 +2056,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                   />
                 </View>
                 <View style={styles.formCol}>
-                  <Text style={styles.fieldLabel}>اللقب</Text>
+                  <Text style={styles.fieldLabel}>اللقب (لاتيني)</Text>
                   <TextInput
                     style={styles.textInput}
                     value={editLastName}
@@ -1618,6 +2064,27 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                   />
                 </View>
               </View>
+
+              {editingUser?.role === 'teacher' && (
+                <View style={rowStyle}>
+                  <View style={styles.formCol}>
+                    <Text style={styles.fieldLabel}>الاسم بالعربية</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={editFirstNameArabic}
+                      onChangeText={setEditFirstNameArabic}
+                    />
+                  </View>
+                  <View style={styles.formCol}>
+                    <Text style={styles.fieldLabel}>اللقب بالعربية</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={editLastNameArabic}
+                      onChangeText={setEditLastNameArabic}
+                    />
+                  </View>
+                </View>
+              )}
 
               <View style={styles.formGroup}>
                 <Text style={styles.fieldLabel}>رقم الهاتف</Text>
@@ -1645,6 +2112,39 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                   />
                 </View>
               </View>
+
+              {editingUser?.role === 'teacher' && (
+                <>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.fieldLabel}>الوظيفة والصفة المسندة</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={editJobTitle}
+                      onChangeText={setEditJobTitle}
+                    />
+                  </View>
+
+                  <View style={rowStyle}>
+                    <View style={styles.formCol}>
+                      <Text style={styles.fieldLabel}>الراتب الأساسي (دج)</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        keyboardType="numeric"
+                        value={editBaseSalary}
+                        onChangeText={setEditBaseSalary}
+                      />
+                    </View>
+                    <View style={styles.formCol}>
+                      <Text style={styles.fieldLabel}>الوضعية الحالية</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={editProfessionalStatus}
+                        onChangeText={setEditProfessionalStatus}
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
 
               {['general_supervisor', 'pedagogical_supervisor'].includes(editingUser?.role) && (
                 <View style={styles.formGroup}>
@@ -1821,6 +2321,42 @@ const styles = StyleSheet.create({
     color: '#7B1E3A',
   },
 
+  /* Article 23 Full Dossier Banner */
+  article23Container: {
+    gap: 12,
+  },
+  officialDossierBanner: {
+    backgroundColor: '#7B1E3A',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#C9A24D',
+    shadowColor: '#7B1E3A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  bannerIconCluster: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bannerMainTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  bannerSubTitle: {
+    color: '#F7EED8',
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
   /* Article 23 Button */
   article23Btn: {
     flexDirection: 'row-reverse',
@@ -1895,6 +2431,61 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  confidentialBadge: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  confidentialBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#B45309',
+  },
+  miniBadge: {
+    backgroundColor: 'rgba(123, 30, 58, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(123, 30, 58, 0.25)',
+  },
+  miniBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#7B1E3A',
+  },
+  statusBadgePill: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  statusBadgePillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#047857',
+  },
+  statusSelectChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#FAF4EB',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.35)',
+  },
+  statusSelectChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#4A3E3D',
   },
   optionalHint: {
     fontSize: 10,
@@ -1988,7 +2579,7 @@ const styles = StyleSheet.create({
   subCardHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(201, 162, 77, 0.2)',
     paddingBottom: 6,
@@ -1998,6 +2589,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#2B2022',
     textAlign: 'right',
+    flex: 1,
+    marginRight: 6,
   },
   inputWithIcon: {
     flexDirection: 'row-reverse',
@@ -2017,12 +2610,91 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
+  /* Salary Highlight Box matching Screenshot 3 */
+  salaryHighlightBox: {
+    backgroundColor: '#FFFDF9',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(201, 162, 77, 0.5)',
+    padding: 14,
+    alignItems: 'center',
+    gap: 6,
+    shadowColor: '#C9A24D',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  salaryHighlightLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#7B1E3A',
+  },
+  salaryHighlightInput: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#7B1E3A',
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    textAlign: 'center',
+    width: '100%',
+    paddingVertical: 4,
+  },
+  salaryHighlightCurrency: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#B45309',
+  },
+
+  /* Checklist Grid */
+  checklistGrid: {
+    gap: 6,
+  },
+  checklistItemRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FFFDF9',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.2)',
+  },
+  checklistItemRowChecked: {
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+  },
+  checkboxBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#7B1E3A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+  },
+  checkboxBoxSelected: {
+    backgroundColor: '#059669',
+    borderColor: '#059669',
+  },
+  checklistDocText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4A3E3D',
+    flex: 1,
+    textAlign: 'right',
+  },
+  checklistDocTextChecked: {
+    color: '#047857',
+    fontWeight: '700',
+  },
+
   /* Chips and Selectables */
   chipGrid: {
     flexDirection: 'row-reverse',
     flexWrap: 'wrap',
     gap: 6,
-    maxHeight: 130,
+    maxHeight: 140,
   },
   chipItem: {
     paddingHorizontal: 10,
@@ -2108,19 +2780,6 @@ const styles = StyleSheet.create({
     gap: 8,
     flex: 1,
   },
-  checkboxBox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#7B1E3A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-  },
-  checkboxBoxSelected: {
-    backgroundColor: '#7B1E3A',
-  },
   studentLinkName: {
     fontSize: 12,
     fontWeight: '700',
@@ -2155,7 +2814,7 @@ const styles = StyleSheet.create({
   submitBtn: {
     backgroundColor: '#7B1E3A',
     borderRadius: 12,
-    paddingVertical: 13,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#7B1E3A',
@@ -2163,14 +2822,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 3,
-    marginTop: 4,
+    marginTop: 6,
   },
   submitBtnDisabled: {
     opacity: 0.5,
   },
   submitBtnText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
   },
 

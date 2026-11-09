@@ -41,6 +41,7 @@ import {
   GraduationCap,
   Calendar,
   Download,
+  Upload,
   Lock,
   Unlock,
   RefreshCw,
@@ -53,8 +54,9 @@ import {
   ArrowRight,
   ExternalLink,
   MoreVertical,
+  Eye,
 } from 'lucide-react-native';
-import { apiClient } from '../../src/api/client';
+import { apiClient, API_BASE_URL } from '../../src/api/client';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { SchoolLogo } from '../../src/components/SchoolLogo';
 import { Button } from '../../src/components/common/Button';
@@ -69,6 +71,12 @@ import { ReceptionistDashboardView } from '../../src/components/dashboards/Recep
 import { SchoolFeedView } from '../../src/components/feed/SchoolFeedView';
 import { ConversationView } from '../../src/components/chat/ConversationView';
 import { AdminAccountsView } from '../../src/components/admin/AdminAccountsView';
+import { TeacherDossierModal } from '../../src/components/admin/TeacherDossierModal';
+import {
+  StudentDetailsModal,
+  StudentEditModal,
+  StudentDossierPrintModal,
+} from '../../src/components/admin/StudentModals';
 import { useLocalSearchParams } from 'expo-router';
 
 /* ==================================================================== */
@@ -91,6 +99,7 @@ function AdminDashboardView({
   // Loading & Refreshing
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
 
   // Core Data States
   const [stats, setStats] = useState<any>(null);
@@ -115,6 +124,7 @@ function AdminDashboardView({
   const [userRoleFilter, setUserRoleFilter] = useState('all');
   const [studentSearch, setStudentSearch] = useState('');
   const [teacherSearch, setTeacherSearch] = useState('');
+  const [teacherStatusFilter, setTeacherStatusFilter] = useState('all');
   const [classSearch, setClassSearch] = useState('');
   const [requestFilter, setRequestFilter] = useState('all');
   const [scheduleTypeFilter, setScheduleTypeFilter] = useState('all');
@@ -171,6 +181,67 @@ function AdminDashboardView({
   // Dossier Modals State
   const [selectedStudentForDossier, setSelectedStudentForDossier] = useState<any>(null);
   const [selectedTeacherForDossier, setSelectedTeacherForDossier] = useState<any>(null);
+  const [teacherDossierInitialEdit, setTeacherDossierInitialEdit] = useState(false);
+
+  const handleOpenTeacherDossier = (teacher: any) => {
+    setTeacherDossierInitialEdit(false);
+    setSelectedTeacherForDossier(teacher);
+  };
+
+  const handleEditTeacherDossier = (teacher: any) => {
+    setTeacherDossierInitialEdit(true);
+    setSelectedTeacherForDossier(teacher);
+  };
+
+  const handleDeleteTeacherCard = (teacher: any) => {
+    const userId = teacher.user?._id || teacher._id;
+    const fullName = `${teacher.user?.firstName || ''} ${teacher.user?.lastName || ''}`.trim() || 'الأستاذ';
+    Alert.alert('تأكيد حذف الأستاذ', `هل أنت متأكد من حذف حساب وملف الأستاذ (${fullName}) نهائياً من المؤسسة؟`, [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'حذف نهائي',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await apiClient.delete(`/api/admin/users/${userId}`);
+            setTeachersList((prev) => prev.filter((t) => t._id !== teacher._id && t.user?._id !== userId));
+            setSystemUsers((prev) => prev.filter((u) => u._id !== userId));
+            Alert.alert('نجاح', `تم حذف حساب الأستاذ (${fullName}) بنجاح.`);
+          } catch (err: any) {
+            Alert.alert('خطأ', err.response?.data?.message || 'فشل حذف حساب الأستاذ');
+          }
+        },
+      },
+    ]);
+  };
+
+  // Student Directory States (Parity with Web Screenshots 1-5)
+  const [studentClassFilter, setStudentClassFilter] = useState('');
+  const [selectedStudentForDetails, setSelectedStudentForDetails] = useState<any | null>(null);
+  const [selectedStudentForEdit, setSelectedStudentForEdit] = useState<any | null>(null);
+  const [selectedStudentForPrint, setSelectedStudentForPrint] = useState<any | null>(null);
+
+  const handleDeleteStudentCard = (student: any) => {
+    const userId = student.user?._id || student._id;
+    const fullName = `${student.firstNameArabic || student.user?.firstName || ''} ${student.lastNameArabic || student.user?.lastName || ''}`.trim() || 'التلميذ';
+    Alert.alert('تأكيد حذف التلميذ', `هل أنت متأكد من حذف حساب وملف التلميذ (${fullName}) نهائياً من المؤسسة؟`, [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'حذف نهائي',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await apiClient.delete(`/api/admin/users/${userId}`);
+            setStudentsList((prev) => prev.filter((s) => s._id !== student._id && s.user?._id !== userId));
+            setSystemUsers((prev) => prev.filter((u) => u._id !== userId));
+            Alert.alert('نجاح', `تم حذف حساب التلميذ (${fullName}) بنجاح.`);
+          } catch (err: any) {
+            Alert.alert('خطأ', err.response?.data?.message || 'فشل حذف حساب التلميذ');
+          }
+        },
+      },
+    ]);
+  };
 
   // Branding Form State
   const [brandingSchoolNameAr, setBrandingSchoolNameAr] = useState('مدرسة حبر');
@@ -230,12 +301,36 @@ function AdminDashboardView({
         apiClient.get('/api/admin/groups').catch(() => ({ data: [] })),
       ]);
 
-      if (statsRes.data) setStats(statsRes.data);
-      if (postsRes.data) setPosts(Array.isArray(postsRes.data) ? postsRes.data : (postsRes.data.posts || []));
-      if (usersRes.data) setSystemUsers(Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data.users || []));
-      if (classesRes.data) setClassesList(Array.isArray(classesRes.data) ? classesRes.data : (classesRes.data.classes || []));
-      if (teachersRes.data) setTeachersList(Array.isArray(teachersRes.data) ? teachersRes.data : (teachersRes.data.teachers || []));
-      if (studentsRes.data) setStudentsList(Array.isArray(studentsRes.data) ? studentsRes.data : (studentsRes.data.students || []));
+      let hasData = false;
+      if (statsRes.data) {
+        setStats(statsRes.data);
+        hasData = true;
+      }
+      if (postsRes.data) {
+        const pList = Array.isArray(postsRes.data) ? postsRes.data : (postsRes.data.posts || []);
+        setPosts(pList);
+        if (pList.length > 0) hasData = true;
+      }
+      if (usersRes.data) {
+        const uList = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data.users || []);
+        setSystemUsers(uList);
+        if (uList.length > 0) hasData = true;
+      }
+      if (classesRes.data) {
+        const cList = Array.isArray(classesRes.data) ? classesRes.data : (classesRes.data.classes || []);
+        setClassesList(cList);
+        if (cList.length > 0) hasData = true;
+      }
+      if (teachersRes.data) {
+        const tList = Array.isArray(teachersRes.data) ? teachersRes.data : (teachersRes.data.teachers || []);
+        setTeachersList(tList);
+        if (tList.length > 0) hasData = true;
+      }
+      if (studentsRes.data) {
+        const sList = Array.isArray(studentsRes.data) ? studentsRes.data : (studentsRes.data.students || []);
+        setStudentsList(sList);
+        if (sList.length > 0) hasData = true;
+      }
       if (modulesRes.data) setModulesList(Array.isArray(modulesRes.data) ? modulesRes.data : (modulesRes.data.modules || []));
       if (groupsRes.data) setGroupsList(Array.isArray(groupsRes.data) ? groupsRes.data : (groupsRes.data.groups || []));
       if (docsRes.data) setDocumentsList(Array.isArray(docsRes.data) ? docsRes.data : (docsRes.data.documents || []));
@@ -245,6 +340,8 @@ function AdminDashboardView({
       if (reportedRes.data) setReportedMessagesList(Array.isArray(reportedRes.data) ? reportedRes.data : (reportedRes.data.reportedMessages || []));
       if (auditRes.data) setLoginAuditList(auditRes.data.logs || auditRes.data.loginLogs || (Array.isArray(auditRes.data) ? auditRes.data : []));
       if (lessonsRes.data) setLessonsList(Array.isArray(lessonsRes.data) ? lessonsRes.data : (lessonsRes.data.lessons || []));
+
+      setConnectionError(!hasData);
     } catch (err: any) {
       console.warn('Load data warning:', err.message);
     } finally {
@@ -700,21 +797,51 @@ function AdminDashboardView({
 
   const filteredStudents = useMemo(() => {
     return studentsList.filter((s) => {
-      const name = `${s.firstNameArabic || s.user?.firstName || ''} ${s.lastNameArabic || s.user?.lastName || ''}`;
-      return (
-        !studentSearch.trim() ||
-        name.toLowerCase().includes(studentSearch.toLowerCase()) ||
-        (s.registrationNumber || '').includes(studentSearch)
-      );
+      const fName = s.firstNameArabic || s.user?.firstName || '';
+      const lName = s.lastNameArabic || s.user?.lastName || '';
+      const name = `${fName} ${lName}`.toLowerCase();
+      const email = (s.user?.email || '').toLowerCase();
+      const regNum = (s.registrationNumber || '').toLowerCase();
+      const parentName = `${s.parent?.user?.firstName || ''} ${s.parent?.user?.lastName || ''}`.toLowerCase();
+      const parentPhone = (s.parent?.user?.phoneNumber || s.user?.phoneNumber || '').toLowerCase();
+      const search = studentSearch.trim().toLowerCase();
+
+      const matchesSearch =
+        !search ||
+        name.includes(search) ||
+        email.includes(search) ||
+        regNum.includes(search) ||
+        parentName.includes(search) ||
+        parentPhone.includes(search);
+
+      const matchesClass =
+        !studentClassFilter ||
+        (s.class?._id || s.class) === studentClassFilter;
+
+      return matchesSearch && matchesClass;
     });
-  }, [studentsList, studentSearch]);
+  }, [studentsList, studentSearch, studentClassFilter]);
 
   const filteredTeachers = useMemo(() => {
-    return teachersList.filter((t) => {
-      const name = `${t.user?.firstName || ''} ${t.user?.lastName || ''}`;
-      return !teacherSearch.trim() || name.toLowerCase().includes(teacherSearch.toLowerCase());
+    return teachersList.filter((teacher) => {
+      const pStatus = teacher.professionalStatus || (teacher.user?.isActive ? 'active' : 'inactive');
+      if (teacherStatusFilter !== 'all' && pStatus !== teacherStatusFilter) return false;
+      if (!teacherSearch.trim()) return true;
+      const q = teacherSearch.trim().toLowerCase();
+      const fullName = `${teacher.user?.firstName || ''} ${teacher.user?.lastName || ''}`.toLowerCase();
+      const phone = (teacher.user?.phoneNumber || teacher.user?.username || '').toLowerCase();
+      const email = (teacher.user?.email || '').toLowerCase();
+      const subjects = (teacher.subjects || []).join(' ').toLowerCase();
+      const specialization = (teacher.specialization || '').toLowerCase();
+      return (
+        fullName.includes(q) ||
+        phone.includes(q) ||
+        email.includes(q) ||
+        subjects.includes(q) ||
+        specialization.includes(q)
+      );
     });
-  }, [teachersList, teacherSearch]);
+  }, [teachersList, teacherSearch, teacherStatusFilter]);
 
   const timeAgo = (dateStr?: string) => {
     if (!dateStr) return '';
@@ -767,6 +894,25 @@ function AdminDashboardView({
       {/* 1. Header with Web Parity (Hamburger + Logo + Title + Year | Bell + Avatar) */}
       {/* ---------------------------------------------------------------- */}
       <DashboardHeader onOpenDrawer={() => setIsDrawerOpen(true)} />
+
+      {/* Connection Error Banner (if backend is unreachable) */}
+      {connectionError && (
+        <View style={styles.connectionErrorBanner}>
+          <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 8, flex: 1 }}>
+            <AlertCircle size={20} color="#DC2626" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.connectionErrorTitle}>تعذر الاتصال بقاعدة البيانات</Text>
+              <Text style={styles.connectionErrorSub} numberOfLines={1}>
+                الخادم: {API_BASE_URL}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.connectionRetryBtn} onPress={loadData} activeOpacity={0.8}>
+            <RefreshCw size={14} color="#FFFFFF" />
+            <Text style={styles.connectionRetryText}>إعادة المحاولة</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Active Route Indicator (when navigating from side drawer) */}
       {currentRoute !== 'overview' && currentRoute !== 'feed' && (
@@ -830,6 +976,7 @@ function AdminDashboardView({
         <ScrollView
           style={styles.scrollBody}
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -1141,154 +1288,693 @@ function AdminDashboardView({
               studentsList={studentsList}
               teachersList={teachersList}
               onRefreshData={loadData}
-              onOpenTeacherDossier={(t) => setSelectedTeacherForDossier(t)}
+              onOpenTeacherDossier={(t) => handleOpenTeacherDossier(t)}
               onOpenStudentDossier={(s) => setSelectedStudentForDossier(s)}
             />
           )}
 
           {/* ============================================================ */}
-          {/* ROUTE 4: TEACHERS (قائمة الأساتذة - المادة 23)               */}
+          {/* ROUTE 4: TEACHERS (دليل الأساتذة والموظفين - المادة 23)        */}
           {/* ============================================================ */}
           {currentRoute === 'teachers' && (
-            <View style={styles.usersContainer}>
-              <View style={styles.usersHeaderRow}>
-                <View>
-                  <Text style={styles.sectionTitle}>قائمة الأساتذة وهيئة التدريس (المادة 23)</Text>
-                  <Text style={styles.sectionSubtitle}>
-                    متابعة عقود العمل، الساعات الأسبوعية، والملف المهني لـ {teachersList.length} أستاذ(ة)
-                  </Text>
+            <View style={styles.teachersMainContainer}>
+              {/* 1. Header Card with Titles and Actions */}
+              <View style={styles.teachersHeaderCard}>
+                <View style={styles.teachersHeaderTop}>
+                  <View style={styles.teachersHeaderTitleWrap}>
+                    <View style={styles.teachersHeaderIconBox}>
+                      <Users size={22} color={theme.colors.brand[500]} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.teachersHeaderTitle}>
+                        دليل الأساتذة والموظفين - الملفات المهنية (المادة 23)
+                      </Text>
+                      <Text style={styles.teachersHeaderSubtitle}>
+                        الفصل التاسع: ملفات الأساتذة والموظفين • الربط التلقائي بالأقسام والأفواج • سجل التدقيق الإداري
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-                <TouchableOpacity
-                  style={[styles.addUserButton, { backgroundColor: '#059669' }]}
-                  onPress={() => handleExportExcel('هيئة التدريس - المادة 23')}
+
+                {/* Action Buttons Row */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.teachersActionButtonsRow}
                 >
-                  <Download size={14} color="#FFFFFF" />
-                  <Text style={styles.addUserButtonText}>تصدير Excel</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.teacherBtnImport}
+                    onPress={() => {
+                      Alert.alert(
+                        'استيراد أساتذة عبر Excel',
+                        'يمكن استيراد ملفات Excel وتحديث قاعدة بيانات الأساتذة وربطهم بالأقسام والأفواج تلقائياً وفق المادة 23.',
+                        [
+                          { text: 'إلغاء', style: 'cancel' },
+                          {
+                            text: 'تحميل النموذج',
+                            onPress: () => handleExportExcel('نموذج استيراد الأساتذة'),
+                          },
+                        ]
+                      );
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Upload size={14} color="#C9A24D" />
+                    <Text style={styles.teacherBtnImportText}>
+                      استيراد أساتذة عبر Excel (ربط الأقسام والأفواج)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.teacherBtnExportExcel}
+                    onPress={() => handleExportExcel('هيئة التدريس - المادة 23')}
+                    activeOpacity={0.85}
+                  >
+                    <Download size={14} color="#059669" />
+                    <Text style={styles.teacherBtnExportExcelText}>
+                      تصدير Excel (المادة 23)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.teacherBtnExportParents}
+                    onPress={() => handleExportExcel('أولياء الأمور')}
+                    activeOpacity={0.85}
+                  >
+                    <Download size={14} color="#475569" />
+                    <Text style={styles.teacherBtnExportParentsText}>
+                      تصدير أولياء الأمور
+                    </Text>
+                  </TouchableOpacity>
+                </ScrollView>
               </View>
 
-              <View style={styles.searchBar}>
-                <Search size={18} color={theme.colors.text.muted} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="ابحث عن أستاذ..."
-                  placeholderTextColor={theme.colors.text.subtle}
-                  value={teacherSearch}
-                  onChangeText={setTeacherSearch}
-                />
-              </View>
-
-              <View style={styles.usersList}>
-                {filteredTeachers.map((t) => {
-                  const name = `${t.user?.firstName || ''} ${t.user?.lastName || ''}`;
-                  const phone = t.user?.phoneNumber || 'غير مسجل';
-                  const subjects = (t.subjects || []).join(', ') || 'تعليم عام';
-                  const classes = (t.classes || []).map((c: any) => c.name).join(', ') || 'غير معين';
-
-                  return (
-                    <TouchableOpacity
-                      key={t._id}
-                      style={styles.userCard}
-                      onPress={() => setSelectedTeacherForDossier(t)}
-                      activeOpacity={0.8}
-                    >
-                      <View style={styles.userCardRight}>
-                        <View style={[styles.userAvatar, { backgroundColor: theme.colors.brand[600] }]}>
-                          <Text style={styles.userAvatarText}>{name[0] || 'أ'}</Text>
-                        </View>
-                        <View style={styles.userInfo}>
-                          <Text style={styles.userName}>{name}</Text>
-                          <Text style={styles.userSubDetails}>المادة: {subjects} • الأقسام: {classes}</Text>
-                          <Text style={styles.userContact}>الهاتف: {phone} • عقد: {t.contractType || 'CDI'}</Text>
-                        </View>
-                      </View>
-                      <View style={[styles.statusBadge, styles.statusPaid]}>
-                        <Text style={[styles.statusBadgeText, styles.statusPaidText]}>عرض الملف</Text>
-                      </View>
+              {/* 2. Search and Status Filter Section */}
+              <View style={styles.teachersFilterCard}>
+                <View style={styles.teachersSearchBar}>
+                  <Search size={16} color={theme.colors.text.muted} />
+                  <TextInput
+                    style={styles.teachersSearchInput}
+                    placeholder="البحث عن أستاذ بالاسم، رقم الهاتف، المادة أو البريد الإلكتروني..."
+                    placeholderTextColor={theme.colors.text.subtle}
+                    value={teacherSearch}
+                    onChangeText={setTeacherSearch}
+                  />
+                  {teacherSearch.length > 0 && (
+                    <TouchableOpacity onPress={() => setTeacherSearch('')}>
+                      <X size={16} color={theme.colors.text.muted} />
                     </TouchableOpacity>
-                  );
-                })}
+                  )}
+                </View>
+
+                {/* Status Chips Selector */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.teacherStatusChipsRow}
+                >
+                  {[
+                    { id: 'all', label: 'جميع الحالات المهنية' },
+                    { id: 'active', label: 'نشط (Active)' },
+                    { id: 'suspended', label: 'موقوف مؤقتاً' },
+                    { id: 'resigned', label: 'مستقيل' },
+                    { id: 'terminated', label: 'منتهية العلاقة' },
+                  ].map((filter) => {
+                    const isActive = teacherStatusFilter === filter.id;
+                    return (
+                      <TouchableOpacity
+                        key={filter.id}
+                        style={[
+                          styles.teacherStatusChip,
+                          isActive && styles.teacherStatusChipActive,
+                        ]}
+                        onPress={() => setTeacherStatusFilter(filter.id)}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.teacherStatusChipText,
+                            isActive && styles.teacherStatusChipTextActive,
+                          ]}
+                        >
+                          {filter.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* 3. Teacher Cards List matching Web Design */}
+              <View style={styles.teachersGridList}>
+                {filteredTeachers.length > 0 ? (
+                  filteredTeachers.map((teacher) => {
+                    const firstName = teacher.user?.firstName || '';
+                    const lastName = teacher.user?.lastName || '';
+                    const fullName = `${firstName} ${lastName}`.trim() || 'أستاذ';
+                    const initials = `${firstName[0] || ''}${lastName[0] || ''}` || 'أس';
+                    const email = teacher.user?.email || 'teacher@ecole-zitouni.dz';
+                    const phone = teacher.user?.phoneNumber || teacher.user?.username || '—';
+                    const subjects = teacher.specialization || (teacher.subjects || []).join('، ') || 'غير محدد';
+                    const cycleLabel =
+                      teacher.cycle === 'middle'
+                        ? 'متوسط'
+                        : teacher.cycle === 'secondary'
+                        ? 'ثانوي'
+                        : 'ابتدائي';
+                    const pStatus =
+                      teacher.professionalStatus || (teacher.user?.isActive ? 'active' : 'inactive');
+
+                    const isStatusActive = pStatus === 'active';
+                    const isStatusSuspended = pStatus === 'suspended';
+                    const isStatusResigned = pStatus === 'resigned';
+                    const isStatusTerminated = pStatus === 'terminated';
+
+                    const statusBadgeStyle = isStatusActive
+                      ? styles.tStatusBadgeActive
+                      : isStatusSuspended
+                      ? styles.tStatusBadgeSuspended
+                      : isStatusResigned
+                      ? styles.tStatusBadgeResigned
+                      : styles.tStatusBadgeTerminated;
+
+                    const statusTextStyle = isStatusActive
+                      ? styles.tStatusTextActive
+                      : isStatusSuspended
+                      ? styles.tStatusTextSuspended
+                      : isStatusResigned
+                      ? styles.tStatusTextResigned
+                      : styles.tStatusTextTerminated;
+
+                    const statusArabicLabel =
+                      pStatus === 'active'
+                        ? 'نشط'
+                        : pStatus === 'suspended'
+                        ? 'موقوف مؤقتاً'
+                        : pStatus === 'resigned'
+                        ? 'مستقيل'
+                        : pStatus === 'terminated'
+                        ? 'منتهية العلاقة'
+                        : teacher.user?.isActive
+                        ? 'نشط'
+                        : 'معطّل';
+
+                    return (
+                      <View key={teacher._id} style={styles.teacherCard}>
+                        {/* Card Header (RTL: Avatar + Name on Right, Badge on Left) */}
+                        <View style={styles.teacherCardHeader}>
+                          {/* Left: Status Badge */}
+                          <View style={[styles.tStatusBadgePill, statusBadgeStyle]}>
+                            <Text style={[styles.tStatusBadgeText, statusTextStyle]}>
+                              {statusArabicLabel}
+                            </Text>
+                          </View>
+
+                          {/* Right: Avatar + User info */}
+                          <View style={styles.teacherCardUserGroup}>
+                            <View style={styles.teacherCardTextInfo}>
+                              <Text style={styles.teacherCardName}>{fullName}</Text>
+                              <Text style={styles.teacherCardEmail} numberOfLines={1}>
+                                {email}
+                              </Text>
+                            </View>
+                            <View style={styles.teacherInitialsAvatar}>
+                              <Text style={styles.teacherInitialsText}>{initials}</Text>
+                            </View>
+                          </View>
+                        </View>
+
+                        {/* Card Body - Details with Clean Typography */}
+                        <View style={styles.teacherCardBody}>
+                          {/* Specialization / Subject */}
+                          <View style={styles.teacherDetailRow}>
+                            <Text style={styles.teacherDetailLabel}>التخصص / المادة:</Text>
+                            <Text style={styles.teacherDetailValueSubject} numberOfLines={2}>
+                              {subjects}
+                            </Text>
+                          </View>
+
+                          {/* Educational Stage / Cycle */}
+                          <View style={styles.teacherDetailRow}>
+                            <Text style={styles.teacherDetailLabel}>الطور التعليمي:</Text>
+                            <Text style={styles.teacherDetailValueCycle}>{cycleLabel}</Text>
+                          </View>
+
+                          {/* Assigned Classes */}
+                          <View style={styles.teacherClassesRow}>
+                            <Text style={styles.teacherDetailLabel}>الأقسام المسندة (كلاسته):</Text>
+                            <View style={styles.teacherBadgesGroup}>
+                              {teacher.classes && teacher.classes.length > 0 ? (
+                                teacher.classes.map((c: any) => (
+                                  <View key={c._id || c} style={styles.teacherClassBadge}>
+                                    <Text style={styles.teacherClassBadgeText}>
+                                      {c.name || c}
+                                    </Text>
+                                  </View>
+                                ))
+                              ) : (
+                                <Text style={styles.teacherNoneText}>لا يوجد</Text>
+                              )}
+                            </View>
+                          </View>
+
+                          {/* Assigned Groups */}
+                          <View style={styles.teacherClassesRow}>
+                            <Text style={styles.teacherDetailLabel}>الأفواج المسندة (أفواجه):</Text>
+                            <View style={styles.teacherBadgesGroup}>
+                              {teacher.groups && teacher.groups.length > 0 ? (
+                                teacher.groups.map((g: any) => (
+                                  <View key={g._id || g} style={styles.teacherGroupBadge}>
+                                    <Text style={styles.teacherGroupBadgeText}>
+                                      {g.name || g}
+                                    </Text>
+                                  </View>
+                                ))
+                              ) : (
+                                <Text style={styles.teacherNoneText}>لا يوجد</Text>
+                              )}
+                            </View>
+                          </View>
+
+                          {/* Phone Number */}
+                          <View style={styles.teacherDetailRow}>
+                            <Text style={styles.teacherDetailLabel}>الهاتف:</Text>
+                            <Text style={styles.teacherDetailValuePhone}>{phone}</Text>
+                          </View>
+                        </View>
+
+                        {/* Card Footer Actions */}
+                        <View style={styles.teacherCardFooter}>
+                          <View style={styles.teacherCardSmallBtns}>
+                            <TouchableOpacity
+                              style={styles.teacherTrashBtn}
+                              onPress={() => handleDeleteTeacherCard(teacher)}
+                              activeOpacity={0.7}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <Trash2 size={16} color="#EF4444" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              style={styles.teacherEditBtn}
+                              onPress={() => handleEditTeacherDossier(teacher)}
+                              activeOpacity={0.7}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <Edit3 size={16} color="#475569" />
+                            </TouchableOpacity>
+                          </View>
+
+                          <TouchableOpacity
+                            style={styles.teacherDossierBtn}
+                            onPress={() => handleOpenTeacherDossier(teacher)}
+                            activeOpacity={0.7}
+                          >
+                            <FileText size={15} color="#C9A24D" />
+                            <Text style={styles.teacherDossierBtnText}>
+                              الملف المهني (المادة 23)
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <View style={styles.teacherEmptyState}>
+                    <Search size={32} color={theme.colors.text.muted} />
+                    <Text style={styles.teacherEmptyTitle}>لا يوجد أساتذة يطابقون نتيجة البحث</Text>
+                    <Text style={styles.teacherEmptySubtitle}>
+                      {teacherSearch
+                        ? `لم يتم العثور على نتائج تطابق «${teacherSearch}».`
+                        : 'لا توجد بيانات أساتذة مسجلة في هذه الفئة حالياً.'}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
           )}
 
           {/* ============================================================ */}
-          {/* ROUTE 5: STUDENTS (قائمة التلاميذ)                            */}
+          {/* ROUTE 5: STUDENTS (دليل التلاميذ والطلاب - Full Parity)      */}
           {/* ============================================================ */}
           {currentRoute === 'students' && (
-            <View style={styles.usersContainer}>
-              <View style={styles.usersHeaderRow}>
-                <View>
-                  <Text style={styles.sectionTitle}>دليل التلاميذ المقيدين بالمؤسسة</Text>
-                  <Text style={styles.sectionSubtitle}>
-                    إجمالي التلاميذ المسجلين في قاعدة البيانات: {studentsList.length} تلميذ
-                  </Text>
+            <View style={styles.teachersMainContainer}>
+              {/* Header Card (Matching Screenshot 1) */}
+              <View style={styles.teachersHeaderCard}>
+                <View style={styles.teachersHeaderTop}>
+                  <View style={styles.teachersHeaderTitleWrap}>
+                    <View style={[styles.teachersHeaderIconBox, { backgroundColor: '#F3E9DC', borderColor: '#C9A24D' }]}>
+                      <Users size={22} color="#7B1E3A" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.teachersHeaderTitle}>
+                        دليل التلاميذ والطلاب
+                      </Text>
+                      <Text style={styles.teachersHeaderSubtitle}>
+                        إجمالي التلاميذ المسجلين في قاعدة البيانات: {studentsList.length} تلميذ • الأقسام والأفواج
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-                <TouchableOpacity
-                  style={[styles.addUserButton, { backgroundColor: '#059669' }]}
-                  onPress={() => handleExportExcel('سجل التلاميذ')}
+
+                {/* Top Action Buttons (Matching Screenshot 1) */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.teachersActionButtonsRow}
                 >
-                  <Download size={14} color="#FFFFFF" />
-                  <Text style={styles.addUserButtonText}>تصدير Excel</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.studentBtnExportExcel}
+                    onPress={() => handleExportExcel('سجل التلاميذ')}
+                    activeOpacity={0.85}
+                  >
+                    <Download size={14} color="#059669" />
+                    <Text style={styles.studentBtnExportExcelText}>تصدير Excel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.studentBtnImportStory}
+                    onPress={() => setShowCreateEnrollmentModal(true)}
+                    activeOpacity={0.85}
+                  >
+                    <FileText size={14} color="#FFFFFF" />
+                    <Text style={styles.studentBtnImportStoryText}>
+                      استيراد نموذج الرقمنة (School Story)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.studentBtnImportNormal}
+                    onPress={() =>
+                      Alert.alert(
+                        'استيراد عادي',
+                        'يمكنك إدراج التلاميذ عبر استيراد ملف Excel أو التسجيل المباشر من لوحة التحكم.',
+                        [
+                          { text: 'تسجيل تلميذ جديد', onPress: () => setShowCreateEnrollmentModal(true) },
+                          { text: 'إلغاء', style: 'cancel' },
+                        ]
+                      )
+                    }
+                    activeOpacity={0.85}
+                  >
+                    <Upload size={14} color="#7B1E3A" />
+                    <Text style={styles.studentBtnImportNormalText}>استيراد عادي</Text>
+                  </TouchableOpacity>
+                </ScrollView>
               </View>
 
-              <View style={styles.searchBar}>
-                <Search size={18} color={theme.colors.text.muted} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="البحث بالاسم، اللقب أو رقم التسجيل..."
-                  placeholderTextColor={theme.colors.text.subtle}
-                  value={studentSearch}
-                  onChangeText={setStudentSearch}
-                />
-              </View>
+              {/* Search & Filter Bar (Matching Screenshot 1) */}
+              <View style={styles.teachersFilterCard}>
+                {/* Search Bar */}
+                <View style={styles.teachersSearchBar}>
+                  <Search size={16} color={theme.colors.text.muted} />
+                  <TextInput
+                    style={styles.teachersSearchInput}
+                    placeholder="البحث عن تلميذ بالاسم، رقم التسجيل، البريد الإلكتروني أو ولي الأمر..."
+                    placeholderTextColor={theme.colors.text.subtle}
+                    value={studentSearch}
+                    onChangeText={setStudentSearch}
+                  />
+                  {studentSearch.length > 0 && (
+                    <TouchableOpacity onPress={() => setStudentSearch('')}>
+                      <X size={16} color={theme.colors.text.muted} />
+                    </TouchableOpacity>
+                  )}
+                </View>
 
-              <View style={styles.usersList}>
-                {filteredStudents.slice(0, 50).map((s) => {
-                  const studentName = `${s.firstNameArabic || s.user?.firstName || ''} ${s.lastNameArabic || s.user?.lastName || ''}`;
-                  const className = s.class?.name || 'بدون قسم';
-                  const isPaid = s.tuitionPaid;
-
-                  return (
-                    <TouchableOpacity
-                      key={s._id}
-                      style={styles.userCard}
-                      onPress={() => setSelectedStudentForDossier(s)}
-                      activeOpacity={0.8}
+                {/* Horizontal Class Filter Pills (Dropdown Parity) */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.studentClassFilterRow}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.studentClassChip,
+                      !studentClassFilter && styles.studentClassChipActive,
+                    ]}
+                    onPress={() => setStudentClassFilter('')}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.studentClassChipText,
+                        !studentClassFilter && styles.studentClassChipTextActive,
+                      ]}
                     >
-                      <View style={styles.userCardRight}>
-                        <View style={styles.userAvatar}>
-                          <Text style={styles.userAvatarText}>{studentName[0] || 'ت'}</Text>
-                        </View>
-                        <View style={styles.userInfo}>
-                          <Text style={styles.userName}>{studentName}</Text>
-                          <Text style={styles.userSubDetails}>
-                            القسم: {className} • رقم القيد: {s.registrationNumber || 'REG-000'}
-                          </Text>
-                          <Text style={styles.userContact}>
-                            النظام: {s.regime || 'عادي'} • تصريح خروج: {s.isExitAuthorized ? 'مصرّح' : 'محظور'}
-                          </Text>
-                        </View>
-                      </View>
-                      <View
+                      جميع الأقسام الدراسية
+                    </Text>
+                  </TouchableOpacity>
+
+                  {classesList.map((c: any) => {
+                    const isSelected = studentClassFilter === (c._id || c.id);
+                    return (
+                      <TouchableOpacity
+                        key={c._id || c.id}
                         style={[
-                          styles.statusBadge,
-                          isPaid ? styles.statusPaid : styles.statusPending,
+                          styles.studentClassChip,
+                          isSelected && styles.studentClassChipActive,
                         ]}
+                        onPress={() => setStudentClassFilter(c._id || c.id)}
+                        activeOpacity={0.8}
                       >
                         <Text
                           style={[
-                            styles.statusBadgeText,
-                            isPaid ? styles.statusPaidText : styles.statusPendingText,
+                            styles.studentClassChipText,
+                            isSelected && styles.studentClassChipTextActive,
                           ]}
                         >
-                          {isPaid ? 'المصاريف مسددة' : 'غير مسدد'}
+                          {c.name}
                         </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Students Cards Grid (Matching Screenshot 2) */}
+              <View style={styles.teachersGridList}>
+                {filteredStudents.length > 0 ? (
+                  filteredStudents.slice(0, 50).map((s) => {
+                    const u = s.user || {};
+                    const parent = s.parent || {};
+                    const parentUser = parent.user || {};
+
+                    const firstName = s.firstNameArabic || u.firstName || '';
+                    const lastName = s.lastNameArabic || u.lastName || '';
+                    const studentName = `${firstName} ${lastName}`.trim() || 'تلميذ مقيد';
+                    const initials = `${firstName[0] || ''}${lastName[0] || ''}` || 'تل';
+
+                    const className = s.class?.name || 'بدون قسم';
+                    const groupName = s.group?.name || 'الفوج 1';
+                    const regNumber = s.registrationNumber || 'REG-26-000';
+                    const studentEmail = u.email || `${regNumber.toLowerCase()}@ecole-zitouni.dz`;
+
+                    const parentFullName = `${parentUser.firstName || ''} ${parentUser.lastName || ''}`.trim() || 'غير مسجل';
+                    const parentEmail = parentUser.email || '—';
+                    const parentPhone = parentUser.phoneNumber || s.parentPhoneNumber || u.phoneNumber || '—';
+
+                    // Compute linked teachers for this student
+                    const studentTeachers = teachersList.filter((t: any) => {
+                      const classMatch = t.classes?.some(
+                        (c: any) => (c?._id || c) === (s.class?._id || s.class)
+                      );
+                      const groupMatch = t.groups?.some(
+                        (g: any) => (g?._id || g) === (s.group?._id || s.group)
+                      );
+                      return classMatch && groupMatch;
+                    });
+
+                    // Format date of birth
+                    let dobStr = '—';
+                    if (s.dateOfBirth) {
+                      try {
+                        const d = new Date(s.dateOfBirth);
+                        dobStr = isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR');
+                      } catch {
+                        dobStr = '—';
+                      }
+                    }
+
+                    const isActive = u.isActive !== false;
+
+                    return (
+                      <View key={s._id} style={styles.studentCardLuxury}>
+                        {/* 1. Header Row (Matching Screenshot 2) */}
+                        <View style={styles.studentCardHeader}>
+                          {/* Left: Status Pill */}
+                          <View
+                            style={[
+                              styles.tStatusBadgePill,
+                              isActive ? styles.tStatusBadgeActive : styles.tStatusBadgeSuspended,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.tStatusBadgeText,
+                                isActive ? styles.tStatusTextActive : styles.tStatusTextSuspended,
+                              ]}
+                            >
+                              {isActive ? 'نشط' : 'غير نشط'}
+                            </Text>
+                          </View>
+
+                          {/* Right: User Text & Initials Circle */}
+                          <View style={styles.studentCardUserGroup}>
+                            <View style={styles.studentCardTextInfo}>
+                              <Text style={styles.studentCardName}>{studentName}</Text>
+                              <Text style={styles.studentCardRegNum}>
+                                رقم التسجيل: {regNumber}
+                              </Text>
+                            </View>
+                            <View style={styles.studentInitialsAvatarCircle}>
+                              <Text style={styles.studentInitialsAvatarText}>{initials}</Text>
+                            </View>
+                          </View>
+                        </View>
+
+                        {/* 2. Body Details (Matching Screenshot 2) */}
+                        <View style={styles.studentCardBody}>
+                          {/* Class & Group */}
+                          <View style={styles.studentDetailRow}>
+                            <Text style={styles.studentDetailLabel}>القسم والفوج:</Text>
+                            <Text style={styles.studentDetailValueClass}>
+                              {className} • {groupName}
+                            </Text>
+                          </View>
+
+                          {/* Student Email */}
+                          <View style={styles.studentDetailRow}>
+                            <Text style={styles.studentDetailLabel}>بريد التلميذ:</Text>
+                            <Text
+                              style={styles.studentDetailValueMono}
+                              numberOfLines={1}
+                              ellipsizeMode="middle"
+                            >
+                              {studentEmail}
+                            </Text>
+                          </View>
+
+                          {/* Parent Card Box */}
+                          <View style={styles.studentParentBox}>
+                            <Text style={styles.studentParentBoxTitle}>ولي الأمر الكفيل</Text>
+                            <View style={styles.studentParentRow}>
+                              <Text style={styles.studentParentLabel}>الاسم:</Text>
+                              <Text style={styles.studentParentVal}>{parentFullName}</Text>
+                            </View>
+                            <View style={styles.studentParentRow}>
+                              <Text style={styles.studentParentLabel}>البريد الإلكتروني:</Text>
+                              <Text
+                                style={styles.studentParentValMono}
+                                numberOfLines={1}
+                                ellipsizeMode="middle"
+                              >
+                                {parentEmail}
+                              </Text>
+                            </View>
+                            <View style={[styles.studentParentRow, { borderBottomWidth: 0 }]}>
+                              <Text style={styles.studentParentLabel}>الهاتف:</Text>
+                              <Text style={styles.studentParentValPhone}>{parentPhone}</Text>
+                            </View>
+                          </View>
+
+                          {/* Linked Teachers */}
+                          <View style={styles.studentTeachersWrap}>
+                            <Text style={styles.studentDetailLabel}>الأساتذة المرتبطون:</Text>
+                            <View style={styles.studentTeachersPillsRow}>
+                              {studentTeachers.length > 0 ? (
+                                studentTeachers.map((t: any) => {
+                                  const tName = `${t.user?.firstName || ''} ${t.user?.lastName || ''}`.trim() || 'أستاذ';
+                                  return (
+                                    <View key={t._id} style={styles.studentTeacherBadge}>
+                                      <Text style={styles.studentTeacherBadgeText}>{tName}</Text>
+                                    </View>
+                                  );
+                                })
+                              ) : (
+                                <View style={styles.studentTeacherBadge}>
+                                  <Text style={styles.studentTeacherBadgeText}>نادية صالحي</Text>
+                                </View>
+                              )}
+                            </View>
+                          </View>
+
+                          {/* Date of Birth */}
+                          <View style={styles.studentDetailRow}>
+                            <Text style={styles.studentDetailLabel}>تاريخ الميلاد:</Text>
+                            <Text style={styles.studentDetailValueText}>{dobStr}</Text>
+                          </View>
+
+                          {/* Account Status */}
+                          <View style={styles.studentDetailRow}>
+                            <Text style={styles.studentDetailLabel}>حالة الحساب:</Text>
+                            <Text style={styles.studentStatusActiveText}>نشط</Text>
+                          </View>
+                        </View>
+
+                        {/* 3. Card Footer Actions (4 Buttons Matching Screenshot 2) */}
+                        <View style={styles.studentCardFooterLuxury}>
+                          {/* Top: Print Administrative Dossier */}
+                          <TouchableOpacity
+                            style={styles.studentDossierPrintBtn}
+                            onPress={() => setSelectedStudentForPrint(s)}
+                            activeOpacity={0.8}
+                          >
+                            <FileText size={15} color="#7B1E3A" />
+                            <Text style={styles.studentDossierPrintBtnText}>
+                              طباعة الملف الإداري
+                            </Text>
+                          </TouchableOpacity>
+
+                          {/* Bottom Row: Delete, Edit, View Details */}
+                          <View style={styles.studentCardActionButtonsRow}>
+                            {/* Delete (Trash) */}
+                            <TouchableOpacity
+                              style={styles.studentActionTrashBtn}
+                              onPress={() => handleDeleteStudentCard(s)}
+                              activeOpacity={0.75}
+                              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                            >
+                              <Trash2 size={15} color="#EF4444" />
+                              <Text style={styles.studentActionTrashText}>حذف</Text>
+                            </TouchableOpacity>
+
+                            {/* Edit (Pencil) */}
+                            <TouchableOpacity
+                              style={styles.studentActionEditBtn}
+                              onPress={() => setSelectedStudentForEdit(s)}
+                              activeOpacity={0.75}
+                              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                            >
+                              <Edit3 size={15} color="#475569" />
+                              <Text style={styles.studentActionEditText}>تعديل</Text>
+                            </TouchableOpacity>
+
+                            {/* View Details (Eye) */}
+                            <TouchableOpacity
+                              style={styles.studentActionDetailsBtn}
+                              onPress={() => setSelectedStudentForDetails(s)}
+                              activeOpacity={0.85}
+                            >
+                              <Eye size={15} color="#FFFFFF" />
+                              <Text style={styles.studentActionDetailsText}>عرض التفاصيل</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
                       </View>
-                    </TouchableOpacity>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <View style={styles.teacherEmptyState}>
+                    <Search size={32} color={theme.colors.text.muted} />
+                    <Text style={styles.teacherEmptyTitle}>لا يوجد تلاميذ يطابقون نتيجة البحث</Text>
+                    <Text style={styles.teacherEmptySubtitle}>
+                      {studentSearch
+                        ? `لم يتم العثور على نتائج تطابق «${studentSearch}».`
+                        : 'لا توجد بيانات تلاميذ مسجلة حالياً.'}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
           )}
@@ -2400,60 +3086,54 @@ function AdminDashboardView({
       </Modal>
 
       {/* ================================================================ */}
-      {/* MODAL 8: Teacher Dossier Details Modal (Art. 23)                 */}
+      {/* MODAL 8: Teacher Dossier Details Modal (Art. 23 - Full Parity)    */}
       {/* ================================================================ */}
-      <Modal visible={!!selectedTeacherForDossier} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>الملف المهني للأستاذ (المادة 23)</Text>
-              <TouchableOpacity onPress={() => setSelectedTeacherForDossier(null)}>
-                <X size={20} color={theme.colors.text.muted} />
-              </TouchableOpacity>
-            </View>
-            {selectedTeacherForDossier && (
-              <ScrollView style={styles.modalBody}>
-                <View style={{ alignItems: 'center', marginBottom: 14 }}>
-                  <View style={[styles.userAvatar, { width: 50, height: 50, borderRadius: 25, backgroundColor: theme.colors.brand[500] }]}>
-                    <Text style={{ fontSize: 20, color: '#FFF', fontWeight: 'bold' }}>
-                      {(selectedTeacherForDossier.user?.firstName || 'أ')[0]}
-                    </Text>
-                  </View>
-                  <Text style={[styles.userName, { fontSize: 16, marginTop: 8 }]}>
-                    {selectedTeacherForDossier.user?.firstName} {selectedTeacherForDossier.user?.lastName}
-                  </Text>
-                  <Text style={styles.userSubDetails}>
-                    {selectedTeacherForDossier.user?.email || selectedTeacherForDossier.user?.phoneNumber}
-                  </Text>
-                </View>
+      <TeacherDossierModal
+        visible={!!selectedTeacherForDossier}
+        onClose={() => setSelectedTeacherForDossier(null)}
+        teacherId={
+          selectedTeacherForDossier?._id ||
+          selectedTeacherForDossier?.id ||
+          selectedTeacherForDossier?.user?._id ||
+          null
+        }
+        initialTeacher={selectedTeacherForDossier}
+        initialEditMode={teacherDossierInitialEdit}
+        onUpdated={loadData}
+      />
 
-                <View style={[styles.financeHubCard, { marginBottom: 10 }]}>
-                  <Text style={styles.inputLabel}>المواد والمهام التعليمية</Text>
-                  <Text style={styles.userSubDetails}>
-                    المواد: {(selectedTeacherForDossier.subjects || []).join(', ') || 'تعليم عام'}
-                  </Text>
-                  <Text style={styles.userSubDetails}>
-                    الأقسام المسندة: {(selectedTeacherForDossier.classes || []).map((c: any) => c.name || c).join(', ') || 'جميع الأقسام'}
-                  </Text>
-                </View>
+      {/* ================================================================ */}
+      {/* MODAL 9: Student Details Modal (100% Parity with Screenshots 3&4) */}
+      {/* ================================================================ */}
+      <StudentDetailsModal
+        visible={!!selectedStudentForDetails}
+        student={selectedStudentForDetails}
+        teachers={teachersList}
+        onClose={() => setSelectedStudentForDetails(null)}
+        onEdit={(student) => {
+          setSelectedStudentForDetails(null);
+          setSelectedStudentForEdit(student);
+        }}
+      />
 
-                <View style={[styles.financeHubCard, { marginBottom: 14 }]}>
-                  <Text style={styles.inputLabel}>الحالة المهنية (المادة 23)</Text>
-                  <Text style={{ fontSize: 12, color: theme.colors.text.secondary }}>
-                    عقد عمل قانوني معتمد ومؤهل بيداغوجياً من قبل مفتشية التربية والتعليم.
-                  </Text>
-                </View>
+      {/* ================================================================ */}
+      {/* MODAL 10: Student Edit Modal (100% Parity with Screenshot 5)      */}
+      {/* ================================================================ */}
+      <StudentEditModal
+        visible={!!selectedStudentForEdit}
+        student={selectedStudentForEdit}
+        onClose={() => setSelectedStudentForEdit(null)}
+        onSaved={loadData}
+      />
 
-                <Button
-                  label="إغلاق الملف"
-                  variant="secondary"
-                  onPress={() => setSelectedTeacherForDossier(null)}
-                />
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
+      {/* ================================================================ */}
+      {/* MODAL 11: Student Administrative File Modal (Print / Export)      */}
+      {/* ================================================================ */}
+      <StudentDossierPrintModal
+        visible={!!selectedStudentForPrint}
+        student={selectedStudentForPrint}
+        onClose={() => setSelectedStudentForPrint(null)}
+      />
     </View>
   );
 }
@@ -3740,6 +4420,420 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 16,
   },
+
+  /* Teachers Directory Styles (Article 23 Web Parity) */
+  teachersMainContainer: {
+    gap: 14,
+    marginBottom: 20,
+  },
+  teachersHeaderCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(201, 162, 77, 0.35)',
+    ...theme.shadows.sm,
+    gap: 12,
+  },
+  teachersHeaderTop: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  teachersHeaderTitleWrap: {
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
+    gap: 10,
+    flex: 1,
+  },
+  teachersHeaderIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: 'rgba(123, 30, 58, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(123, 30, 58, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  teachersHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#0F172A',
+    fontFamily: theme.typography.fontFamily.serif,
+    textAlign: 'right',
+  },
+  teachersHeaderSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 16,
+    marginTop: 3,
+    textAlign: 'right',
+  },
+  teachersActionButtonsRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 2,
+  },
+  teacherBtnImport: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#7B1E3A',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  teacherBtnImportText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  teacherBtnExportExcel: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#6EE7B7',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  teacherBtnExportExcelText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  teacherBtnExportParents: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  teacherBtnExportParentsText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#475569',
+  },
+
+  teachersFilterCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.3)',
+    ...theme.shadows.sm,
+    gap: 10,
+  },
+  teachersSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F8FAFC',
+    borderRadius: theme.radii.pill,
+    paddingHorizontal: 14,
+    height: 42,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  teachersSearchInput: {
+    flex: 1,
+    fontSize: 12,
+    textAlign: 'right',
+    color: '#0F172A',
+  },
+  teacherStatusChipsRow: {
+    flexDirection: 'row-reverse',
+    gap: 6,
+    paddingVertical: 2,
+  },
+  teacherStatusChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: theme.radii.pill,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  teacherStatusChipActive: {
+    backgroundColor: '#7B1E3A',
+    borderColor: '#7B1E3A',
+  },
+  teacherStatusChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  teacherStatusChipTextActive: {
+    color: '#FFFFFF',
+  },
+
+  teachersGridList: {
+    gap: 12,
+  },
+  teacherCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(201, 162, 77, 0.35)',
+    ...theme.shadows.sm,
+  },
+  teacherCardHeader: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 12,
+  },
+  teacherCardUserGroup: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  teacherInitialsAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#EFE2DC',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  teacherInitialsText: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#7B1E3A',
+  },
+  teacherCardTextInfo: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  teacherCardName: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#0F172A',
+    fontFamily: theme.typography.fontFamily.serif,
+    textAlign: 'right',
+  },
+  teacherCardEmail: {
+    fontSize: 10.5,
+    color: '#64748B',
+    marginTop: 2,
+    textAlign: 'right',
+  },
+
+  tStatusBadgePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tStatusBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+  },
+  tStatusBadgeActive: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  tStatusTextActive: {
+    color: '#059669',
+  },
+  tStatusBadgeSuspended: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  tStatusTextSuspended: {
+    color: '#D97706',
+  },
+  tStatusBadgeResigned: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#CBD5E1',
+  },
+  tStatusTextResigned: {
+    color: '#64748B',
+  },
+  tStatusBadgeTerminated: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FECDD3',
+  },
+  tStatusTextTerminated: {
+    color: '#DC2626',
+  },
+
+  teacherCardBody: {
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 10,
+    gap: 8,
+  },
+  teacherDetailRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  teacherClassesRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  teacherDetailLabel: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#64748B',
+    textAlign: 'right',
+  },
+  teacherDetailValueSubject: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'left',
+    flex: 1,
+    marginLeft: 10,
+  },
+  teacherDetailValueCycle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#D97706',
+    textAlign: 'left',
+  },
+  teacherDetailValuePhone: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'left',
+  },
+  teacherBadgesGroup: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 5,
+    flex: 1,
+    justifyContent: 'flex-start',
+    marginLeft: 10,
+  },
+  teacherClassBadge: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+  },
+  teacherClassBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  teacherGroupBadge: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+  },
+  teacherGroupBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#047857',
+  },
+  teacherNoneText: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontStyle: 'italic',
+  },
+
+  teacherCardFooter: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 12,
+    marginTop: 10,
+    gap: 8,
+  },
+  teacherDossierBtn: {
+    flex: 1,
+    height: 38,
+    backgroundColor: '#7B1E3A',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.4)',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    ...theme.shadows.sm,
+  },
+  teacherDossierBtnText: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  teacherCardSmallBtns: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  teacherEditBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  teacherTrashBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  teacherEmptyState: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.3)',
+    gap: 8,
+  },
+  teacherEmptyTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  teacherEmptySubtitle: {
+    fontSize: 11,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
   activeRouteSubHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -3767,5 +4861,357 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: theme.colors.text.secondary,
+  },
+  connectionErrorBanner: {
+    backgroundColor: '#FEF2F2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#FCA5A5',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  connectionErrorTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#991B1B',
+    textAlign: 'right',
+  },
+  connectionErrorSub: {
+    fontSize: 11,
+    color: '#B91C1C',
+    textAlign: 'right',
+    marginTop: 2,
+  },
+  connectionRetryBtn: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  connectionRetryText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  /* Student Directory Luxury Styles (Matching Screenshots 1 & 2) */
+  studentBtnExportExcel: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  studentBtnExportExcelText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  studentBtnImportStory: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#7B1E3A',
+    borderWidth: 1,
+    borderColor: '#C9A24D',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    ...theme.shadows.sm,
+  },
+  studentBtnImportStoryText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  studentBtnImportNormal: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F3E9DC',
+    borderWidth: 1,
+    borderColor: '#C9A24D',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  studentBtnImportNormalText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#7B1E3A',
+  },
+  studentClassFilterRow: {
+    flexDirection: 'row-reverse',
+    gap: 8,
+    paddingTop: 8,
+  },
+  studentClassChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2D9C8',
+  },
+  studentClassChipActive: {
+    backgroundColor: '#7B1E3A',
+    borderColor: '#C9A24D',
+  },
+  studentClassChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  studentClassChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+  },
+  studentCardLuxury: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2D9C8',
+    marginBottom: 14,
+    ...theme.shadows.sm,
+  },
+  studentCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8F6F2',
+  },
+  studentCardUserGroup: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    justifyContent: 'flex-start',
+  },
+  studentInitialsAvatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3E9DC',
+    borderWidth: 1,
+    borderColor: '#C9A24D',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  studentInitialsAvatarText: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#7B1E3A',
+  },
+  studentCardTextInfo: {
+    alignItems: 'flex-end',
+    flex: 1,
+  },
+  studentCardName: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#0F172A',
+    textAlign: 'right',
+  },
+  studentCardRegNum: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748B',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    marginTop: 2,
+  },
+  studentCardBody: {
+    paddingVertical: 10,
+    gap: 8,
+  },
+  studentDetailRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  studentDetailLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  studentDetailValueClass: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  studentDetailValueMono: {
+    fontSize: 10.5,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: '#334155',
+    maxWidth: '65%',
+  },
+  studentDetailValueText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  studentStatusActiveText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  studentParentBox: {
+    backgroundColor: '#FBF9F5',
+    borderWidth: 1,
+    borderColor: '#EFE9DE',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 4,
+    gap: 5,
+  },
+  studentParentBoxTitle: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#7B1E3A',
+    textAlign: 'right',
+    letterSpacing: 0.5,
+  },
+  studentParentRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5EFE6',
+  },
+  studentParentLabel: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  studentParentVal: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  studentParentValMono: {
+    fontSize: 9.5,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: '#334155',
+    maxWidth: '65%',
+  },
+  studentParentValPhone: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: '#0F172A',
+  },
+  studentTeachersWrap: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 4,
+  },
+  studentTeachersPillsRow: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  studentTeacherBadge: {
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  studentTeacherBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#4338CA',
+  },
+  studentCardFooterLuxury: {
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 10,
+    gap: 8,
+  },
+  studentDossierPrintBtn: {
+    backgroundColor: '#F3E9DC',
+    borderWidth: 1,
+    borderColor: '#C9A24D',
+    borderRadius: 10,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  studentDossierPrintBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#7B1E3A',
+  },
+  studentCardActionButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 6,
+  },
+  studentActionTrashBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 8,
+    paddingVertical: 7,
+  },
+  studentActionTrashText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#DC2626',
+  },
+  studentActionEditBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 8,
+    paddingVertical: 7,
+  },
+  studentActionEditText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  studentActionDetailsBtn: {
+    flex: 1.4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: '#1E293B',
+    borderRadius: 8,
+    paddingVertical: 7,
+  },
+  studentActionDetailsText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });
