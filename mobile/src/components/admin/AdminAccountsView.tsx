@@ -10,6 +10,8 @@ import {
   Alert,
   Modal,
   Platform,
+  useWindowDimensions,
+  KeyboardAvoidingView,
 } from 'react-native';
 import {
   Plus,
@@ -34,6 +36,10 @@ import {
   Layers,
   GraduationCap,
   Users,
+  Shield,
+  User,
+  Info,
+  RefreshCw,
 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { theme } from '../../theme/tokens';
@@ -52,14 +58,14 @@ export interface AdminAccountsViewProps {
 }
 
 const ROLE_OPTIONS = [
-  { value: 'student', label: 'تلميذ (Student)' },
-  { value: 'teacher', label: 'أستاذ (Teacher)' },
-  { value: 'parent', label: 'ولي أمر (Parent)' },
-  { value: 'general_supervisor', label: 'مشرف عام (Superviseur Général)' },
-  { value: 'pedagogical_supervisor', label: 'مشرف تربوي (Superviseur Pédagogique)' },
-  { value: 'receptionist', label: 'موظف الاستقبال (Réceptionniste)' },
-  { value: 'school', label: 'إدارة المدرسة (School)' },
-  { value: 'admin', label: 'مدير النظام (Admin)' },
+  { value: 'student', label: 'تلميذ (Student)', icon: GraduationCap },
+  { value: 'teacher', label: 'أستاذ (Teacher)', icon: Briefcase },
+  { value: 'parent', label: 'ولي أمر (Parent)', icon: Users },
+  { value: 'general_supervisor', label: 'مشرف عام (Superviseur Général)', icon: Shield },
+  { value: 'pedagogical_supervisor', label: 'مشرف تربوي (Superviseur Pédagogique)', icon: ShieldAlert },
+  { value: 'receptionist', label: 'موظف الاستقبال (Réceptionniste)', icon: Clock },
+  { value: 'school', label: 'إدارة المدرسة (School)', icon: Layers },
+  { value: 'admin', label: 'مدير النظام (Admin)', icon: UserCheck },
 ];
 
 export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
@@ -73,8 +79,12 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
   onOpenTeacherDossier,
   onOpenStudentDossier,
 }) => {
-  // Navigation / segment within Accounts
+  const { width: windowWidth } = useWindowDimensions();
+  const isMobile = windowWidth < 680;
+
+  // Top navigation / segmented view within Accounts
   const [activeSegment, setActiveSegment] = useState<'all' | 'register' | 'accounts' | 'excel'>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ==========================================
   // Form State: Create New Account
@@ -95,6 +105,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
   const [isClassPickerOpen, setIsClassPickerOpen] = useState(false);
   const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
   const [isParentPickerOpen, setIsParentPickerOpen] = useState(false);
+  const [parentModalSearch, setParentModalSearch] = useState('');
 
   // Teacher specific
   const [teacherSubjects, setTeacherSubjects] = useState<string[]>([]);
@@ -123,6 +134,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
   const [excelFile, setExcelFile] = useState<any>(null);
   const [isImportingExcel, setIsImportingExcel] = useState(false);
   const [excelImportType, setExcelImportType] = useState<'general' | 'teachers'>('general');
+  const [showExcelGuide, setShowExcelGuide] = useState(false);
 
   // ==========================================
   // System Accounts List & Filters
@@ -174,28 +186,40 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
   }, [systemUsers, accountRoleFilter, accountSearch]);
 
   // ==========================================
-  // Helper Labels
+  // Helper: Role Labels & Colors
   // ==========================================
-  const getRoleLabel = (r: string) => {
+  const getRoleBadgeConfig = (r: string) => {
     switch (r) {
       case 'student':
-        return 'تلميذ';
+        return { label: 'تلميذ', bg: 'rgba(59, 130, 246, 0.12)', text: '#1D4ED8', border: 'rgba(59, 130, 246, 0.25)' };
       case 'teacher':
-        return 'أستاذ';
+        return { label: 'أستاذ', bg: 'rgba(16, 185, 129, 0.12)', text: '#047857', border: 'rgba(16, 185, 129, 0.25)' };
       case 'parent':
-        return 'ولي أمر';
+        return { label: 'ولي أمر', bg: 'rgba(139, 92, 246, 0.12)', text: '#6D28D9', border: 'rgba(139, 92, 246, 0.25)' };
       case 'general_supervisor':
-        return 'مشرف عام';
+        return { label: 'مشرف عام', bg: 'rgba(245, 158, 11, 0.12)', text: '#B45309', border: 'rgba(245, 158, 11, 0.25)' };
       case 'pedagogical_supervisor':
-        return 'مشرف تربوي';
+        return { label: 'مشرف تربوي', bg: 'rgba(249, 115, 22, 0.12)', text: '#C2410C', border: 'rgba(249, 115, 22, 0.25)' };
       case 'receptionist':
-        return 'موظف استقبال';
+        return { label: 'استقبال', bg: 'rgba(6, 182, 212, 0.12)', text: '#0E7490', border: 'rgba(6, 182, 212, 0.25)' };
       case 'school':
-        return 'إدارة المدرسة';
+        return { label: 'إدارة المدرسة', bg: 'rgba(123, 30, 58, 0.12)', text: '#7B1E3A', border: 'rgba(123, 30, 58, 0.25)' };
       case 'admin':
-        return 'مدير النظام';
+        return { label: 'مدير المنصة', bg: 'rgba(123, 30, 58, 0.18)', text: '#7B1E3A', border: 'rgba(123, 30, 58, 0.4)' };
       default:
-        return r;
+        return { label: r, bg: 'rgba(118, 96, 101, 0.12)', text: '#766065', border: 'rgba(118, 96, 101, 0.25)' };
+    }
+  };
+
+  // ==========================================
+  // Handler: Manual Refresh
+  // ==========================================
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await onRefreshData();
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -463,52 +487,84 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
     }
   };
 
+  // Responsive layout class for form rows
+  const rowStyle = isMobile ? styles.formColStack : styles.formRow;
+
   return (
     <View style={styles.container}>
-      {/* Top Segment Controller */}
+      {/* ========================================================================= */}
+      {/* Top Segment Controller & Quick Stats                                      */}
+      {/* ========================================================================= */}
       <View style={styles.segmentContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.segmentScroll}>
           <TouchableOpacity
             style={[styles.segmentBtn, activeSegment === 'all' && styles.segmentBtnActive]}
             onPress={() => setActiveSegment('all')}
+            activeOpacity={0.8}
           >
+            <Layers size={14} color={activeSegment === 'all' ? '#FFF' : theme.colors.brand[500]} />
             <Text style={[styles.segmentBtnText, activeSegment === 'all' && styles.segmentBtnTextActive]}>
-              عرض الصفحة كاملة
+              الكل
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.segmentBtn, activeSegment === 'register' && styles.segmentBtnActive]}
             onPress={() => setActiveSegment('register')}
+            activeOpacity={0.8}
           >
             <Plus size={14} color={activeSegment === 'register' ? '#FFF' : theme.colors.brand[500]} />
             <Text style={[styles.segmentBtnText, activeSegment === 'register' && styles.segmentBtnTextActive]}>
-              إنشاء حساب جديد
+              + إنشاء حساب
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.segmentBtn, activeSegment === 'accounts' && styles.segmentBtnActive]}
             onPress={() => setActiveSegment('accounts')}
+            activeOpacity={0.8}
           >
             <ShieldAlert size={14} color={activeSegment === 'accounts' ? '#FFF' : theme.colors.brand[500]} />
             <Text style={[styles.segmentBtnText, activeSegment === 'accounts' && styles.segmentBtnTextActive]}>
-              تنشيط وتعديل الحسابات ({systemUsers.length})
+              تعديل الحسابات ({systemUsers.length})
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.segmentBtn, activeSegment === 'excel' && styles.segmentBtnActive]}
             onPress={() => setActiveSegment('excel')}
+            activeOpacity={0.8}
           >
             <Upload size={14} color={activeSegment === 'excel' ? '#FFF' : theme.colors.brand[500]} />
             <Text style={[styles.segmentBtnText, activeSegment === 'excel' && styles.segmentBtnTextActive]}>
               استيراد Excel
             </Text>
           </TouchableOpacity>
+
+          {/* Refresh Button */}
+          <TouchableOpacity
+            style={styles.refreshIconBtn}
+            onPress={handleManualRefresh}
+            disabled={isRefreshing}
+            activeOpacity={0.7}
+          >
+            {isRefreshing ? (
+              <ActivityIndicator size="small" color={theme.colors.brand[500]} />
+            ) : (
+              <RefreshCw size={15} color={theme.colors.brand[500]} />
+            )}
+          </TouchableOpacity>
         </ScrollView>
       </View>
 
-      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* ========================================================================= */}
-        {/* CARD 1: + إنشاء حساب جديد (MATCHING RIGHT CARD IN SCREENSHOT 1 & 2)       */}
+        {/* CARD 1: + إنشاء حساب جديد (MATCHING RIGHT CARD IN SCREENSHOTS 1 & 2)       */}
         {/* ========================================================================= */}
         {(activeSegment === 'all' || activeSegment === 'register') && (
           <View style={styles.card}>
@@ -518,7 +574,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
             </View>
 
             {/* Row 1: First Name & Last Name */}
-            <View style={styles.formRow}>
+            <View style={rowStyle}>
               <View style={styles.formCol}>
                 <Text style={styles.fieldLabel}>الاسم الأول</Text>
                 <TextInput
@@ -542,7 +598,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
             </View>
 
             {/* Row 2: Account Type & Phone Login */}
-            <View style={styles.formRow}>
+            <View style={rowStyle}>
               <View style={styles.formCol}>
                 <Text style={styles.fieldLabel}>نوع الحساب *</Text>
                 <TouchableOpacity
@@ -550,7 +606,9 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                   onPress={() => setIsRolePickerOpen(true)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.pickerSelectorText}>{getRoleLabel(role)}</Text>
+                  <Text style={styles.pickerSelectorText}>
+                    {ROLE_OPTIONS.find((r) => r.value === role)?.label || role}
+                  </Text>
                   <ChevronDown size={16} color={theme.colors.text.secondary} />
                 </TouchableOpacity>
               </View>
@@ -564,14 +622,17 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                     <Text style={styles.greenBadgeText}>أرقام نقية فقط (Login)</Text>
                   </View>
                 </View>
-                <TextInput
-                  style={[styles.textInput, styles.phoneInput]}
-                  placeholder="0797060052 : مـثـال"
-                  placeholderTextColor={theme.colors.text.subtle}
-                  keyboardType="phone-pad"
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                />
+                <View style={styles.inputWithIcon}>
+                  <Phone size={16} color={theme.colors.brand[500]} />
+                  <TextInput
+                    style={[styles.inputInsideIcon, styles.phoneInput]}
+                    placeholder="0797060052 : مـثـال"
+                    placeholderTextColor={theme.colors.text.subtle}
+                    keyboardType="phone-pad"
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                  />
+                </View>
                 <Text style={styles.helperText}>
                   يُعتمد مباشرة كمعرف رسمي لتسجيل الدخول (أرقام مثل 0797060052 دون @ أو com.).
                 </Text>
@@ -584,39 +645,55 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 <Text style={styles.fieldLabel}>البريد الإلكتروني (اختياري)</Text>
                 <Text style={styles.optionalHint}>يُنشأ تلقائياً برقم الهاتف إن تُرك فارغاً</Text>
               </View>
-              <TextInput
-                style={styles.textInput}
-                placeholder="اختياري (يمكن تركه فارغاً)"
-                placeholderTextColor={theme.colors.text.subtle}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
+              <View style={styles.inputWithIcon}>
+                <Mail size={16} color={theme.colors.text.muted} />
+                <TextInput
+                  style={styles.inputInsideIcon}
+                  placeholder="اختياري (يمكن تركه فارغاً)"
+                  placeholderTextColor={theme.colors.text.subtle}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
             </View>
 
             {/* Password Section (Auto-derived notice matching screenshot) */}
             <View style={styles.formGroup}>
               <Text style={styles.fieldLabel}>كلمة المرور</Text>
               {role === 'teacher' || role === 'admin' || role === 'school' ? (
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="كلمة المرور (أو تُحدد تلقائياً كرقم الهاتف)"
-                  placeholderTextColor={theme.colors.text.subtle}
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                />
+                <View style={styles.inputWithIcon}>
+                  <Lock size={16} color={theme.colors.text.muted} />
+                  <TextInput
+                    style={styles.inputInsideIcon}
+                    placeholder="كلمة المرور (أو تُحدد تلقائياً كرقم الهاتف)"
+                    placeholderTextColor={theme.colors.text.subtle}
+                    secureTextEntry
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                </View>
               ) : role === 'student' ? (
                 <View style={styles.passwordNoticeBox}>
-                  <Text style={styles.passwordNoticeTitle}>كلمة المرور تُحدّد تلقائياً = تاريخ ميلاد التلميذ</Text>
+                  <View style={styles.passwordNoticeHeader}>
+                    <Lock size={14} color={theme.colors.brand[500]} />
+                    <Text style={styles.passwordNoticeTitle}>
+                      كلمة المرور تُحدّد تلقائياً = تاريخ ميلاد التلميذ
+                    </Text>
+                  </View>
                   <Text style={styles.passwordNoticeValue}>
                     {dateOfBirth ? dateOfBirth : '— أدخل تاريخ الميلاد —'}
                   </Text>
                 </View>
               ) : (
                 <View style={styles.passwordNoticeBox}>
-                  <Text style={styles.passwordNoticeTitle}>كلمة المرور تُحدَّد تلقائياً = رقم الهاتف نفسه</Text>
+                  <View style={styles.passwordNoticeHeader}>
+                    <Lock size={14} color={theme.colors.brand[500]} />
+                    <Text style={styles.passwordNoticeTitle}>
+                      كلمة المرور تُحدَّد تلقائياً = رقم الهاتف نفسه
+                    </Text>
+                  </View>
                   <Text style={styles.passwordNoticeValue}>
                     {phoneNumber ? phoneNumber : '— أدخل رقم الهاتف أعلاه —'}
                   </Text>
@@ -629,16 +706,30 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
             {/* ========================================== */}
             {role === 'student' && (
               <View style={styles.subCard}>
-                <Text style={styles.subCardTitle}>الربط المدرسي والتفاصيل</Text>
+                <View style={styles.subCardHeader}>
+                  <GraduationCap size={16} color={theme.colors.brand[500]} />
+                  <Text style={styles.subCardTitle}>الربط المدرسي والتفاصيل</Text>
+                </View>
 
-                {/* Date of Birth input */}
+                {/* Date of Birth input with helper formatting */}
                 <View style={styles.formGroup}>
-                  <Text style={styles.fieldLabel}>تاريخ الميلاد (كلمة المرور)</Text>
+                  <View style={styles.labelWithBadgeRow}>
+                    <Text style={styles.fieldLabel}>تاريخ الميلاد (كلمة المرور)</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        const d = new Date();
+                        const pad = (n: number) => (n < 10 ? '0' + n : n);
+                        setDateOfBirth(`${d.getFullYear() - 10}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+                      }}
+                    >
+                      <Text style={styles.quickPresetText}>+ مثال افتراضي</Text>
+                    </TouchableOpacity>
+                  </View>
                   <View style={styles.inputWithIcon}>
                     <Calendar size={18} color={theme.colors.text.muted} />
                     <TextInput
                       style={styles.inputInsideIcon}
-                      placeholder="jj/mm/aaaa (مثال: 2012-05-18)"
+                      placeholder="YYYY-MM-DD (مثال: 2012-05-18)"
                       placeholderTextColor={theme.colors.text.subtle}
                       value={dateOfBirth}
                       onChangeText={setDateOfBirth}
@@ -647,15 +738,16 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 </View>
 
                 {/* 3 Selectors: Class, Group, Guardian Parent */}
-                <View style={styles.formRow}>
+                <View style={rowStyle}>
                   {/* Class */}
                   <View style={styles.formCol}>
                     <Text style={styles.fieldLabel}>القسم</Text>
                     <TouchableOpacity
                       style={styles.pickerSelector}
                       onPress={() => setIsClassPickerOpen(true)}
+                      activeOpacity={0.8}
                     >
-                      <Text style={styles.pickerSelectorText}>
+                      <Text style={styles.pickerSelectorText} numberOfLines={1}>
                         {classesList.find((c) => c._id === selectedClassId)?.name || 'اختر القسم'}
                       </Text>
                       <ChevronDown size={16} color={theme.colors.text.secondary} />
@@ -668,8 +760,9 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                     <TouchableOpacity
                       style={styles.pickerSelector}
                       onPress={() => setIsGroupPickerOpen(true)}
+                      activeOpacity={0.8}
                     >
-                      <Text style={styles.pickerSelectorText}>
+                      <Text style={styles.pickerSelectorText} numberOfLines={1}>
                         {availableGroups.find((g) => g._id === selectedGroupId)?.name || 'اختر الفوج'}
                       </Text>
                       <ChevronDown size={16} color={theme.colors.text.secondary} />
@@ -682,6 +775,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                     <TouchableOpacity
                       style={styles.pickerSelector}
                       onPress={() => setIsParentPickerOpen(true)}
+                      activeOpacity={0.8}
                     >
                       <Text style={styles.pickerSelectorText} numberOfLines={1}>
                         {(() => {
@@ -701,7 +795,10 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
             {/* ========================================== */}
             {role === 'teacher' && (
               <View style={styles.subCard}>
-                <Text style={styles.subCardTitle}>تفاصيل الأستاذ والمهام</Text>
+                <View style={styles.subCardHeader}>
+                  <Briefcase size={16} color={theme.colors.brand[500]} />
+                  <Text style={styles.subCardTitle}>تفاصيل الأستاذ والمهام</Text>
+                </View>
 
                 {/* Modules Checklist */}
                 <View style={styles.formGroup}>
@@ -731,7 +828,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 </View>
 
                 {/* Classes & Groups */}
-                <View style={styles.formRow}>
+                <View style={rowStyle}>
                   <View style={styles.formCol}>
                     <Text style={styles.fieldLabel}>الأقسام المرتبطة</Text>
                     <View style={styles.chipGrid}>
@@ -846,9 +943,12 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
             {/* ========================================== */}
             {role === 'parent' && (
               <View style={styles.subCard}>
-                <Text style={styles.subCardTitle}>تفاصيل ولي الأمر</Text>
+                <View style={styles.subCardHeader}>
+                  <Users size={16} color={theme.colors.brand[500]} />
+                  <Text style={styles.subCardTitle}>تفاصيل ولي الأمر</Text>
+                </View>
 
-                <View style={styles.formRow}>
+                <View style={rowStyle}>
                   <View style={styles.formCol}>
                     <Text style={styles.fieldLabel}>المهنة</Text>
                     <TextInput
@@ -954,16 +1054,22 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
             {/* ======================================================== */}
             {['general_supervisor', 'pedagogical_supervisor'].includes(role) && (
               <View style={styles.subCard}>
-                <Text style={styles.subCardTitle}>تفاصيل المشرف والمكتب</Text>
+                <View style={styles.subCardHeader}>
+                  <Shield size={16} color={theme.colors.brand[500]} />
+                  <Text style={styles.subCardTitle}>تفاصيل المشرف والمكتب</Text>
+                </View>
                 <View style={styles.formGroup}>
                   <Text style={styles.fieldLabel}>مكتب العمل / الموقع</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="مثال: Bureau principal - الطابق الأول"
-                    placeholderTextColor={theme.colors.text.subtle}
-                    value={officeLocation}
-                    onChangeText={setOfficeLocation}
-                  />
+                  <View style={styles.inputWithIcon}>
+                    <MapPin size={16} color={theme.colors.text.muted} />
+                    <TextInput
+                      style={styles.inputInsideIcon}
+                      placeholder="مثال: Bureau principal - الطابق الأول"
+                      placeholderTextColor={theme.colors.text.subtle}
+                      value={officeLocation}
+                      onChangeText={setOfficeLocation}
+                    />
+                  </View>
                 </View>
               </View>
             )}
@@ -973,8 +1079,11 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
             {/* ========================================== */}
             {role === 'receptionist' && (
               <View style={styles.subCard}>
-                <Text style={styles.subCardTitle}>تفاصيل الاستقبال وساعات العمل</Text>
-                <View style={styles.formRow}>
+                <View style={styles.subCardHeader}>
+                  <Clock size={16} color={theme.colors.brand[500]} />
+                  <Text style={styles.subCardTitle}>تفاصيل الاستقبال وساعات العمل</Text>
+                </View>
+                <View style={rowStyle}>
                   <View style={styles.formCol}>
                     <Text style={styles.fieldLabel}>رقم مكتب الاستقبال</Text>
                     <TextInput
@@ -1016,7 +1125,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* CARD 2: استيراد جماعي عبر Excel (MATCHING TOP LEFT CARD IN SCREENSHOT 1)  */}
+        {/* CARD 2: استيراد جماعي عبر Excel (MATCHING TOP LEFT CARD IN SCREENSHOTS)   */}
         {/* ========================================================================= */}
         {(activeSegment === 'all' || activeSegment === 'excel') && (
           <View style={styles.card}>
@@ -1034,6 +1143,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 onPress={() =>
                   setExcelImportType((prev) => (prev === 'teachers' ? 'general' : 'teachers'))
                 }
+                activeOpacity={0.8}
               >
                 <FileSpreadsheet size={14} color={theme.colors.gold[500]} />
                 <Text style={styles.article23BtnText}>
@@ -1044,20 +1154,59 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
               </TouchableOpacity>
             </View>
 
+            {/* Guide toggle button */}
+            <TouchableOpacity
+              style={styles.guideToggleRow}
+              onPress={() => setShowExcelGuide((p) => !p)}
+            >
+              <Info size={14} color={theme.colors.brand[500]} />
+              <Text style={styles.guideToggleText}>
+                {showExcelGuide ? 'إخفاء دليل أعمدة Excel' : 'عرض دليل أعمدة ملف Excel المطابقة'}
+              </Text>
+            </TouchableOpacity>
+
+            {showExcelGuide && (
+              <View style={styles.guideBox}>
+                <Text style={styles.guideBoxTitle}>
+                  {excelImportType === 'teachers'
+                    ? 'الأعمدة المتوقعة لاستيراد الأساتذة (المادة 23):'
+                    : 'الأعمدة المتوقعة لاستيراد الحسابات العامة:'}
+                </Text>
+                <Text style={styles.guideBoxBody}>
+                  {excelImportType === 'teachers'
+                    ? '• email, firstName, lastName, phoneNumber, subjects, cycle, classes, groups, hiringDate, baseSalary'
+                    : '• email, firstName, lastName, phoneNumber, role (student/teacher/parent), dateOfBirth, class'}
+                </Text>
+              </View>
+            )}
+
             {/* Dropzone / File Picker */}
             <TouchableOpacity
-              style={styles.dropzone}
+              style={[styles.dropzone, excelFile && styles.dropzoneActive]}
               onPress={handlePickExcel}
               activeOpacity={0.8}
             >
-              <FileText size={32} color={theme.colors.text.muted} />
+              <FileSpreadsheet size={36} color={excelFile ? theme.colors.brand[500] : theme.colors.text.muted} />
               <Text style={styles.dropzoneText}>
                 {excelFile ? `الملف المحدد: ${excelFile.name}` : 'انقر أو اسحب ملف Excel هنا لتحديده'}
               </Text>
-              {excelFile && (
-                <Text style={styles.dropzoneSubText}>
-                  الحجم: {((excelFile.size || 0) / 1024).toFixed(1)} ك.ب • انقر للتغيير
-                </Text>
+              {excelFile ? (
+                <View style={styles.fileSelectedRow}>
+                  <Text style={styles.dropzoneSubText}>
+                    الحجم: {((excelFile.size || 0) / 1024).toFixed(1)} ك.ب
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.removeFileBtn}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      setExcelFile(null);
+                    }}
+                  >
+                    <Text style={styles.removeFileBtnText}>إلغاء التحديد</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <Text style={styles.dropzoneSubText}>يدعم صيغ .xlsx و .xls المطابقة لمعايير الوزارة</Text>
               )}
             </TouchableOpacity>
 
@@ -1081,9 +1230,14 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
         {/* ========================================================================= */}
         {(activeSegment === 'all' || activeSegment === 'accounts') && (
           <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <ShieldAlert size={20} color={theme.colors.brand[500]} />
-              <Text style={styles.cardTitle}>تنشيط وتعديل حسابات النظام</Text>
+            <View style={styles.cardHeaderBetween}>
+              <View style={styles.headerLeftCluster}>
+                <ShieldAlert size={20} color={theme.colors.brand[500]} />
+                <Text style={styles.cardTitle}>تنشيط وتعديل حسابات النظام</Text>
+              </View>
+              <View style={styles.countBadge}>
+                <Text style={styles.countBadgeText}>{filteredUsers.length} من {systemUsers.length}</Text>
+              </View>
             </View>
 
             {/* Search and Role Filter */}
@@ -1097,6 +1251,11 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                   value={accountSearch}
                   onChangeText={setAccountSearch}
                 />
+                {accountSearch.length > 0 && (
+                  <TouchableOpacity onPress={() => setAccountSearch('')}>
+                    <X size={16} color={theme.colors.text.muted} />
+                  </TouchableOpacity>
+                )}
               </View>
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.roleChipsRow}>
@@ -1127,97 +1286,114 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
             <View style={styles.usersListContainer}>
               {filteredUsers.length === 0 ? (
                 <View style={styles.emptyContainer}>
+                  <Users size={32} color={theme.colors.text.subtle} />
                   <Text style={styles.emptyNote}>لا يوجد مستخدمون مطابقون لمعايير البحث.</Text>
                 </View>
               ) : (
                 filteredUsers.map((u) => {
                   const isTeacherOrStaff = ['teacher', 'general_supervisor', 'pedagogical_supervisor', 'receptionist'].includes(u.role);
                   const isStudent = u.role === 'student';
+                  const badgeCfg = getRoleBadgeConfig(u.role);
 
                   return (
                     <View key={u._id} style={styles.userCard}>
-                      {/* Left actions in RTL layout */}
-                      <View style={styles.userActionsRow}>
-                        {/* Delete Button */}
-                        <TouchableOpacity
-                          style={styles.iconActionBtnDanger}
-                          onPress={() => handleDeleteUser(u)}
-                          disabled={deletingUserId === u._id}
-                        >
-                          {deletingUserId === u._id ? (
-                            <ActivityIndicator size="small" color="#BE123C" />
-                          ) : (
-                            <Trash2 size={15} color="#BE123C" />
-                          )}
-                        </TouchableOpacity>
-
-                        {/* Edit Button */}
-                        <TouchableOpacity
-                          style={styles.iconActionBtnNeutral}
-                          onPress={() => handleOpenEdit(u)}
-                        >
-                          <Edit2 size={15} color={theme.colors.text.secondary} />
-                        </TouchableOpacity>
-
-                        {/* Status Toggle Button */}
-                        <TouchableOpacity
-                          style={[
-                            styles.statusBtn,
-                            u.isActive ? styles.statusBtnActive : styles.statusBtnInactive,
-                          ]}
-                          onPress={() => handleToggleStatus(u)}
-                          disabled={togglingUserId === u._id}
-                        >
-                          {togglingUserId === u._id ? (
-                            <ActivityIndicator size="small" color={u.isActive ? '#7B1E3A' : '#065F46'} />
-                          ) : (
-                            <Text
-                              style={[
-                                styles.statusBtnText,
-                                u.isActive ? styles.statusBtnTextActive : styles.statusBtnTextInactive,
-                              ]}
-                            >
-                              {u.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب'}
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-
-                        {/* Dossier Button: Article 23 (Teacher/Staff) or School Dossier (Student) */}
-                        {isTeacherOrStaff && onOpenTeacherDossier && (
-                          <TouchableOpacity
-                            style={styles.dossierBtn}
-                            onPress={() => {
-                              const tObj = teachersList.find((t) => t.user?._id === u._id) || { user: u };
-                              onOpenTeacherDossier(tObj);
-                            }}
-                          >
-                            <FileText size={13} color={theme.colors.gold[500]} />
-                            <Text style={styles.dossierBtnText}>الملف المهني (المادة 23)</Text>
-                          </TouchableOpacity>
-                        )}
-
-                        {isStudent && onOpenStudentDossier && (
-                          <TouchableOpacity
-                            style={styles.studentDossierBtn}
-                            onPress={() => {
-                              const sObj = studentsList.find((s) => s.user?._id === u._id) || { user: u };
-                              onOpenStudentDossier(sObj);
-                            }}
-                          >
-                            <FileText size={13} color="#FDE047" />
-                            <Text style={styles.studentDossierBtnText}>الملف المدرسي</Text>
-                          </TouchableOpacity>
-                        )}
+                      {/* Top Header of User Card: Name + Role Badge */}
+                      <View style={styles.userCardTopRow}>
+                        <View style={styles.userNameBlock}>
+                          <Text style={styles.userNameText}>
+                            {u.firstName} {u.lastName}
+                          </Text>
+                          <Text style={styles.userSubText}>
+                            {u.email || u.phoneNumber}
+                          </Text>
+                        </View>
+                        <View style={[styles.roleBadgePill, { backgroundColor: badgeCfg.bg, borderColor: badgeCfg.border }]}>
+                          <Text style={[styles.roleBadgePillText, { color: badgeCfg.text }]}>
+                            {badgeCfg.label}
+                          </Text>
+                        </View>
                       </View>
 
-                      {/* Right info in RTL */}
-                      <View style={styles.userInfoCol}>
-                        <Text style={styles.userNameText}>
-                          {u.firstName} {u.lastName}
-                        </Text>
-                        <Text style={styles.userSubText}>
-                          {getRoleLabel(u.role)} &bull; {u.email || u.phoneNumber}
-                        </Text>
+                      {/* Bottom Action Buttons Bar */}
+                      <View style={styles.userCardActionsBar}>
+                        {/* Right cluster in RTL: Action buttons */}
+                        <View style={styles.userActionsRow}>
+                          {/* Dossier Button: Article 23 (Teacher/Staff) or School Dossier (Student) */}
+                          {isTeacherOrStaff && onOpenTeacherDossier && (
+                            <TouchableOpacity
+                              style={styles.dossierBtn}
+                              onPress={() => {
+                                const tObj = teachersList.find((t) => t.user?._id === u._id) || { user: u };
+                                onOpenTeacherDossier(tObj);
+                              }}
+                              activeOpacity={0.8}
+                            >
+                              <FileText size={13} color={theme.colors.gold[500]} />
+                              <Text style={styles.dossierBtnText}>الملف المهني (المادة 23)</Text>
+                            </TouchableOpacity>
+                          )}
+
+                          {isStudent && onOpenStudentDossier && (
+                            <TouchableOpacity
+                              style={styles.studentDossierBtn}
+                              onPress={() => {
+                                const sObj = studentsList.find((s) => s.user?._id === u._id) || { user: u };
+                                onOpenStudentDossier(sObj);
+                              }}
+                              activeOpacity={0.8}
+                            >
+                              <FileText size={13} color="#FDE047" />
+                              <Text style={styles.studentDossierBtnText}>الملف المدرسي</Text>
+                            </TouchableOpacity>
+                          )}
+
+                          {/* Status Toggle Button */}
+                          <TouchableOpacity
+                            style={[
+                              styles.statusBtn,
+                              u.isActive ? styles.statusBtnActive : styles.statusBtnInactive,
+                            ]}
+                            onPress={() => handleToggleStatus(u)}
+                            disabled={togglingUserId === u._id}
+                            activeOpacity={0.7}
+                          >
+                            {togglingUserId === u._id ? (
+                              <ActivityIndicator size="small" color={u.isActive ? '#7B1E3A' : '#065F46'} />
+                            ) : (
+                              <Text
+                                style={[
+                                  styles.statusBtnText,
+                                  u.isActive ? styles.statusBtnTextActive : styles.statusBtnTextInactive,
+                                ]}
+                              >
+                                {u.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب'}
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+
+                          {/* Edit Button */}
+                          <TouchableOpacity
+                            style={styles.iconActionBtnNeutral}
+                            onPress={() => handleOpenEdit(u)}
+                            activeOpacity={0.7}
+                          >
+                            <Edit2 size={14} color={theme.colors.text.secondary} />
+                          </TouchableOpacity>
+
+                          {/* Delete Button */}
+                          <TouchableOpacity
+                            style={styles.iconActionBtnDanger}
+                            onPress={() => handleDeleteUser(u)}
+                            disabled={deletingUserId === u._id}
+                            activeOpacity={0.7}
+                          >
+                            {deletingUserId === u._id ? (
+                              <ActivityIndicator size="small" color="#BE123C" />
+                            ) : (
+                              <Trash2 size={14} color="#BE123C" />
+                            )}
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                   );
@@ -1240,22 +1416,29 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 <X size={20} color={theme.colors.text.muted} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={{ maxHeight: 350 }}>
-              {ROLE_OPTIONS.map((item) => (
-                <TouchableOpacity
-                  key={item.value}
-                  style={[styles.pickerItem, role === item.value && styles.pickerItemSelected]}
-                  onPress={() => {
-                    setRole(item.value);
-                    setIsRolePickerOpen(false);
-                  }}
-                >
-                  <Text style={[styles.pickerItemText, role === item.value && styles.pickerItemTextSelected]}>
-                    {item.label}
-                  </Text>
-                  {role === item.value && <Check size={16} color={theme.colors.brand[500]} />}
-                </TouchableOpacity>
-              ))}
+            <ScrollView style={{ maxHeight: 380 }}>
+              {ROLE_OPTIONS.map((item) => {
+                const IconComp = item.icon;
+                const isSelected = role === item.value;
+                return (
+                  <TouchableOpacity
+                    key={item.value}
+                    style={[styles.pickerItem, isSelected && styles.pickerItemSelected]}
+                    onPress={() => {
+                      setRole(item.value);
+                      setIsRolePickerOpen(false);
+                    }}
+                  >
+                    <View style={styles.pickerItemLeft}>
+                      <IconComp size={18} color={isSelected ? theme.colors.brand[500] : theme.colors.text.muted} />
+                      <Text style={[styles.pickerItemText, isSelected && styles.pickerItemTextSelected]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                    {isSelected && <Check size={16} color={theme.colors.brand[500]} />}
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
         </View>
@@ -1273,7 +1456,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 <X size={20} color={theme.colors.text.muted} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={{ maxHeight: 350 }}>
+            <ScrollView style={{ maxHeight: 380 }}>
               {classesList.map((c) => (
                 <TouchableOpacity
                   key={c._id}
@@ -1307,7 +1490,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 <X size={20} color={theme.colors.text.muted} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={{ maxHeight: 350 }}>
+            <ScrollView style={{ maxHeight: 380 }}>
               {availableGroups.map((g) => (
                 <TouchableOpacity
                   key={g._id}
@@ -1334,7 +1517,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
       </Modal>
 
       {/* ========================================================================= */}
-      {/* MODAL 4: Parent Picker                                                    */}
+      {/* MODAL 4: Parent Picker with Live Search                                   */}
       {/* ========================================================================= */}
       <Modal visible={isParentPickerOpen} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
@@ -1345,25 +1528,46 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 <X size={20} color={theme.colors.text.muted} />
               </TouchableOpacity>
             </View>
+
+            <View style={styles.inputWithIcon}>
+              <Search size={16} color={theme.colors.text.muted} />
+              <TextInput
+                style={styles.inputInsideIcon}
+                placeholder="ابحث بالاسم أو رقم الهاتف..."
+                placeholderTextColor={theme.colors.text.subtle}
+                value={parentModalSearch}
+                onChangeText={setParentModalSearch}
+              />
+            </View>
+
             <ScrollView style={{ maxHeight: 350 }}>
-              {parentsList.map((p) => (
-                <TouchableOpacity
-                  key={p._id}
-                  style={[styles.pickerItem, selectedParentId === p._id && styles.pickerItemSelected]}
-                  onPress={() => {
-                    setSelectedParentId(p._id);
-                    setIsParentPickerOpen(false);
-                  }}
-                >
-                  <View>
-                    <Text style={[styles.pickerItemText, selectedParentId === p._id && styles.pickerItemTextSelected]}>
-                      {p.firstName} {p.lastName}
-                    </Text>
-                    <Text style={styles.pickerSubItemText}>{p.phoneNumber || p.email}</Text>
-                  </View>
-                  {selectedParentId === p._id && <Check size={16} color={theme.colors.brand[500]} />}
-                </TouchableOpacity>
-              ))}
+              {parentsList
+                .filter((p) => {
+                  if (!parentModalSearch.trim()) return true;
+                  const q = parentModalSearch.toLowerCase().trim();
+                  const name = `${p.firstName || ''} ${p.lastName || ''}`.toLowerCase();
+                  const phone = (p.phoneNumber || '').toLowerCase();
+                  return name.includes(q) || phone.includes(q);
+                })
+                .map((p) => (
+                  <TouchableOpacity
+                    key={p._id}
+                    style={[styles.pickerItem, selectedParentId === p._id && styles.pickerItemSelected]}
+                    onPress={() => {
+                      setSelectedParentId(p._id);
+                      setIsParentPickerOpen(false);
+                      setParentModalSearch('');
+                    }}
+                  >
+                    <View>
+                      <Text style={[styles.pickerItemText, selectedParentId === p._id && styles.pickerItemTextSelected]}>
+                        {p.firstName} {p.lastName}
+                      </Text>
+                      <Text style={styles.pickerSubItemText}>{p.phoneNumber || p.email}</Text>
+                    </View>
+                    {selectedParentId === p._id && <Check size={16} color={theme.colors.brand[500]} />}
+                  </TouchableOpacity>
+                ))}
               {parentsList.length === 0 && (
                 <View style={{ padding: 16 }}>
                   <Text style={styles.emptyNote}>لا يوجد أولياء مسجلين حالياً.</Text>
@@ -1378,19 +1582,25 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
       {/* MODAL 5: Edit User Modal                                                  */}
       {/* ========================================================================= */}
       <Modal visible={!!editingUser} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
           <View style={styles.modalDialog}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                تعديل بيانات الحساب: {editingUser?.firstName} {editingUser?.lastName}
-              </Text>
+              <View style={styles.modalTitleCluster}>
+                <Edit2 size={16} color={theme.colors.brand[500]} />
+                <Text style={styles.modalTitle}>
+                  تعديل حساب: {editingUser?.firstName} {editingUser?.lastName}
+                </Text>
+              </View>
               <TouchableOpacity onPress={() => setEditingUser(null)}>
                 <X size={20} color={theme.colors.text.muted} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ maxHeight: 400 }}>
-              <View style={styles.formRow}>
+            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+              <View style={rowStyle}>
                 <View style={styles.formCol}>
                   <Text style={styles.fieldLabel}>الاسم الأول</Text>
                   <TextInput
@@ -1411,38 +1621,47 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
 
               <View style={styles.formGroup}>
                 <Text style={styles.fieldLabel}>رقم الهاتف</Text>
-                <TextInput
-                  style={styles.textInput}
-                  keyboardType="phone-pad"
-                  value={editPhoneNumber}
-                  onChangeText={setEditPhoneNumber}
-                />
+                <View style={styles.inputWithIcon}>
+                  <Phone size={16} color={theme.colors.brand[500]} />
+                  <TextInput
+                    style={styles.inputInsideIcon}
+                    keyboardType="phone-pad"
+                    value={editPhoneNumber}
+                    onChangeText={setEditPhoneNumber}
+                  />
+                </View>
               </View>
 
               <View style={styles.formGroup}>
                 <Text style={styles.fieldLabel}>البريد الإلكتروني</Text>
-                <TextInput
-                  style={styles.textInput}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={editEmail}
-                  onChangeText={setEditEmail}
-                />
+                <View style={styles.inputWithIcon}>
+                  <Mail size={16} color={theme.colors.text.muted} />
+                  <TextInput
+                    style={styles.inputInsideIcon}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={editEmail}
+                    onChangeText={setEditEmail}
+                  />
+                </View>
               </View>
 
               {['general_supervisor', 'pedagogical_supervisor'].includes(editingUser?.role) && (
                 <View style={styles.formGroup}>
                   <Text style={styles.fieldLabel}>مكتب العمل / الموقع</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={editOfficeLocation}
-                    onChangeText={setEditOfficeLocation}
-                  />
+                  <View style={styles.inputWithIcon}>
+                    <MapPin size={16} color={theme.colors.text.muted} />
+                    <TextInput
+                      style={styles.inputInsideIcon}
+                      value={editOfficeLocation}
+                      onChangeText={setEditOfficeLocation}
+                    />
+                  </View>
                 </View>
               )}
 
               {editingUser?.role === 'receptionist' && (
-                <View style={styles.formRow}>
+                <View style={rowStyle}>
                   <View style={styles.formCol}>
                     <Text style={styles.fieldLabel}>رقم المكتب</Text>
                     <TextInput
@@ -1466,6 +1685,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
                 style={styles.submitBtn}
                 onPress={handleSaveEdit}
                 disabled={isUpdatingUser}
+                activeOpacity={0.85}
               >
                 {isUpdatingUser ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
@@ -1475,7 +1695,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
               </TouchableOpacity>
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -1490,7 +1710,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAF4EB',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(201, 162, 77, 0.25)',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
   },
   segmentScroll: {
@@ -1502,12 +1722,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 20,
     backgroundColor: '#FFFDF9',
     borderWidth: 1,
-    borderColor: 'rgba(201, 162, 77, 0.3)',
+    borderColor: 'rgba(201, 162, 77, 0.35)',
+    shadowColor: '#2B2022',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   segmentBtnActive: {
     backgroundColor: '#7B1E3A',
@@ -1521,13 +1746,22 @@ const styles = StyleSheet.create({
   segmentBtnTextActive: {
     color: '#FFFFFF',
   },
+  refreshIconBtn: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#FFFDF9',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   scrollArea: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: 14,
     gap: 16,
-    paddingBottom: 40,
+    paddingBottom: 48,
   },
 
   /* Card Container */
@@ -1539,8 +1773,8 @@ const styles = StyleSheet.create({
     padding: 16,
     shadowColor: '#2B2022',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
     gap: 14,
   },
@@ -1573,6 +1807,19 @@ const styles = StyleSheet.create({
     color: '#2B2022',
     fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
   },
+  countBadge: {
+    backgroundColor: 'rgba(123, 30, 58, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(123, 30, 58, 0.25)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  countBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#7B1E3A',
+  },
 
   /* Article 23 Button */
   article23Btn: {
@@ -1599,6 +1846,10 @@ const styles = StyleSheet.create({
   /* Form Elements */
   formRow: {
     flexDirection: 'row-reverse',
+    gap: 12,
+  },
+  formColStack: {
+    flexDirection: 'column',
     gap: 12,
   },
   formCol: {
@@ -1649,13 +1900,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#766065',
   },
+  quickPresetText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#7B1E3A',
+  },
   textInput: {
     backgroundColor: '#FAF4EB',
     borderWidth: 1,
     borderColor: 'rgba(201, 162, 77, 0.35)',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingVertical: 10,
     fontSize: 13,
     color: '#2B2022',
     textAlign: 'right',
@@ -1663,13 +1919,14 @@ const styles = StyleSheet.create({
   phoneInput: {
     fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
     fontWeight: '700',
-    borderColor: 'rgba(123, 30, 58, 0.4)',
+    color: '#7B1E3A',
   },
   helperText: {
     fontSize: 10,
     color: '#766065',
     textAlign: 'right',
     lineHeight: 14,
+    marginTop: 2,
   },
   pickerSelector: {
     flexDirection: 'row-reverse',
@@ -1680,13 +1937,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(201, 162, 77, 0.35)',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 11,
   },
   pickerSelectorText: {
     fontSize: 13,
     fontWeight: '600',
     color: '#2B2022',
     textAlign: 'right',
+    flex: 1,
   },
 
   /* Password Notice Box */
@@ -1698,6 +1956,11 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: 'flex-end',
     gap: 4,
+  },
+  passwordNoticeHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
   },
   passwordNoticeTitle: {
     fontSize: 12,
@@ -1715,21 +1978,26 @@ const styles = StyleSheet.create({
 
   /* Sub Card (Dynamic Role Details) */
   subCard: {
-    backgroundColor: 'rgba(243, 233, 220, 0.5)',
+    backgroundColor: 'rgba(243, 233, 220, 0.55)',
     borderWidth: 1,
     borderColor: 'rgba(201, 162, 77, 0.3)',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     gap: 12,
+  },
+  subCardHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(201, 162, 77, 0.2)',
+    paddingBottom: 6,
   },
   subCardTitle: {
     fontSize: 13,
     fontWeight: '800',
     color: '#2B2022',
     textAlign: 'right',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(201, 162, 77, 0.2)',
-    paddingBottom: 6,
   },
   inputWithIcon: {
     flexDirection: 'row-reverse',
@@ -1742,9 +2010,9 @@ const styles = StyleSheet.create({
   },
   inputInsideIcon: {
     flex: 1,
-    paddingVertical: 9,
+    paddingVertical: 10,
     paddingHorizontal: 8,
-    fontSize: 12,
+    fontSize: 13,
     color: '#2B2022',
     textAlign: 'right',
   },
@@ -1754,11 +2022,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     flexWrap: 'wrap',
     gap: 6,
-    maxHeight: 120,
+    maxHeight: 130,
   },
   chipItem: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 8,
     backgroundColor: '#FAF4EB',
     borderWidth: 1,
@@ -1812,7 +2080,7 @@ const styles = StyleSheet.create({
 
   /* Student Linking */
   studentLinkBox: {
-    maxHeight: 160,
+    maxHeight: 180,
     backgroundColor: '#FAF4EB',
     borderWidth: 1,
     borderColor: 'rgba(201, 162, 77, 0.3)',
@@ -1838,6 +2106,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
   },
   checkboxBox: {
     width: 18,
@@ -1905,6 +2174,40 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
+  /* Guide toggle */
+  guideToggleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
+  guideToggleText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#7B1E3A',
+    textDecorationLine: 'underline',
+  },
+  guideBox: {
+    backgroundColor: 'rgba(201, 162, 77, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 162, 77, 0.3)',
+    borderRadius: 10,
+    padding: 10,
+    gap: 4,
+  },
+  guideBoxTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2B2022',
+    textAlign: 'right',
+  },
+  guideBoxBody: {
+    fontSize: 10,
+    color: '#574549',
+    textAlign: 'right',
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    lineHeight: 14,
+  },
+
   /* Dropzone */
   dropzone: {
     borderWidth: 1.5,
@@ -1917,16 +2220,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
+  dropzoneActive: {
+    borderColor: '#7B1E3A',
+    backgroundColor: 'rgba(123, 30, 58, 0.05)',
+  },
   dropzoneText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4A3E3D',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2B2022',
     textAlign: 'center',
   },
   dropzoneSubText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#766065',
     textAlign: 'center',
+  },
+  fileSelectedRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 12,
+  },
+  removeFileBtn: {
+    backgroundColor: 'rgba(190, 18, 60, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  removeFileBtnText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#BE123C',
   },
 
   /* Filter Section */
@@ -1961,16 +2284,14 @@ const styles = StyleSheet.create({
 
   /* Users List */
   usersListContainer: {
-    gap: 8,
+    gap: 10,
   },
   emptyContainer: {
-    padding: 20,
+    padding: 24,
     alignItems: 'center',
+    gap: 8,
   },
   userCard: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     backgroundColor: '#FFFDF9',
     borderRadius: 12,
     padding: 12,
@@ -1983,12 +2304,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 3,
     elevation: 1,
+    gap: 10,
+  },
+  userCardTopRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     gap: 8,
   },
-  userInfoCol: {
+  userNameBlock: {
     flex: 1,
     alignItems: 'flex-end',
-    gap: 3,
+    gap: 2,
   },
   userNameText: {
     fontSize: 14,
@@ -2000,6 +2327,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#766065',
     textAlign: 'right',
+  },
+  roleBadgePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  roleBadgePillText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  userCardActionsBar: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(201, 162, 77, 0.15)',
+    paddingTop: 8,
   },
   userActionsRow: {
     flexDirection: 'row-reverse',
@@ -2109,6 +2454,11 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(201, 162, 77, 0.25)',
     paddingBottom: 10,
   },
+  modalTitleCluster: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 6,
+  },
   modalTitle: {
     fontSize: 15,
     fontWeight: '800',
@@ -2126,6 +2476,11 @@ const styles = StyleSheet.create({
   },
   pickerItemSelected: {
     backgroundColor: 'rgba(123, 30, 58, 0.08)',
+  },
+  pickerItemLeft: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
   },
   pickerItemText: {
     fontSize: 13,
