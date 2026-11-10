@@ -11,6 +11,11 @@ const {
   approveExitPass,
   rejectExitPass,
   getExitPasses,
+  getCanteenRecipes,
+  createCanteenRecipe,
+  toggleDeliverCanteenRecipe,
+  updateCanteenRecipe,
+  deleteCanteenRecipe,
 } = require('../controllers/supervisor.controller');
 const { protect } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/role.middleware');
@@ -27,8 +32,13 @@ router.post('/staff-attendance', authorize('general_supervisor', 'pedagogical_su
 router.post('/damage', authorize('pedagogical_supervisor', 'general_supervisor', 'teacher', 'admin', 'school'), recordMaterialDamage);
 router.put('/damage/:id', authorize('general_supervisor', 'admin', 'school'), updateMaterialDamage);
 
-// Canteen Reservations
+// Canteen Reservations & Recipes Delivery Management
 router.post('/canteen', createCanteenReservation);
+router.get('/canteen/recipes', authorize('general_supervisor', 'pedagogical_supervisor', 'admin', 'school'), getCanteenRecipes);
+router.post('/canteen/recipes', authorize('general_supervisor', 'pedagogical_supervisor', 'admin', 'school'), createCanteenRecipe);
+router.put('/canteen/recipes/:id/deliver', authorize('general_supervisor', 'pedagogical_supervisor', 'admin', 'school'), toggleDeliverCanteenRecipe);
+router.put('/canteen/recipes/:id', authorize('general_supervisor', 'pedagogical_supervisor', 'admin', 'school'), updateCanteenRecipe);
+router.delete('/canteen/recipes/:id', authorize('general_supervisor', 'pedagogical_supervisor', 'admin', 'school'), deleteCanteenRecipe);
 
 // Class assignment to Pedagogical Supervisor
 router.post('/assign-classes', authorize('general_supervisor', 'admin', 'school'), assignClassesToSupervisor);

@@ -1742,75 +1742,126 @@ export default function AdminDashboard() {
                   <span>تنشيط وتعديل حسابات النظام</span>
                 </h3>
                 
-                <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
                   {systemUsers.length === 0 ? (
-                    <div className="text-xs text-slate-500 italic text-center py-4">لا يوجد مستخدمون حالياً.</div>
+                    <div className="text-xs text-slate-500 italic text-center py-6">لا يوجد مستخدمون حالياً.</div>
                   ) : (
-                    systemUsers.map((u) => (
-                      <div key={u._id} className="p-3 bg-slate-900/40 border border-luxury-border rounded-xl flex justify-between items-center text-sm gap-2 hover:border-brand-500/10 transition-all">
-                        <div>
-                          <span className="font-semibold block text-slate-100">{u.firstName} {u.lastName}</span>
-                          <span className="text-xs text-slate-450">{u.role === 'student' ? 'تلميذ' : u.role === 'teacher' ? 'أستاذ' : u.role === 'parent' ? 'ولي أمر' : u.role} &bull; {u.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {['teacher', 'general_supervisor', 'pedagogical_supervisor', 'receptionist'].includes(u.role) && (
-                            <button
-                              onClick={() => setSelectedTeacherForDossier(u._id)}
-                              className="px-3 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-                              title="عرض وطباعة الملف المهني الشامل (المادة 23)"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
-                              <span>الملف المهني (المادة 23)</span>
-                            </button>
-                          )}
-                          {u.role === 'student' && (
-                            <button
-                              onClick={async () => {
-                                try {
-                                  let st = students.find((s) => s.user?._id === u._id);
-                                  if (!st) {
-                                    const res = await axios.get('/api/admin/students');
-                                    st = res.data.find((s) => s.user?._id === u._id);
+                    systemUsers.map((u) => {
+                      const roleConfig = {
+                        admin: { label: 'مدير المنصة (Admin)', bg: 'bg-[#7B1E3A]/10', text: 'text-[#7B1E3A]', border: 'border-[#7B1E3A]/25' },
+                        school: { label: 'إدارة المدرسة', bg: 'bg-[#7B1E3A]/10', text: 'text-[#7B1E3A]', border: 'border-[#7B1E3A]/25' },
+                        teacher: { label: 'أستاذ وموظف (المادة 23)', bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-300' },
+                        general_supervisor: { label: 'مراقب عام', bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-300' },
+                        pedagogical_supervisor: { label: 'مراقب تربوي', bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-300' },
+                        receptionist: { label: 'موظف الاستقبال', bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-300' },
+                        student: { label: 'تلميذ مسجل', bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-300' },
+                        parent: { label: 'ولي أمر', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-300' },
+                      };
+                      const roleMeta = roleConfig[u.role] || { label: u.role, bg: 'bg-stone-50', text: 'text-stone-700', border: 'border-stone-300' };
+
+                      return (
+                        <div
+                          key={u._id}
+                          className="p-4 rounded-2xl bg-[#FCF8F2] border-2 border-[#DFD3C2] hover:border-[#C9A24D]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition-all text-right"
+                          dir="rtl"
+                        >
+                          {/* User info */}
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-[#7B1E3A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                              {u.profilePic ? (
+                                <img src={u.profilePic} alt="" className="w-full h-full object-cover rounded-xl" />
+                              ) : (
+                                `${u.firstName?.[0] || ''}${u.lastName?.[0] || ''}` || 'م'
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-serif font-black text-sm text-[#2B2022] truncate">
+                                  {u.firstName} {u.lastName}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${roleMeta.bg} ${roleMeta.text} ${roleMeta.border}`}>
+                                  {roleMeta.label}
+                                </span>
+                              </div>
+                              <span className="text-xs text-[#2B2022]/60 truncate block font-mono mt-0.5">
+                                {u.email}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 flex-wrap shrink-0">
+                            {['teacher', 'general_supervisor', 'pedagogical_supervisor', 'receptionist'].includes(u.role) && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedTeacherForDossier(u._id)}
+                                className="px-3 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                title="عرض وطباعة الملف المهني الشامل (المادة 23)"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
+                                <span>الملف المهني (المادة 23)</span>
+                              </button>
+                            )}
+
+                            {u.role === 'student' && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    let st = students.find((s) => s.user?._id === u._id);
+                                    if (!st) {
+                                      const res = await axios.get('/api/admin/students');
+                                      st = res.data.find((s) => s.user?._id === u._id);
+                                    }
+                                    if (st) setSelectedStudentForDossier(st);
+                                  } catch (err) {
+                                    console.error(err);
                                   }
-                                  if (st) setSelectedStudentForDossier(st);
-                                } catch (err) {
-                                  console.error(err);
-                                }
-                              }}
-                              className="px-3 py-1.5 bg-brand-700 hover:bg-brand-600 text-white rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-                              title="عرض الملف الإداري المدرسي للتلميذ"
+                                }}
+                                className="px-3 py-1.5 bg-[#7B1E3A]/10 hover:bg-[#7B1E3A] hover:text-white text-[#7B1E3A] border border-[#7B1E3A]/30 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                title="عرض الملف الإداري المدرسي للتلميذ"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
+                                <span>الملف المدرسي</span>
+                              </button>
+                            )}
+
+                            {/* Active / Inactive Status Toggle */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(u._id)}
+                              className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer border shadow-2xs ${
+                                u.isActive
+                                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-300'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                              }`}
                             >
-                              <FileText className="w-3.5 h-3.5 text-amber-300" />
-                              <span>الملف المدرسي</span>
+                              {u.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب'}
                             </button>
-                          )}
-                          <button
-                            onClick={() => handleToggleStatus(u._id)}
-                            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
-                              u.isActive
-                                ? 'bg-red-950/40 border border-red-900/50 text-red-400 hover:bg-red-900/40'
-                                : 'bg-emerald-950/40 border border-emerald-900/50 text-emerald-450 hover:bg-emerald-900/40'
-                            }`}
-                          >
-                            {u.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب'}
-                          </button>
-                          <button
-                            onClick={() => handleOpenEdit(u)}
-                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all cursor-pointer"
-                            title="تعديل"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(u._id)}
-                            className="p-2 bg-red-950/20 hover:bg-red-950/50 text-red-400 rounded-lg transition-all cursor-pointer"
-                            title="حذف"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+
+                            {/* Edit Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(u)}
+                              className="p-2 bg-white hover:bg-[#FAF4EB] text-[#2B2022] border border-[#DFD3C2] hover:border-[#7B1E3A] rounded-xl transition-all cursor-pointer shadow-2xs"
+                              title="تعديل بيانات الحساب"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Delete Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUser(u._id)}
+                              className="p-2 bg-rose-50/60 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+                              title="حذف الحساب"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -1871,82 +1922,116 @@ export default function AdminDashboard() {
                 }
 
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {filtered.map((u) => (
-                      <div key={u._id} className="p-4 bg-slate-900/40 border border-luxury-border rounded-xl flex justify-between items-center gap-3 hover:border-brand-500/20 transition-all">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-full bg-brand-900/50 flex items-center justify-center font-bold text-brand-300 text-xs shrink-0">
-                            {u.firstName?.[0]}{u.lastName?.[0]}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {filtered.map((u) => {
+                      const roleConfig = {
+                        admin: { label: 'مدير المنصة (Admin)', bg: 'bg-[#7B1E3A]/10', text: 'text-[#7B1E3A]', border: 'border-[#7B1E3A]/25' },
+                        school: { label: 'إدارة المدرسة', bg: 'bg-[#7B1E3A]/10', text: 'text-[#7B1E3A]', border: 'border-[#7B1E3A]/25' },
+                        teacher: { label: 'أستاذ وموظف (المادة 23)', bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-300' },
+                        general_supervisor: { label: 'مراقب عام', bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-300' },
+                        pedagogical_supervisor: { label: 'مراقب تربوي', bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-300' },
+                        receptionist: { label: 'موظف الاستقبال', bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-300' },
+                        student: { label: 'تلميذ مسجل', bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-300' },
+                        parent: { label: 'ولي أمر', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-300' },
+                      };
+                      const roleMeta = roleConfig[u.role] || { label: u.role, bg: 'bg-stone-50', text: 'text-stone-700', border: 'border-stone-300' };
+
+                      return (
+                        <div
+                          key={u._id}
+                          className="p-4 rounded-2xl bg-[#FCF8F2] border-2 border-[#DFD3C2] hover:border-[#C9A24D]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition-all text-right"
+                          dir="rtl"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-[#7B1E3A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                              {u.profilePic ? (
+                                <img src={u.profilePic} alt="" className="w-full h-full object-cover rounded-xl" />
+                              ) : (
+                                `${u.firstName?.[0] || ''}${u.lastName?.[0] || ''}` || 'م'
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-serif font-black text-sm text-[#2B2022] truncate">
+                                  {u.firstName} {u.lastName}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${roleMeta.bg} ${roleMeta.text} ${roleMeta.border}`}>
+                                  {roleMeta.label}
+                                </span>
+                              </div>
+                              <span className="text-xs text-[#2B2022]/60 truncate block font-mono mt-0.5">
+                                {u.email}
+                              </span>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <span className="font-semibold block text-slate-100 truncate">{u.firstName} {u.lastName}</span>
-                            <span className="text-[11px] text-slate-450 truncate block">
-                              {u.role === 'student' ? 'تلميذ' : u.role === 'teacher' ? 'أستاذ' : u.role === 'parent' ? 'ولي أمر' : u.role} • {u.email}
-                            </span>
-                            <span className={`inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full ${u.isActive ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/50' : 'bg-red-950/40 text-red-400 border border-red-900/50'}`}>
-                              {u.isActive ? 'نشط' : 'معطّل'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => handleToggleStatus(u._id)}
-                            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
-                              u.isActive
-                                ? 'bg-red-950/40 border border-red-900/50 text-red-400 hover:bg-red-900/40'
-                                : 'bg-emerald-950/40 border border-emerald-900/50 text-emerald-450 hover:bg-emerald-900/40'
-                            }`}
-                          >
-                            {u.isActive ? 'تعطيل' : 'تنشيط'}
-                          </button>
-                          {['teacher', 'general_supervisor', 'pedagogical_supervisor', 'receptionist'].includes(u.role) && (
-                            <button
-                              onClick={() => setSelectedTeacherForDossier(u._id)}
-                              className="px-2.5 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                              title="عرض وطباعة الملف المهني الشامل (المادة 23)"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
-                              <span className="hidden sm:inline">الملف المهني</span>
-                            </button>
-                          )}
-                          {u.role === 'student' && (
-                            <button
-                              onClick={async () => {
-                                try {
-                                  let st = students.find((s) => s.user?._id === u._id);
-                                  if (!st) {
-                                    const res = await axios.get('/api/admin/students');
-                                    st = res.data.find((s) => s.user?._id === u._id);
+
+                          <div className="flex items-center gap-2 flex-wrap shrink-0">
+                            {['teacher', 'general_supervisor', 'pedagogical_supervisor', 'receptionist'].includes(u.role) && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedTeacherForDossier(u._id)}
+                                className="px-3 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                title="عرض وطباعة الملف المهني الشامل (المادة 23)"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
+                                <span>الملف المهني (المادة 23)</span>
+                              </button>
+                            )}
+                            {u.role === 'student' && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    let st = students.find((s) => s.user?._id === u._id);
+                                    if (!st) {
+                                      const res = await axios.get('/api/admin/students');
+                                      st = res.data.find((s) => s.user?._id === u._id);
+                                    }
+                                    if (st) setSelectedStudentForDossier(st);
+                                  } catch (err) {
+                                    console.error(err);
                                   }
-                                  if (st) setSelectedStudentForDossier(st);
-                                } catch (err) {
-                                  console.error(err);
-                                }
-                              }}
-                              className="px-2.5 py-1.5 bg-brand-700 hover:bg-brand-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                              title="عرض الملف الإداري المدرسي للتلميذ"
+                                }}
+                                className="px-3 py-1.5 bg-[#7B1E3A]/10 hover:bg-[#7B1E3A] hover:text-white text-[#7B1E3A] border border-[#7B1E3A]/30 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                title="عرض الملف الإداري المدرسي للتلميذ"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
+                                <span>الملف المدرسي</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(u._id)}
+                              className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer border shadow-2xs ${
+                                u.isActive
+                                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-300'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                              }`}
                             >
-                              <FileText className="w-3.5 h-3.5 text-amber-300" />
-                              <span className="hidden sm:inline">الملف المدرسي</span>
+                              {u.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب'}
                             </button>
-                          )}
-                          <button
-                            onClick={() => handleOpenEdit(u)}
-                            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all"
-                            title="تعديل"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(u._id)}
-                            className="p-2 bg-red-950/20 hover:bg-red-950/50 text-red-400 rounded-lg transition-all"
-                            title="حذف"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(u)}
+                              className="p-2 bg-white hover:bg-[#FAF4EB] text-[#2B2022] border border-[#DFD3C2] hover:border-[#7B1E3A] rounded-xl transition-all cursor-pointer shadow-2xs"
+                              title="تعديل بيانات الحساب"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUser(u._id)}
+                              className="p-2 bg-rose-50/60 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+                              title="حذف الحساب"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })()}

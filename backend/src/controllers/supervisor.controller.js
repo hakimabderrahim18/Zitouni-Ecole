@@ -2,6 +2,7 @@ const Supervisor = require('../models/supervisor.model');
 const StaffAttendance = require('../models/staffAttendance.model');
 const MaterialDamage = require('../models/materialDamage.model');
 const CanteenReservation = require('../models/canteenReservation.model');
+const CanteenRecipe = require('../models/canteenRecipe.model');
 const ExitPass = require('../models/exitPass.model');
 const User = require('../models/user.model');
 const Class = require('../models/class.model');
@@ -61,11 +62,90 @@ const getSupervisorDashboardStats = async (req, res, next) => {
       .populate('user', 'firstName lastName username phoneNumber profilePic')
       .populate('class', 'name level');
 
+    // Seed default Algerian school canteen recipes if collection is empty
+    const recipesCount = await CanteenRecipe.countDocuments();
+    if (recipesCount === 0) {
+      const defaultRecipes = [
+        {
+          name: 'كسكسي قبائلي بالدجاج والخضار الطازجة',
+          category: 'lunch',
+          dayOfWeek: 'Sunday',
+          description: 'وجبة تقليدية متكاملة بالمرق الأحمر مع الجزر، الكوسة، اللفت، الحمص والبيض المسلوق.',
+          ingredients: ['سميد القمح الصلب', 'دجاج طازج', 'كوسة', 'جزر', 'لفت', 'حمص', 'بيض'],
+          calories: 520,
+          allergens: ['غلوتين', 'بيض'],
+          isDelivered: true,
+          deliveryDate: new Date(),
+          mealCount: 85,
+          price: 250,
+          status: 'delivered',
+        },
+        {
+          name: 'طاجين زيتون بلحم العجل مع أرز بسمتي',
+          category: 'lunch',
+          dayOfWeek: 'Monday',
+          description: 'طاجين الزيتون المنزوع الملوحة مع مرق خفيف، جزر وقطع لحم طازجة مع أرز بسمتي مفور.',
+          ingredients: ['زيتون أخضر', 'لحم عجل', 'جزر', 'أرز بسمتي', 'بصل', 'بهارات طبيعية'],
+          calories: 480,
+          allergens: [],
+          isDelivered: false,
+          mealCount: 75,
+          price: 280,
+          status: 'available',
+        },
+        {
+          name: 'شوربة فريك تقليدية مع بوراك باللحم والبطاطا',
+          category: 'lunch',
+          dayOfWeek: 'Tuesday',
+          description: 'شوربة الفريك بالكزبرة والنعناع مصحوبة ببوراك مقرمش في الفرن وسلطة حميص خفيفة.',
+          ingredients: ['فريك القمح الأخضر', 'لحم مفروم', 'ديول ورقة', 'بطاطا مهروسة', 'طماطم'],
+          calories: 460,
+          allergens: ['غلوتين'],
+          isDelivered: false,
+          mealCount: 90,
+          price: 260,
+          status: 'available',
+        },
+        {
+          name: 'غراتان بطاطا والدجاج مع سلطة خضراء منعشة',
+          category: 'lunch',
+          dayOfWeek: 'Wednesday',
+          description: 'صينية غراتان بالفرن بصلصة البيشاميل الخفيفة وجبن مرحي مع طبق سلطة الخس والطماطم.',
+          ingredients: ['بطاطا', 'صدر دجاج', 'حليب قليل الدسم', 'جبن جزائري', 'خس', 'طماطم'],
+          calories: 490,
+          allergens: ['حليب ومشتقاته'],
+          isDelivered: false,
+          mealCount: 80,
+          price: 240,
+          status: 'available',
+        },
+        {
+          name: 'عدس بلدي بالخضار وزيت الزيتون مع فاكهة الموسم',
+          category: 'lunch',
+          dayOfWeek: 'Thursday',
+          description: 'حساء العدس البني بالثوم والكمون وزيت الزيتون البكر مع خبز الدار وحبة برتقال/تفاح.',
+          ingredients: ['عدس بني', 'جزر', 'كرفس', 'ثوم', 'زيت زيتون', 'فاكهة طازجة'],
+          calories: 410,
+          allergens: [],
+          isDelivered: false,
+          mealCount: 70,
+          price: 200,
+          status: 'available',
+        },
+      ];
+      await CanteenRecipe.insertMany(defaultRecipes);
+    }
+
+    const canteenRecipes = await CanteenRecipe.find()
+      .populate('createdBy', 'firstName lastName role')
+      .sort({ isDelivered: -1, createdAt: -1 });
+
     res.status(200).json({
       supervisor,
       staffAttendanceToday,
       damagesToday,
       canteenToday,
+      canteenRecipes,
       exitPassesToday,
       allTeachers,
       allPedagogicalSupervisors,
@@ -425,6 +505,120 @@ const getExitPasses = async (req, res, next) => {
   }
 };
 
+// ============================================================================
+// Canteen Recipes & Menu Delivery Management (Admin & Administration)
+// ============================================================================
+const getCanteenRecipes = async (req, res, next) => {
+  try {
+    const recipes = await CanteenRecipe.find()
+      .populate('createdBy', 'firstName lastName role')
+      .sort({ isDelivered: -1, createdAt: -1 });
+    res.status(200).json(recipes);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createCanteenRecipe = async (req, res, next) => {
+  const { name, category, dayOfWeek, description, ingredients, calories, allergens, isDelivered, mealCount, price } = req.body;
+  try {
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: 'اسم الوجبة الغذائية مطلوب' });
+    }
+    const cleanIngredients = Array.isArray(ingredients)
+      ? ingredients
+      : typeof ingredients === 'string'
+      ? ingredients.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+    const cleanAllergens = Array.isArray(allergens)
+      ? allergens
+      : typeof allergens === 'string'
+      ? allergens.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    const recipe = await CanteenRecipe.create({
+      name: name.trim(),
+      category: category || 'lunch',
+      dayOfWeek: dayOfWeek || 'Sunday',
+      description: description || '',
+      ingredients: cleanIngredients,
+      calories: Number(calories) || 450,
+      allergens: cleanAllergens,
+      isDelivered: Boolean(isDelivered),
+      deliveryDate: isDelivered ? new Date() : null,
+      mealCount: Number(mealCount) || 60,
+      price: Number(price) || 0,
+      status: isDelivered ? 'delivered' : 'available',
+      createdBy: req.user.id,
+    });
+    const populated = await CanteenRecipe.findById(recipe._id).populate('createdBy', 'firstName lastName role');
+    res.status(201).json({ message: 'تمت إضافة الوجبة إلى قائمة طعام الكانتين بنجاح', recipe: populated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const toggleDeliverCanteenRecipe = async (req, res, next) => {
+  const { id } = req.params;
+  const { isDelivered } = req.body;
+  try {
+    const recipe = await CanteenRecipe.findById(id);
+    if (!recipe) {
+      return res.status(404).json({ message: 'وجبة الكانتين غير موجودة' });
+    }
+    const willDeliver = isDelivered !== undefined ? Boolean(isDelivered) : !recipe.isDelivered;
+    recipe.isDelivered = willDeliver;
+    recipe.deliveryDate = willDeliver ? new Date() : null;
+    recipe.status = willDeliver ? 'delivered' : 'available';
+    await recipe.save();
+    const populated = await CanteenRecipe.findById(recipe._id).populate('createdBy', 'firstName lastName role');
+    res.status(200).json({
+      message: willDeliver ? 'تم اعتماد الوجبة وتسليمها في الكانتين اليوم' : 'تم إلغاء تسليم الوجبة اليوم',
+      recipe: populated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateCanteenRecipe = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const updateData = { ...req.body };
+    if (typeof updateData.ingredients === 'string') {
+      updateData.ingredients = updateData.ingredients.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    if (typeof updateData.allergens === 'string') {
+      updateData.allergens = updateData.allergens.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    if (updateData.isDelivered !== undefined) {
+      updateData.deliveryDate = updateData.isDelivered ? new Date() : null;
+      updateData.status = updateData.isDelivered ? 'delivered' : 'available';
+    }
+    const recipe = await CanteenRecipe.findByIdAndUpdate(id, updateData, { new: true })
+      .populate('createdBy', 'firstName lastName role');
+    if (!recipe) {
+      return res.status(404).json({ message: 'وجبة الكانتين غير موجودة' });
+    }
+    res.status(200).json({ message: 'تم تحديث الوجبة بنجاح', recipe });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteCanteenRecipe = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const recipe = await CanteenRecipe.findByIdAndDelete(id);
+    if (!recipe) {
+      return res.status(404).json({ message: 'وجبة الكانتين غير موجودة' });
+    }
+    res.status(200).json({ message: 'تم حذف الوجبة بنجاح' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getSupervisorDashboardStats,
   recordStaffAttendance,
@@ -436,4 +630,9 @@ module.exports = {
   approveExitPass,
   rejectExitPass,
   getExitPasses,
+  getCanteenRecipes,
+  createCanteenRecipe,
+  toggleDeliverCanteenRecipe,
+  updateCanteenRecipe,
+  deleteCanteenRecipe,
 };

@@ -310,25 +310,38 @@ export default function TeacherProfileFileModal({ teacherId, onClose, onUpdated 
         dir="rtl"
         className="bg-white border border-[#C9A24D]/40 rounded-3xl w-full max-w-5xl shadow-2xl relative my-auto overflow-hidden font-sans max-h-[94vh] flex flex-col text-right"
       >
-        {/* Top Actions Toolbar */}
-        <div className="no-print p-4 sm:px-6 bg-[#F3E9DC] border-b border-[#C9A24D]/30 flex flex-wrap items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <Briefcase className="w-5 h-5 text-[#7B1E3A]" />
-            <div>
-              <span className="font-serif font-black text-sm text-[#7B1E3A] block">
-                الملف المهني للأستاذ والموظف - الفصل التاسع (المادة 23)
-              </span>
-              <span className="text-[10px] text-slate-600 block">
-                العناصر القانونية الـ 15 | الربط الآلي بالأقسام والأفواج | سرية البيانات المالية
-              </span>
+        {/* Top Actions Toolbar - Responsive & Polished */}
+        <div className="no-print p-4 sm:px-6 bg-[#F3E9DC] border-b border-[#C9A24D]/30 space-y-3 shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-[#7B1E3A]/10 border border-[#7B1E3A]/25 flex items-center justify-center text-[#7B1E3A] shrink-0">
+                <Briefcase className="w-4 h-4 text-[#C9A24D]" />
+              </div>
+              <div className="min-w-0">
+                <span className="font-serif font-black text-sm text-[#7B1E3A] block truncate">
+                  الملف المهني للأستاذ والموظف - الفصل التاسع (المادة 23)
+                </span>
+                <span className="text-[10px] text-slate-600 block truncate">
+                  العناصر القانونية الـ 15 | الربط الآلي بالأقسام والأفواج | سرية البيانات المالية
+                </span>
+              </div>
             </div>
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 hover:text-black transition-colors cursor-pointer border border-[#C9A24D]/35 shrink-0 shadow-xs"
+              title="إغلاق"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Action buttons with smooth horizontal scroll for small screens */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
             {isAuthorized && (
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer border ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer border shrink-0 ${
                   isEditing
                     ? 'bg-amber-100 text-amber-900 border-amber-300'
                     : 'bg-white hover:bg-slate-50 text-[#7B1E3A] border-[#C9A24D]/40'
@@ -343,7 +356,7 @@ export default function TeacherProfileFileModal({ teacherId, onClose, onUpdated 
             <button
               type="button"
               onClick={() => setCertModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-[#7B1E3A] border border-[#C9A24D]/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-[#7B1E3A] border border-[#C9A24D]/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
               title="إصدار وطباعة شهادة عمل رسمية (المادة 24)"
             >
               <FileCheck className="w-3.5 h-3.5 text-[#C9A24D]" />
@@ -354,7 +367,7 @@ export default function TeacherProfileFileModal({ teacherId, onClose, onUpdated 
             <button
               type="button"
               onClick={() => setContractModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-[#7B1E3A] border border-[#C9A24D]/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-[#7B1E3A] border border-[#C9A24D]/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
               title="معاينة وطباعة نموذج عقد العمل الرسمي (المادة 24)"
             >
               <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
@@ -365,7 +378,7 @@ export default function TeacherProfileFileModal({ teacherId, onClose, onUpdated 
             <button
               type="button"
               onClick={() => setResignationModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
               title="تسجيل ومتابعة طلب الاستقالة ومدة الإشعار (المادة 24)"
             >
               <Clock className="w-3.5 h-3.5 text-amber-600" />
@@ -375,29 +388,21 @@ export default function TeacherProfileFileModal({ teacherId, onClose, onUpdated 
             {/* Save / Download HTML */}
             <button
               onClick={handleSaveHtml}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-[#7B1E3A] border border-[#C9A24D]/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-[#7B1E3A] border border-[#C9A24D]/40 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
               title="حفظ الملف كاملاً على الجهاز"
             >
-              <Download className="w-4 h-4 text-[#C9A24D]" />
+              <Download className="w-3.5 h-3.5 text-[#C9A24D]" />
               <span>حفظ الملف</span>
             </button>
 
             {/* Print / Save to PDF */}
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer shrink-0 border border-[#C9A24D]/40"
               title="طباعة الملف مباشرة أو حفظ كـ PDF"
             >
-              <Printer className="w-4 h-4 text-[#C9A24D]" />
+              <Printer className="w-3.5 h-3.5 text-[#C9A24D]" />
               <span>طباعة (PDF)</span>
-            </button>
-
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer border border-[#C9A24D]/30"
-              title="إغلاق"
-            >
-              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -510,12 +515,12 @@ export default function TeacherProfileFileModal({ teacherId, onClose, onUpdated 
                 </div>
               </div>
 
-              {/* Status Switcher & Badge (no-print interactive controls) */}
+              {/* Status Switcher & Badge (no-print interactive controls) - Prestige Académique */}
               <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-white border border-[#C9A24D]/30 rounded-2xl shadow-xs">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-500">الوضعية الحالية (البند 14):</span>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                    className={`px-3.5 py-1 rounded-full text-xs font-bold border shadow-xs ${
                       statusBadgeColors[currentStatus] || statusBadgeColors.active
                     }`}
                   >
@@ -523,21 +528,24 @@ export default function TeacherProfileFileModal({ teacherId, onClose, onUpdated 
                   </span>
                 </div>
 
-                <div className="no-print flex items-center gap-1.5 text-xs">
-                  <span className="text-slate-400 text-[11px]">تغيير الوضعية:</span>
-                  {['active', 'suspended', 'resigned', 'terminated'].map((st) => (
+                <div className="no-print flex items-center gap-1.5 text-xs flex-wrap">
+                  <span className="text-[#2B2022]/60 text-xs font-bold">تغيير الوضعية:</span>
+                  {[
+                    { key: 'active', label: 'نشط', activeBg: 'bg-emerald-700 text-white ring-2 ring-emerald-400 shadow-xs font-bold', inactiveBg: 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200' },
+                    { key: 'suspended', label: 'موقوف مؤقتاً', activeBg: 'bg-amber-600 text-white ring-2 ring-amber-400 shadow-xs font-bold', inactiveBg: 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' },
+                    { key: 'resigned', label: 'مستقيل', activeBg: 'bg-stone-700 text-white ring-2 ring-stone-400 shadow-xs font-bold', inactiveBg: 'bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300' },
+                    { key: 'terminated', label: 'منتهية المهام', activeBg: 'bg-rose-700 text-white ring-2 ring-rose-400 shadow-xs font-bold', inactiveBg: 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200' },
+                  ].map((st) => (
                     <button
-                      key={st}
+                      key={st.key}
                       type="button"
-                      disabled={currentStatus === st}
-                      onClick={() => handleStatusChange(st)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                        currentStatus === st
-                          ? 'bg-[#7B1E3A] text-white shadow-xs'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      disabled={currentStatus === st.key}
+                      onClick={() => handleStatusChange(st.key)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        currentStatus === st.key ? st.activeBg : st.inactiveBg
                       }`}
                     >
-                      {statusLabels[st].split(' ')[0]}
+                      {st.label}
                     </button>
                   ))}
                 </div>
