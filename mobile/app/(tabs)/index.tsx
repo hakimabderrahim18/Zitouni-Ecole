@@ -72,6 +72,7 @@ import { SchoolFeedView } from '../../src/components/feed/SchoolFeedView';
 import { ConversationView } from '../../src/components/chat/ConversationView';
 import { AdminAccountsView } from '../../src/components/admin/AdminAccountsView';
 import { AdminEnrollmentView } from '../../src/components/admin/AdminEnrollmentView';
+import { AdminClassesView } from '../../src/components/admin/AdminClassesView';
 import { TeacherDossierModal } from '../../src/components/admin/TeacherDossierModal';
 import {
   StudentDetailsModal,
@@ -1995,62 +1996,18 @@ function AdminDashboardView({
           )}
 
           {/* ============================================================ */}
-          {/* ROUTE 7: CLASSES & GROUPS (الأقسام والأفواج)                 */}
+          {/* ROUTE 7: CLASSES & GROUPS (الأقسام والأفواج الدراسية)        */}
           {/* ============================================================ */}
           {currentRoute === 'classes' && (
-            <View style={styles.classesContainer}>
-              <View style={styles.usersHeaderRow}>
-                <View>
-                  <Text style={styles.sectionTitle}>الأقسام والأفواج الدراسية</Text>
-                  <Text style={styles.sectionSubtitle}>
-                    إدارة {classesList.length} قسماً دراسياً
-                  </Text>
-                </View>
-                <View style={{ flexDirection: 'row-reverse', gap: 6, alignItems: 'center' }}>
-                  <TouchableOpacity
-                    style={styles.addUserButton}
-                    onPress={() => setShowCreateClassModal(true)}
-                  >
-                    <Plus size={15} color="#FFFFFF" />
-                    <Text style={styles.addUserButtonText}>إنشاء قسم</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.addUserButton, { backgroundColor: theme.colors.gold[500] }]}
-                    onPress={() => setShowCreateGroupModal(true)}
-                  >
-                    <Plus size={15} color="#FFFFFF" />
-                    <Text style={styles.addUserButtonText}>إضافة فوج</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.classesGrid}>
-                {classesList.map((c) => (
-                  <View key={c._id} style={styles.classCard}>
-                    <View style={styles.classCardHeader}>
-                      <View style={styles.classIconBg}>
-                        <GraduationCap size={18} color={theme.colors.brand[500]} />
-                      </View>
-                      <Text style={styles.className}>{c.name}</Text>
-                    </View>
-                    <View style={styles.classBadge}>
-                      <Text style={styles.classBadgeText}>{c.level || 'طور التعليم'}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                      <Text style={styles.classDetails}>
-                        عدد الأفواج: {c.groups?.length || 1}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteClass(c._id, c.name)}
-                        style={{ padding: 4 }}
-                      >
-                        <Trash2 size={16} color="#BE123C" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
+            <AdminClassesView
+              classesList={classesList}
+              groupsList={groupsList}
+              teachersList={teachersList}
+              studentsList={studentsList}
+              modulesList={modulesList}
+              onRefreshData={loadData}
+              onOpenStudentDossier={(s) => setSelectedStudentForDossier(s)}
+            />
           )}
 
           {/* ============================================================ */}
