@@ -41,12 +41,26 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
+// Auto-recover if dynamic chunks fail to load due to a new deployment
+window.addEventListener('vite:preloadError', (event) => {
+  console.warn('Vite chunk preload error detected, reloading page for fresh assets...', event);
+  const lastReload = sessionStorage.getItem('chunk_reload_time');
+  const now = Date.now();
+  if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+    sessionStorage.setItem('chunk_reload_time', String(now));
+    window.location.reload();
+  }
+});
+
 // Register Service Worker for PWA (Article 6)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
-      .then((reg) => console.log('PWA ServiceWorker registered successfully:', reg.scope))
+      .then((reg) => {
+        console.log('PWA ServiceWorker registered successfully:', reg.scope);
+        reg.update();
+      })
       .catch((err) => console.log('PWA ServiceWorker registration failed:', err));
   });
 }
