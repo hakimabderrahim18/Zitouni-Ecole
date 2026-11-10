@@ -22,7 +22,13 @@ export const useChatStore = create((set, get) => ({
     }
 
     set({ isConnecting: true });
-    const socket = io('/', {
+    const backendUrl =
+      import.meta.env.VITE_API_URL ||
+      (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? 'https://zitouni-ecole.onrender.com'
+        : '');
+
+    const socket = io(backendUrl || '/', {
       transports: ['websocket', 'polling'],
       path: '/socket.io',
       reconnection: true,

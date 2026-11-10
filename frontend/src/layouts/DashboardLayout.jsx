@@ -14,28 +14,38 @@ const getNotificationIcon = (type) => {
   switch (type) {
     case 'message':
       return {
-        icon: <MessageSquare className="w-4 h-4 text-indigo-400" />,
-        bg: 'bg-indigo-950/50 border-indigo-900/40'
+        icon: <MessageSquare className="w-4 h-4 text-indigo-500" />,
+        bg: 'bg-indigo-500/10 border-indigo-500/30'
       };
     case 'course':
       return {
-        icon: <BookOpen className="w-4 h-4 text-brand-400" />,
-        bg: 'bg-brand-950/50 border-brand-900/40'
+        icon: <BookOpen className="w-4 h-4 text-[#7B1E3A]" />,
+        bg: 'bg-[#7B1E3A]/10 border-[#7B1E3A]/30'
       };
     case 'schedule':
       return {
-        icon: <Calendar className="w-4 h-4 text-amber-400" />,
-        bg: 'bg-amber-950/50 border-amber-900/40'
+        icon: <Calendar className="w-4 h-4 text-[#C9A24D]" />,
+        bg: 'bg-[#C9A24D]/15 border-[#C9A24D]/35'
       };
     case 'post':
       return {
-        icon: <Globe className="w-4 h-4 text-emerald-400" />,
-        bg: 'bg-emerald-950/50 border-emerald-900/40'
+        icon: <Globe className="w-4 h-4 text-emerald-600" />,
+        bg: 'bg-emerald-500/10 border-emerald-500/30'
+      };
+    case 'attendance':
+      return {
+        icon: <CheckSquare className="w-4 h-4 text-amber-600" />,
+        bg: 'bg-amber-500/10 border-amber-500/30'
+      };
+    case 'warning':
+      return {
+        icon: <AlertTriangle className="w-4 h-4 text-rose-600" />,
+        bg: 'bg-rose-500/10 border-rose-500/30'
       };
     default:
       return {
-        icon: <Bell className="w-4 h-4 text-slate-400" />,
-        bg: 'bg-slate-800 border-slate-705'
+        icon: <Bell className="w-4 h-4 text-[#7B1E3A]" />,
+        bg: 'bg-[#7B1E3A]/10 border-[#7B1E3A]/25'
       };
   }
 };
@@ -53,6 +63,8 @@ export default function DashboardLayout({ children, noPadding = false }) {
   const { t, i18n } = useTranslation();
 
   const fileInputRef = useRef(null);
+  const desktopNotifRef = useRef(null);
+  const mobileNotifRef = useRef(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarDeleting, setAvatarDeleting] = useState(false);
@@ -177,8 +189,35 @@ export default function DashboardLayout({ children, noPadding = false }) {
     connectSocket(user.id);
     // Fetch notifications
     fetchNotifications();
-    return () => disconnectSocket();
+
+    // Periodic sync every 30s as robust fallback
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000);
+
+    return () => {
+      clearInterval(interval);
+      disconnectSocket();
+    };
   }, [user]);
+
+  // Click-outside listener for notifications dropdown (no ghost clicks, works on web & mobile)
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const isOutsideDesktop = !desktopNotifRef.current || !desktopNotifRef.current.contains(event.target);
+      const isOutsideMobile = !mobileNotifRef.current || !mobileNotifRef.current.contains(event.target);
+      if (isOutsideDesktop && isOutsideMobile) {
+        setNotificationsOpen(false);
+      }
+    };
+
+    if (notificationsOpen) {
+      document.addEventListener('pointerdown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('pointerdown', handleClickOutside);
+    };
+  }, [notificationsOpen]);
 
   const handleNotificationClick = (notif) => {
     if (!notif.isRead) markAsRead(notif._id);
@@ -206,6 +245,15 @@ export default function DashboardLayout({ children, noPadding = false }) {
       else if (user?.role === 'pedagogical_supervisor') navigate('/dashboard/pedagogical-supervisor');
       else if (user?.role === 'receptionist') navigate('/dashboard/receptionist');
       else navigate('/dashboard/admin');
+    } else if (notif.type === 'attendance' || notif.type === 'warning') {
+      if (user?.role === 'student') navigate('/dashboard/student/attendance');
+      else if (user?.role === 'parent') navigate('/dashboard/parent/attendance');
+      else if (user?.role === 'teacher') navigate('/dashboard/teacher/attendance');
+      else if (user?.role === 'general_supervisor') navigate('/dashboard/general-supervisor/student-attendance');
+      else if (user?.role === 'pedagogical_supervisor') navigate('/dashboard/pedagogical-supervisor/student-attendance');
+      else navigate('/dashboard/admin/attendance');
+    } else {
+      navigate('/feed');
     }
   };
 
@@ -506,7 +554,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
       <main className="flex-1 flex flex-col min-w-0 max-w-full overflow-hidden">
         
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-3 sm:p-4 glass-panel border-b border-luxury-border/50 z-30 max-w-full overflow-hidden">
+        <header className="md:hidden flex items-center justify-between p-3 sm:p-4 glass-panel border-b border-luxury-border/50 z-30 max-w-full relative">
           <div className="flex items-center gap-2 min-w-0">
             <button
               type="button"
@@ -526,85 +574,99 @@ export default function DashboardLayout({ children, noPadding = false }) {
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Notifications toggle on mobile */}
-            <div className="relative">
+            <div ref={mobileNotifRef} className="relative">
               <button
                 type="button"
                 onClick={() => {
-                  setNotificationsOpen(!notificationsOpen);
+                  setNotificationsOpen((prev) => !prev);
                   if (!notificationsOpen) fetchNotifications();
                 }}
-                className="p-1.5 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-100 transition-colors relative"
+                className="p-1.5 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-100 transition-colors relative cursor-pointer"
+                title="الإشعارات"
               >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
                   <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full text-[8px] font-extrabold text-white flex items-center justify-center animate-pulse">
-                    {unreadCount}
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
 
               {notificationsOpen && (
-                <>
-                  <div
-                    onClick={() => setNotificationsOpen(false)}
-                    className="fixed inset-0 z-40"
-                  />
-                  <div className="absolute left-0 mt-3 w-72 rounded-2xl bg-slate-900 border border-luxury-border/80 shadow-[0_15px_50px_rgba(0,0,0,0.1)] z-50 p-4 space-y-3.5 max-h-80 overflow-y-auto text-right">
-                    <div className="flex justify-between items-center border-b border-luxury-border/30 pb-2.5">
-                      <span className="text-xs font-bold text-white uppercase tracking-wider">الإشعارات</span>
+                <div
+                  className="absolute left-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-[#FDFBF7] dark:bg-[#1E0910] border border-[#C9A24D]/40 shadow-[0_20px_50px_rgba(123,30,58,0.22)] z-50 p-3.5 space-y-3 max-h-80 overflow-y-auto text-right"
+                  dir="rtl"
+                >
+                  <div className="flex justify-between items-center border-b border-[#C9A24D]/25 pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-[#7B1E3A] dark:text-[#F3E9DC] font-serif">الإشعارات</span>
+                      {unreadCount > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-[#7B1E3A] text-white">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
                       {unreadCount > 0 && (
                         <button
+                          type="button"
                           onClick={markAllAsRead}
-                          className="text-[9px] font-semibold text-brand-500 hover:text-brand-650 transition-colors"
+                          className="text-[9px] font-semibold text-[#7B1E3A] dark:text-[#C9A24D] hover:underline transition-colors cursor-pointer"
                         >
                           قراءة الكل
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setNotificationsOpen(false)}
+                        className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    {notifications.length === 0 ? (
-                      <div className="text-center py-6 text-xs text-slate-500 italic">
-                        لا توجد إشعارات جديدة.
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {notifications.map((notif) => {
-                          const notifStyle = getNotificationIcon(notif.type);
-                          return (
-                            <div
-                              key={notif._id}
-                              onClick={() => handleNotificationClick(notif)}
-                              className={`py-2.5 flex gap-2.5 cursor-pointer rounded-xl px-2.5 border transition-all text-start ${
-                                notif.isRead 
-                                  ? 'bg-slate-950/20 border-luxury-border/10 hover:bg-slate-950/40 hover:border-luxury-border/25 text-slate-400' 
-                                  : 'bg-brand-955/10 border-brand-500/20 hover:bg-brand-955/15 hover:border-brand-500/30 text-slate-100'
-                              }`}
-                            >
-                              <div className={`w-7.5 h-7.5 rounded-lg border flex items-center justify-center shrink-0 ${notifStyle.bg}`}>
-                                {notifStyle.icon}
-                              </div>
-                              <div className="flex-1 min-w-0 space-y-0.5">
-                                <div className="flex justify-between items-start gap-1.5">
-                                  <span className={`text-[10px] font-bold group-hover:text-brand-300 transition-colors ${
-                                    notif.isRead ? 'text-slate-400' : 'text-slate-100'
-                                  }`}>
-                                    {notif.title}
-                                  </span>
-                                  {!notif.isRead && (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0 mt-1" />
-                                  )}
-                                </div>
-                                <p className="text-[9px] text-slate-450 leading-relaxed font-cairo font-medium">{notif.content}</p>
-                                <span className="text-[7px] text-slate-500 font-mono block text-right pt-0.5">
-                                  {new Date(notif.createdAt).toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
-                </>
+
+                  {notifications.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-slate-500 dark:text-slate-400 italic">
+                      لا توجد إشعارات جديدة.
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {notifications.map((notif) => {
+                        const notifStyle = getNotificationIcon(notif.type);
+                        return (
+                          <div
+                            key={notif._id}
+                            onClick={() => handleNotificationClick(notif)}
+                            className={`p-2.5 flex gap-2.5 cursor-pointer rounded-xl border transition-all text-start ${
+                              notif.isRead 
+                                ? 'bg-slate-50/70 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400' 
+                                : 'bg-[#7B1E3A]/5 dark:bg-[#7B1E3A]/15 border-[#7B1E3A]/30 text-slate-900 dark:text-slate-100 shadow-xs'
+                            }`}
+                          >
+                            <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${notifStyle.bg}`}>
+                              {notifStyle.icon}
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-0.5">
+                              <div className="flex justify-between items-start gap-1.5">
+                                <span className={`text-[10px] font-bold ${notif.isRead ? 'text-slate-700 dark:text-slate-300' : 'text-[#7B1E3A] dark:text-[#C9A24D]'}`}>
+                                  {notif.title}
+                                </span>
+                                {!notif.isRead && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#7B1E3A] shrink-0 mt-1" />
+                                )}
+                              </div>
+                              <p className="text-[9px] text-slate-600 dark:text-slate-300 leading-relaxed font-cairo">{notif.content}</p>
+                              <span className="text-[7.5px] text-slate-400 dark:text-slate-500 font-mono block text-end pt-0.5">
+                                {new Date(notif.createdAt).toLocaleDateString('ar-DZ', { day: 'numeric', month: 'short' })} • {new Date(notif.createdAt).toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
             
@@ -639,84 +701,102 @@ export default function DashboardLayout({ children, noPadding = false }) {
             <span className="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-500 font-extrabold text-xs">السنة الدراسية 2025/2026</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative">
+            <div ref={desktopNotifRef} className="relative">
               <button
+                type="button"
                 onClick={() => {
-                  setNotificationsOpen(!notificationsOpen);
+                  setNotificationsOpen((prev) => !prev);
                   if (!notificationsOpen) fetchNotifications();
                 }}
-                className="p-2 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-100 transition-colors relative"
+                className="p-2 hover:bg-[#7B1E3A]/10 rounded-xl text-slate-500 hover:text-[#7B1E3A] transition-all relative cursor-pointer border border-transparent hover:border-[#C9A24D]/30"
+                title="الإشعارات والتنبيهات"
               >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-extrabold text-white flex items-center justify-center animate-pulse">
-                    {unreadCount}
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-[#7B1E3A] rounded-full text-[9px] font-extrabold text-white flex items-center justify-center animate-pulse shadow-sm">
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
 
               {notificationsOpen && (
-                <>
-                  <div
-                    onClick={() => setNotificationsOpen(false)}
-                    className="fixed inset-0 z-40"
-                  />
-                  <div className="absolute left-0 mt-3 w-80 rounded-2xl bg-slate-900 border border-luxury-border/80 shadow-[0_15px_50px_rgba(0,0,0,0.1)] z-50 p-4 space-y-3.5 max-h-96 overflow-y-auto text-right">
-                    <div className="flex justify-between items-center border-b border-luxury-border/30 pb-2.5">
-                      <span className="text-xs font-bold text-white uppercase tracking-wider">الإشعارات</span>
+                <div
+                  className="absolute left-0 top-full mt-2 w-80 sm:w-96 rounded-2xl bg-[#FDFBF7] dark:bg-[#1E0910] border border-[#C9A24D]/40 shadow-[0_20px_50px_rgba(123,30,58,0.22)] z-50 p-4 space-y-3.5 max-h-[28rem] overflow-y-auto text-right"
+                  dir="rtl"
+                >
+                  <div className="flex justify-between items-center border-b border-[#C9A24D]/25 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-[#7B1E3A] dark:text-[#F3E9DC] font-serif">الإشعارات والتنبيهات</span>
+                      {unreadCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#7B1E3A] text-white">
+                          {unreadCount} جديدة
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
                       {unreadCount > 0 && (
                         <button
+                          type="button"
                           onClick={markAllAsRead}
-                          className="text-[10px] font-semibold text-brand-500 hover:text-brand-650 transition-colors"
+                          className="text-[11px] font-semibold text-[#7B1E3A] dark:text-[#C9A24D] hover:underline transition-colors cursor-pointer"
                         >
                           تعليم الكل كمقروء
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setNotificationsOpen(false)}
+                        className="p-1 rounded-lg hover:bg-[#7B1E3A]/10 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
-                    {notifications.length === 0 ? (
-                      <div className="text-center py-6 text-xs text-slate-500 italic">
-                        لا توجد إشعارات جديدة.
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {notifications.map((notif) => {
-                          const notifStyle = getNotificationIcon(notif.type);
-                          return (
-                            <div
-                              key={notif._id}
-                              onClick={() => handleNotificationClick(notif)}
-                              className={`py-2.5 flex gap-3 cursor-pointer rounded-xl px-2.5 border transition-all text-start ${
-                                notif.isRead 
-                                  ? 'bg-slate-950/20 border-luxury-border/10 hover:bg-slate-950/40 hover:border-luxury-border/25 text-slate-400' 
-                                  : 'bg-brand-955/10 border-brand-500/20 hover:bg-brand-955/15 hover:border-brand-500/30 text-slate-100'
-                              }`}
-                            >
-                              <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${notifStyle.bg}`}>
-                                {notifStyle.icon}
-                              </div>
-                              <div className="flex-1 min-w-0 space-y-0.5">
-                                <div className="flex justify-between items-start gap-2">
-                                  <span className={`text-[11px] font-bold group-hover:text-brand-300 transition-colors ${
-                                    notif.isRead ? 'text-slate-400' : 'text-slate-100'
-                                  }`}>
-                                    {notif.title}
-                                  </span>
-                                  {!notif.isRead && (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0 mt-1.5" />
-                                  )}
-                                </div>
-                                <p className="text-[10px] text-slate-455 leading-relaxed font-cairo font-medium">{notif.content}</p>
-                                <span className="text-[7.5px] text-slate-500 font-mono block text-right pt-0.5">
-                                  {new Date(notif.createdAt).toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
-                </>
+
+                  {notifications.length === 0 ? (
+                    <div className="text-center py-8 space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-[#7B1E3A]/10 flex items-center justify-center mx-auto text-[#7B1E3A]">
+                        <Bell className="w-5 h-5 opacity-60" />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">لا توجد إشعارات جديدة حالياً.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {notifications.map((notif) => {
+                        const notifStyle = getNotificationIcon(notif.type);
+                        return (
+                          <div
+                            key={notif._id}
+                            onClick={() => handleNotificationClick(notif)}
+                            className={`p-3 flex gap-3 cursor-pointer rounded-xl border transition-all text-start ${
+                              notif.isRead 
+                                ? 'bg-slate-50/70 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-[#C9A24D]/40' 
+                                : 'bg-[#7B1E3A]/5 dark:bg-[#7B1E3A]/15 border-[#7B1E3A]/30 text-slate-900 dark:text-slate-100 shadow-xs hover:border-[#7B1E3A]/60'
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${notifStyle.bg}`}>
+                              {notifStyle.icon}
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <div className="flex justify-between items-start gap-2">
+                                <span className={`text-xs font-bold leading-snug ${notif.isRead ? 'text-slate-700 dark:text-slate-300' : 'text-[#7B1E3A] dark:text-[#C9A24D]'}`}>
+                                  {notif.title}
+                                </span>
+                                {!notif.isRead && (
+                                  <span className="w-2 h-2 rounded-full bg-[#7B1E3A] shrink-0 mt-1" />
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-cairo">{notif.content}</p>
+                              <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono block text-end pt-0.5">
+                                {new Date(notif.createdAt).toLocaleDateString('ar-DZ', { day: 'numeric', month: 'short' })} • {new Date(notif.createdAt).toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
             <div className="w-px h-5 bg-slate-800"></div>
