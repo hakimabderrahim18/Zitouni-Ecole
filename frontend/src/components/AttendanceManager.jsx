@@ -123,13 +123,15 @@ export default function AttendanceManager() {
       const res = await axios.get(`${API_URL}/admin/classes`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = res.data || [];
+      const data = Array.isArray(res.data) ? res.data : (res.data?.classes || []);
       // Sort classes: primary, middle, secondary
       setClasses(data);
       if (data.length > 0 && !selectedClassId) {
         // Prefer 1AM1 or 1AP if available, otherwise first
-        const pref = data.find(c => c.name === '1AM1') || data.find(c => c.name === '1AP') || data[0];
-        setSelectedClassId(pref._id);
+        const pref = data.find(c => c && (c.name === '1AM1' || c.name === '1AP')) || data[0];
+        if (pref?._id) {
+          setSelectedClassId(pref._id);
+        }
       }
     } catch (err) {
       console.error('Error fetching classes:', err);
@@ -142,13 +144,16 @@ export default function AttendanceManager() {
       const res = await axios.get(`${API_URL}/attendance/stats/today`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setTodayStats(res.data);
+      if (res.data && typeof res.data === 'object') {
+        setTodayStats(res.data);
+      }
     } catch (err) {
       console.error('Error fetching today stats:', err);
     }
   };
 
   const fetchClassAttendance = async () => {
+    if (!selectedClassId) return;
     setLoading(true);
     try {
       const token = getToken();
@@ -158,9 +163,13 @@ export default function AttendanceManager() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      const rawStudents = Array.isArray(studentsRes.data)
+        ? studentsRes.data
+        : (studentsRes.data?.students || []);
+
       // Filter by selected class if API returns all
-      const classStudents = (studentsRes.data || []).filter(
-        s => (s.class?._id || s.class) === selectedClassId
+      const classStudents = rawStudents.filter(
+        s => s && ((s.class?._id || s.class) === selectedClassId)
       );
       setStudents(classStudents);
 
@@ -170,16 +179,19 @@ export default function AttendanceManager() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const existingRecords = attRes.data || [];
+      const existingRecords = Array.isArray(attRes.data)
+        ? attRes.data
+        : (attRes.data?.records || []);
       const newMap = {};
 
       // Seed map with existing records or default to 'Present'
       classStudents.forEach(stu => {
-        const found = existingRecords.find(r => (r.student?._id || r.student) === stu._id);
+        if (!stu || !stu._id) return;
+        const found = existingRecords.find(r => r && (r.student?._id || r.student) === stu._id);
         if (found) {
           newMap[stu._id] = {
             recordId: found._id,
-            status: found.status,
+            status: found.status || 'Present',
             lateMinutes: found.lateMinutes || 15,
             remarks: found.remarks || '',
             warning: found.activeWarning || null,
@@ -360,25 +372,26 @@ export default function AttendanceManager() {
 
   // Count current states
   const counts = {
-    total: students.length,
-    present: Object.values(attendanceMap).filter(v => v.status === 'Present').length,
-    absent: Object.values(attendanceMap).filter(v => ['Absent', 'Unexcused'].includes(v.status)).length,
-    late: Object.values(attendanceMap).filter(v => v.status === 'Late').length,
-    excused: Object.values(attendanceMap).filter(v => v.status === 'Excused').length,
-    exitPass: Object.values(attendanceMap).filter(v => v.status === 'ExitPass').length,
+    total: students?.length || 0,
+    present: Object.values(attendanceMap || {}).filter(v => v?.status === 'Present').length,
+    absent: Object.values(attendanceMap || {}).filter(v => ['Absent', 'Unexcused'].includes(v?.status)).length,
+    late: Object.values(attendanceMap || {}).filter(v => v?.status === 'Late').length,
+    excused: Object.values(attendanceMap || {}).filter(v => v?.status === 'Excused').length,
+    exitPass: Object.values(attendanceMap || {}).filter(v => v?.status === 'ExitPass').length,
   };
 
   // Filtered students list based on search and status filter
-  const filteredStudents = students.filter(stu => {
-    const state = attendanceMap[stu._id] || { status: 'Present' };
+  const filteredStudents = (students || []).filter(stu => {
+    if (!stu) return false;
+    const state = attendanceMap?.[stu._id] || { status: 'Present' };
     if (attendanceStatusFilter !== 'all') {
       if (attendanceStatusFilter === 'absent_any') {
-        if (!['Absent', 'Unexcused'].includes(state.status)) return false;
+        if (!['Absent', 'Unexcused'].includes(state?.status)) return false;
       } else if (attendanceStatusFilter === 'warning') {
-        if (!state.warning) return false;
+        if (!state?.warning) return false;
       } else if (attendanceStatusFilter === 'justification') {
-        if (state.justificationStatus !== 'Pending') return false;
-      } else if (state.status !== attendanceStatusFilter) {
+        if (state?.justificationStatus !== 'Pending') return false;
+      } else if (state?.status !== attendanceStatusFilter) {
         return false;
       }
     }
@@ -486,6 +499,11 @@ export default function AttendanceManager() {
                 onChange={e => setSelectedClassId(e.target.value)}
                 className="bg-transparent text-[#2B2022] text-xs font-bold focus:outline-none cursor-pointer w-full"
               >
+                {classes.length === 0 && (
+                  <option value="" disabled className="bg-white text-stone-400">
+                    {loading ? 'جاري تحميل الأقسام...' : 'لا توجد أقسام متاحة'}
+                  </option>
+                )}
                 {classes.map(cls => (
                   <option key={cls._id} value={cls._id} className="bg-white text-[#2B2022]">
                     {cls.name} {cls.description ? `(${cls.description})` : ''}

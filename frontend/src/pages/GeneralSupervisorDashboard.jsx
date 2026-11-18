@@ -45,18 +45,18 @@ export default function GeneralSupervisorDashboard() {
   const navigate = useNavigate();
 
   const getActiveTab = () => {
-    const path = location.pathname;
-    if (path.endsWith('/student-attendance')) return 'student_attendance';
-    if (path.endsWith('/inscriptions')) return 'inscriptions';
-    if (path.endsWith('/login-audit')) return 'login_audit';
-    if (path.endsWith('/reported-messages')) return 'reported_messages';
-    if (path.endsWith('/timetable')) return 'timetable';
-    if (path.endsWith('/lessons')) return 'lessons';
-    if (path.endsWith('/attendance')) return 'attendance';
-    if (path.endsWith('/assignment') || path.endsWith('/classes-assignment')) return 'assignment';
-    if (path.endsWith('/damages')) return 'damages';
-    if (path.endsWith('/canteen')) return 'canteen';
-    if (path.endsWith('/exit-passes') || path.endsWith('/exit-pass')) return 'exit_passes';
+    const rawPath = location.pathname.toLowerCase().replace(/\/+$/, '');
+    if (rawPath.includes('student-attendance') || rawPath.includes('student_attendance')) return 'student_attendance';
+    if (rawPath.includes('inscriptions')) return 'inscriptions';
+    if (rawPath.includes('login-audit')) return 'login_audit';
+    if (rawPath.includes('reported-messages')) return 'reported_messages';
+    if (rawPath.includes('timetable')) return 'timetable';
+    if (rawPath.includes('lessons')) return 'lessons';
+    if (rawPath.includes('assignment') || rawPath.includes('classes-assignment')) return 'assignment';
+    if (rawPath.includes('damages')) return 'damages';
+    if (rawPath.includes('canteen')) return 'canteen';
+    if (rawPath.includes('exit-passes') || rawPath.includes('exit-pass')) return 'exit_passes';
+    if (rawPath.includes('attendance')) return 'attendance';
     return 'attendance';
   };
 

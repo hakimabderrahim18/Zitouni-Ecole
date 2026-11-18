@@ -112,7 +112,7 @@ export default function AppRoutes() {
         <Route
           path="/dashboard/general-supervisor/*"
           element={
-            <ProtectedRoute allowedRoles={['general_supervisor']}>
+            <ProtectedRoute allowedRoles={['general_supervisor', 'admin', 'school']}>
               <GeneralSupervisorDashboard />
             </ProtectedRoute>
           }
@@ -120,7 +120,7 @@ export default function AppRoutes() {
         <Route
           path="/dashboard/pedagogical-supervisor/*"
           element={
-            <ProtectedRoute allowedRoles={['pedagogical_supervisor']}>
+            <ProtectedRoute allowedRoles={['pedagogical_supervisor', 'admin', 'school']}>
               <PedagogicalSupervisorDashboard />
             </ProtectedRoute>
           }
@@ -128,7 +128,7 @@ export default function AppRoutes() {
         <Route
           path="/dashboard/receptionist/*"
           element={
-            <ProtectedRoute allowedRoles={['receptionist']}>
+            <ProtectedRoute allowedRoles={['receptionist', 'admin', 'school']}>
               <ReceptionistDashboard />
             </ProtectedRoute>
           }
