@@ -250,16 +250,16 @@ export default function ParentNoticesManager() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-gray-400 absolute start-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="بحث في الرسائل والإعلانات..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl ps-9 pe-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:bg-white transition-all"
+              className="w-full bg-gray-50 border border-gray-300 rounded-xl ps-9 pe-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-600 focus:bg-white transition-all font-medium"
             />
           </div>
 
@@ -267,7 +267,7 @@ export default function ParentNoticesManager() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-brand-500"
+              className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-600 font-medium"
             >
               <option value="all">جميع الأنواع</option>
               {NOTICE_TYPES.map((t) => (
@@ -280,7 +280,7 @@ export default function ParentNoticesManager() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-brand-500"
+              className="bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-600 font-medium"
             >
               <option value="all">جميع الحالات</option>
               <option value="sent">مرسلة</option>
@@ -292,7 +292,7 @@ export default function ParentNoticesManager() {
 
         <button
           onClick={fetchNotices}
-          className="text-xs text-brand-700 hover:text-brand-800 font-bold flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg hover:bg-slate-50 transition-colors"
+          className="text-xs text-brand-700 hover:text-brand-800 font-bold flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           تحديث
@@ -478,23 +478,23 @@ export default function ParentNoticesManager() {
               {/* Title & Type */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">عنوان الرسالة أو الإعلان:</label>
+                  <label className="font-bold text-gray-700 block mb-1">عنوان الرسالة أو الإعلان:</label>
                   <input
                     type="text"
                     required
                     placeholder="مثال: برمجة يوم استقبال أولياء التلاميذ"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:bg-white transition-all"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-600 focus:bg-white transition-all font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">نوع الرسالة / الإشعار:</label>
+                  <label className="font-bold text-gray-700 block mb-1">نوع الرسالة / الإشعار:</label>
                   <select
                     value={formData.noticeType}
                     onChange={(e) => setFormData({ ...formData, noticeType: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-brand-600 focus:bg-white font-medium"
                   >
                     {NOTICE_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
@@ -507,25 +507,25 @@ export default function ParentNoticesManager() {
 
               {/* Detailed Message Body */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">نص الرسالة بالتفصيل:</label>
+                <label className="font-bold text-gray-700 block mb-1">نص الرسالة بالتفصيل:</label>
                 <textarea
                   rows={4}
                   required
                   placeholder="اكتب نص الإعلان أو الرسالة بالتفصيل..."
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:bg-white leading-relaxed transition-all"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-600 focus:bg-white leading-relaxed transition-all font-medium"
                 />
               </div>
 
               {/* Target Audience */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">الفئة المستهدفة:</label>
+                  <label className="font-bold text-gray-700 block mb-1">الفئة المستهدفة:</label>
                   <select
                     value={formData.targetAudience}
                     onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-brand-600 font-medium"
                   >
                     <option value="all">جميع الأولياء المسجلين</option>
                     <option value="cycle">طور محدد (ابتدائي / متوسط / ثانوي)</option>
@@ -535,11 +535,11 @@ export default function ParentNoticesManager() {
 
                 {formData.targetAudience === 'cycle' && (
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">اختر الطور:</label>
+                    <label className="font-bold text-gray-700 block mb-1">اختر الطور:</label>
                     <select
                       value={formData.targetCycle}
                       onChange={(e) => setFormData({ ...formData, targetCycle: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none font-medium"
                     >
                       <option value="">-- اختر الطور --</option>
                       <option value="primary">الطور الابتدائي</option>
@@ -551,11 +551,11 @@ export default function ParentNoticesManager() {
 
                 {formData.targetAudience === 'class' && (
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">اختر القسم:</label>
+                    <label className="font-bold text-gray-700 block mb-1">اختر القسم:</label>
                     <select
                       value={formData.targetClass}
                       onChange={(e) => setFormData({ ...formData, targetClass: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none font-medium"
                     >
                       <option value="">-- اختر القسم --</option>
                       {classes.map((cls) => (
@@ -569,36 +569,36 @@ export default function ParentNoticesManager() {
               </div>
 
               {/* Appointment details (if applicable) */}
-              <div className="p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-3">
-                <span className="font-bold text-amber-900 block">
+              <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-3">
+                <span className="font-bold text-amber-950 block">
                   بيانات الموعد واللقاء (في حال تضمنت الرسالة موعداً):
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-[11px] text-amber-800 font-semibold block mb-1">تاريخ الموعد:</label>
+                    <label className="text-[11px] text-amber-900 font-bold block mb-1">تاريخ الموعد:</label>
                     <input
                       type="date"
                       value={formData.appointmentDate}
                       onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
-                      className="w-full bg-white border border-amber-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brand-500"
+                      className="w-full bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-900 focus:outline-none focus:border-brand-600 font-medium"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-amber-800 font-semibold block mb-1">وقت النهاية:</label>
+                    <label className="text-[11px] text-amber-900 font-bold block mb-1">وقت النهاية:</label>
                     <input
                       type="time"
                       value={formData.appointmentEndTime}
                       onChange={(e) => setFormData({ ...formData, appointmentEndTime: e.target.value })}
-                      className="w-full bg-white border border-amber-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brand-500"
+                      className="w-full bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-900 focus:outline-none focus:border-brand-600 font-medium"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-amber-800 font-semibold block mb-1">مكان الاستقبال / الاجتماع:</label>
+                    <label className="text-[11px] text-amber-900 font-bold block mb-1">مكان الاستقبال / الاجتماع:</label>
                     <input
                       type="text"
                       value={formData.appointmentLocation}
                       onChange={(e) => setFormData({ ...formData, appointmentLocation: e.target.value })}
-                      className="w-full bg-white border border-amber-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brand-500"
+                      className="w-full bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-900 focus:outline-none focus:border-brand-600 font-medium"
                     />
                   </div>
                 </div>
@@ -607,9 +607,9 @@ export default function ParentNoticesManager() {
               {/* Immediate vs Scheduled */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">توقيت الإرسال:</label>
+                  <label className="font-bold text-gray-700 block mb-1">توقيت الإرسال:</label>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+                    <label className="flex items-center gap-2 cursor-pointer text-gray-800 font-medium">
                       <input
                         type="radio"
                         name="sendType"
@@ -621,7 +621,7 @@ export default function ParentNoticesManager() {
                       <span>إرسال فوري الآن</span>
                     </label>
 
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+                    <label className="flex items-center gap-2 cursor-pointer text-gray-800 font-medium">
                       <input
                         type="radio"
                         name="sendType"
@@ -643,18 +643,18 @@ export default function ParentNoticesManager() {
                       required
                       value={formData.scheduledDate}
                       onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-1.5 text-xs text-gray-900 focus:outline-none focus:border-brand-600 focus:bg-white font-medium"
                     />
                   </div>
                 )}
               </div>
 
               {/* Submit Buttons */}
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+              <div className="pt-4 flex justify-end gap-3 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold transition-colors"
                 >
                   إلغاء
                 </button>
@@ -674,24 +674,24 @@ export default function ParentNoticesManager() {
 
       {/* Details Modal */}
       {selectedNoticeDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl p-5 sm:p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white border border-gray-200 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl p-5 sm:p-6 space-y-4">
             <div className="flex justify-between items-start">
-              <h3 className="text-base font-black text-slate-800">{selectedNoticeDetails.title}</h3>
+              <h3 className="text-base font-black text-gray-900">{selectedNoticeDetails.title}</h3>
               <button
                 onClick={() => setSelectedNoticeDetails(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-200 leading-relaxed whitespace-pre-wrap">
+            <p className="text-xs text-gray-800 bg-gray-50 p-4 rounded-xl border border-gray-200 leading-relaxed whitespace-pre-wrap font-medium">
               {selectedNoticeDetails.content}
             </p>
 
             {selectedNoticeDetails.appointmentDate && (
-              <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs space-y-1.5 text-amber-950">
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs space-y-1.5 text-amber-950">
                 <div>
                   <strong>تاريخ ووقت الموعد: </strong>
                   {new Date(selectedNoticeDetails.appointmentDate).toLocaleDateString('ar-DZ')}
@@ -704,9 +704,9 @@ export default function ParentNoticesManager() {
               </div>
             )}
 
-            <div className="text-[11px] text-slate-500 space-y-1 pt-1">
+            <div className="text-[11px] text-gray-500 space-y-1 pt-1">
               <div>
-                المرسل: <span className="text-slate-800 font-semibold">{selectedNoticeDetails.senderName}</span>
+                المرسل: <span className="text-gray-900 font-bold">{selectedNoticeDetails.senderName}</span>
               </div>
               <div>
                 تاريخ الإنشاء: {new Date(selectedNoticeDetails.createdAt).toLocaleString('ar-DZ')}
@@ -719,7 +719,7 @@ export default function ParentNoticesManager() {
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setSelectedNoticeDetails(null)}
-                className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                className="px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors"
               >
                 إغلاق
               </button>

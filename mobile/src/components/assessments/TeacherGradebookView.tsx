@@ -113,10 +113,13 @@ export function TeacherGradebookView() {
 
   const initRoster = (classObj: any) => {
     if (!classObj || !classObj.students) return;
-    const records = (classObj.students || []).map((st: any) => ({
+    const records = (classObj.students || []).map((st: any, index: number) => ({
       student: st._id,
-      fullName: st.fullName,
-      registrationNumber: st.registrationNumber,
+      fullName:
+        st.fullName ||
+        `${st.firstNameArabic || st.firstName || ''} ${st.lastNameArabic || st.lastName || ''}`.trim() ||
+        `تلميذ ${index + 1}`,
+      registrationNumber: st.registrationNumber || '',
       grade: '',
       isAbsent: false,
       individualRemark: '',
@@ -363,7 +366,7 @@ export function TeacherGradebookView() {
                   <Text style={styles.numText}>{idx + 1}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.studentName}>{r.fullName}</Text>
+                  <Text style={styles.studentName}>{r.fullName || `تلميذ ${idx + 1}`}</Text>
                   <Text style={styles.studentReg}>رقم التسجيل: {r.registrationNumber || '-'}</Text>
                 </View>
 

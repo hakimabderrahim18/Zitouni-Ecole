@@ -64,44 +64,48 @@ export default function ParentGradesView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
         <div>
-          <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2 flex-wrap">
+          <h2 className="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2 flex-wrap">
             <span>كشوف النقاط والنتائج المدرسية</span>
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
+            <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200 shadow-2xs">
               فضاء الأولياء
             </span>
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-gray-600 font-medium mt-1">
             الاطلاع الحصري على النتائج المعتمدة والمنشورة رسمياً من طرف الإدارة لأبنائكم فقط.
           </p>
         </div>
 
         <button
           onClick={fetchResults}
-          className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-brand-700 text-xs font-bold border border-slate-200 flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          تحديث النتائج
+          <span>تحديث النتائج</span>
         </button>
       </div>
 
       {/* Children Tabs (if more than 1 child) */}
       {childrenResults.length > 1 && (
-        <div className="flex gap-2 border-b border-slate-200 pb-2.5 overflow-x-auto scrollbar-none">
+        <div className="flex gap-2.5 border-b border-gray-200 pb-3 overflow-x-auto scrollbar-none">
           {childrenResults.map((child, idx) => (
             <button
               key={child.childId}
               onClick={() => setSelectedChildIndex(idx)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 shrink-0 cursor-pointer ${
                 selectedChildIndex === idx
-                  ? 'bg-brand-600 text-white shadow-md shadow-brand-600/25'
-                  : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 shadow-2xs'
+                  ? 'bg-brand-600 text-white shadow-md shadow-brand-600/25 ring-2 ring-brand-600/20'
+                  : 'bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 border border-gray-300 shadow-2xs'
               }`}
             >
               <Users className="w-4 h-4" />
               <span>{child.childName}</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${selectedChildIndex === idx ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                selectedChildIndex === idx
+                  ? 'bg-white/20 text-white'
+                  : 'bg-gray-100 text-gray-700'
+              }`}>
                 {child.className}
               </span>
             </button>
@@ -111,17 +115,17 @@ export default function ParentGradesView() {
 
       {/* Results for Active Child */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-slate-500 px-1">
-          <span className="font-bold text-slate-800 text-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+          <span className="font-black text-gray-900 text-sm sm:text-base">
             التلميذ: {activeChild.childName} — القسم: {activeChild.className}
           </span>
-          <span className="font-medium bg-slate-100 px-2.5 py-0.5 rounded-full text-[11px] self-start sm:self-auto">
+          <span className="font-extrabold bg-brand-50 text-brand-700 border border-brand-200 px-3 py-1 rounded-full text-xs self-start sm:self-auto shadow-2xs">
             {activeChild.assessments?.length || 0} تقييم منشور
           </span>
         </div>
 
         {activeChild.assessments?.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 shadow-xs">
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-600 shadow-sm font-medium text-sm">
             لم يتم نشر أية نتائج لهذا التلميذ حتى الآن.
           </div>
         ) : (
@@ -132,23 +136,28 @@ export default function ParentGradesView() {
               return (
                 <div
                   key={i}
-                  className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col justify-between hover:border-brand-300 hover:shadow-md transition-all shadow-xs space-y-4"
+                  className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 flex flex-col justify-between hover:border-brand-300 hover:shadow-lg transition-all shadow-sm space-y-4"
                 >
                   <div className="space-y-3.5">
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-brand-50 text-brand-700 border border-brand-200">
+                    {/* Top Badges */}
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="px-3.5 py-1 rounded-full text-xs font-black bg-brand-50 text-brand-700 border border-brand-200 shadow-2xs">
                         {a.subject}
                       </span>
-                      <span className="text-[11px] font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">
+                      <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-200 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-gray-500" />
                         {a.assessmentDate ? new Date(a.assessmentDate).toLocaleDateString('ar-DZ') : ''}
                       </span>
                     </div>
 
-                    <h4 className="text-base font-black text-slate-900">{a.assessmentType}</h4>
+                    {/* Assessment Title */}
+                    <h4 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
+                      {a.assessmentType}
+                    </h4>
 
                     {/* Premium High-Contrast Score Box */}
                     <div
-                      className={`p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-white shadow-md ${
+                      className={`p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-white shadow-md ${
                         a.isAbsent
                           ? 'bg-gradient-to-br from-rose-600 to-red-700 shadow-rose-600/20'
                           : isPass
@@ -157,50 +166,59 @@ export default function ParentGradesView() {
                       }`}
                     >
                       <div>
-                        <span className="text-[11px] text-white/80 block font-medium">العلامة المحصل عليها:</span>
-                        <div className="text-3xl font-black mt-0.5 tracking-tight">
+                        <span className="text-xs text-white/90 block font-semibold">العلامة المحصل عليها:</span>
+                        <div className="text-3xl sm:text-4xl font-black mt-1 tracking-tight text-white drop-shadow-xs">
                           {a.isAbsent ? 'غائب / Absent' : `${a.grade != null ? a.grade : '--'} / ${a.maxGrade || 20}`}
                         </div>
                       </div>
 
-                      <div className="text-right sm:text-left text-[11px] font-mono space-y-1 bg-black/15 backdrop-blur-xs p-2.5 rounded-xl border border-white/10 w-full sm:w-auto">
-                        <div className="flex sm:block justify-between gap-3">
-                          <span className="opacity-80">معدل القسم:</span> <strong className="font-bold">{a.classAverage}</strong>
+                      <div className="text-right sm:text-left text-xs font-mono space-y-1.5 bg-black/20 backdrop-blur-md p-3 rounded-xl border border-white/20 w-full sm:w-auto">
+                        <div className="flex sm:block justify-between gap-4">
+                          <span className="text-white/80">معدل القسم:</span> <strong className="font-extrabold text-white text-sm">{a.classAverage}</strong>
                         </div>
-                        <div className="flex sm:block justify-between gap-3">
-                          <span className="opacity-80">أعلى علامة:</span> <strong className="font-bold">{a.classMax}</strong>
+                        <div className="flex sm:block justify-between gap-4">
+                          <span className="text-white/80">أعلى علامة:</span> <strong className="font-extrabold text-emerald-200 text-sm">{a.classMax}</strong>
                         </div>
-                        <div className="flex sm:block justify-between gap-3">
-                          <span className="opacity-80">أدنى علامة:</span> <strong className="font-bold">{a.classMin}</strong>
+                        <div className="flex sm:block justify-between gap-4">
+                          <span className="text-white/80">أدنى علامة:</span> <strong className="font-extrabold text-rose-200 text-sm">{a.classMin}</strong>
                         </div>
                       </div>
                     </div>
 
-                    {/* Individual Remark */}
+                    {/* Individual Remark (High contrast, warm brand styling) */}
                     {a.individualRemark && (
-                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 text-xs">
-                        <strong className="text-brand-700 block mb-1 font-bold">ملاحظة الأستاذ الفردية:</strong>
-                        <p className="text-slate-800 leading-relaxed font-medium">{a.individualRemark}</p>
+                      <div className="p-3.5 rounded-xl bg-brand-50/70 border border-brand-200 text-xs">
+                        <strong className="text-brand-800 block mb-1 font-extrabold flex items-center gap-1.5">
+                          <Award className="w-4 h-4 text-brand-600" />
+                          ملاحظة الأستاذ الفردية:
+                        </strong>
+                        <p className="text-gray-800 leading-relaxed font-semibold">{a.individualRemark}</p>
                       </div>
                     )}
 
-                    {/* Class General Remark */}
+                    {/* Class General Remark (High contrast, clean gray styling) */}
                     {a.classRemark && (
-                      <div className="p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/60 text-xs">
-                        <strong className="text-slate-600 block mb-1 font-bold">الملاحظة العامة للقسم:</strong>
-                        <p className="text-slate-700 leading-relaxed">{a.classRemark}</p>
+                      <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
+                        <strong className="text-gray-700 block mb-1 font-bold flex items-center gap-1.5">
+                          <BookOpen className="w-3.5 h-3.5 text-gray-500" />
+                          الملاحظة العامة للقسم:
+                        </strong>
+                        <p className="text-gray-700 leading-relaxed font-medium">{a.classRemark}</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
-                    <span className="text-slate-500 text-[11px] font-medium">الأستاذ: <strong className="text-slate-700">{a.teacherName || 'الأستاذ'}</strong></span>
+                  {/* Footer: Teacher Name & PDF Download Button */}
+                  <div className="pt-3.5 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+                    <span className="text-gray-600 text-xs font-medium">
+                      الأستاذ(ة): <strong className="text-gray-900 font-bold">{a.teacherName || 'الأستاذ'}</strong>
+                    </span>
                     <button
                       onClick={() => handleDownloadReportCard(a.assessmentId, activeChild.childId)}
-                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold border border-brand-200 flex items-center justify-center gap-2 transition-all shadow-2xs cursor-pointer"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brand-50 hover:bg-brand-600 text-brand-700 hover:text-white border border-brand-200 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer group"
                     >
-                      <Download className="w-3.5 h-3.5" />
-                      تحميل كشف النقاط (PDF)
+                      <Download className="w-4 h-4 text-brand-600 group-hover:text-white transition-colors" />
+                      <span>تحميل كشف النقاط (PDF)</span>
                     </button>
                   </div>
                 </div>

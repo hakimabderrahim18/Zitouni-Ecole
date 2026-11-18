@@ -72,13 +72,13 @@ export default function AssessmentStatisticsView() {
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
                 التقارير والإحصائيات التربوية
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
                   لوحة القيادة
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-gray-600 mt-0.5">
                 معدلات الأقسام، نسب النجاح والتحقيق، ومتابعة نسبة استكمال إدخال النقاط للأساتذة.
               </p>
             </div>
@@ -86,11 +86,11 @@ export default function AssessmentStatisticsView() {
         </div>
 
         {/* Tab switch */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 w-full sm:w-auto">
+        <div className="flex items-center bg-gray-100 p-1.5 rounded-xl border border-gray-200 w-full sm:w-auto">
           <button
             onClick={() => setActiveTab('classes')}
             className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-              activeTab === 'classes' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'classes' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             <BarChart2 className="w-3.5 h-3.5" />
@@ -99,7 +99,7 @@ export default function AssessmentStatisticsView() {
           <button
             onClick={() => setActiveTab('teachers')}
             className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-              activeTab === 'teachers' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'teachers' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -110,16 +110,16 @@ export default function AssessmentStatisticsView() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
-          <span className="text-xs text-slate-500 font-bold block">إجمالي التقييمات المحسوبة</span>
-          <span className="text-2xl font-black text-slate-800 mt-1 block">{totalAssessments}</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">فروض وتقويمات مدرجة</span>
+        <div className="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm">
+          <span className="text-xs text-gray-600 font-bold block">إجمالي التقييمات المحسوبة</span>
+          <span className="text-2xl font-black text-gray-900 mt-1 block">{totalAssessments}</span>
+          <span className="text-[11px] text-gray-500 mt-0.5 block">فروض وتقويمات مدرجة</span>
         </div>
 
         <div className="bg-white border border-brand-200 p-4 rounded-2xl shadow-sm bg-gradient-to-br from-white to-brand-50/30">
           <span className="text-xs text-brand-700 font-bold block">المعدل العام للمؤسسة</span>
           <span className="text-2xl font-black text-brand-700 mt-1 block">{overallAvg} / 20</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">متوسط كافة المواد</span>
+          <span className="text-[11px] text-gray-500 mt-0.5 block">متوسط كافة المواد</span>
         </div>
 
         <div className="bg-white border border-emerald-200 p-4 rounded-2xl shadow-sm bg-gradient-to-br from-white to-emerald-50/30">
@@ -127,7 +127,7 @@ export default function AssessmentStatisticsView() {
             نسبة المحققين للمعايير ({threshold}/20)
           </span>
           <span className="text-2xl font-black text-emerald-600 mt-1 block">{overallPassRate}%</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">
+          <span className="text-[11px] text-gray-500 mt-0.5 block">
             {totalPassedStudents} من أصل {totalEvaluatedStudents} تلميذ
           </span>
         </div>
@@ -135,14 +135,14 @@ export default function AssessmentStatisticsView() {
         <div className="bg-white border border-sky-200 p-4 rounded-2xl shadow-sm bg-gradient-to-br from-white to-sky-50/30">
           <span className="text-xs text-sky-700 font-bold block">عدد الأساتذة المتابعين</span>
           <span className="text-2xl font-black text-sky-600 mt-1 block">{teacherProgress.length}</span>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">طاقم التدريس المسند</span>
+          <span className="text-[11px] text-gray-500 mt-0.5 block">طاقم التدريس المسند</span>
         </div>
       </div>
 
       {/* Controls & Threshold Filter */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
         <form onSubmit={handleApplyThreshold} className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <span className="text-xs font-bold text-slate-700">معيار النجاح القابل للضبط (عتبة المعدل):</span>
+          <span className="text-xs font-bold text-gray-800">معيار النجاح القابل للضبط (عتبة المعدل):</span>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -151,7 +151,7 @@ export default function AssessmentStatisticsView() {
               step="0.5"
               value={thresholdInput}
               onChange={(e) => setThresholdInput(e.target.value)}
-              className="w-16 sm:w-20 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 text-center font-bold focus:outline-none focus:border-brand-500 focus:bg-white"
+              className="w-16 sm:w-20 bg-gray-50 border border-gray-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-900 text-center font-bold focus:outline-none focus:border-brand-500 focus:bg-white"
             />
             <button
               type="submit"
@@ -166,7 +166,7 @@ export default function AssessmentStatisticsView() {
           <select
             value={cycleFilter}
             onChange={(e) => setCycleFilter(e.target.value)}
-            className="flex-1 sm:flex-none bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-brand-500"
+            className="flex-1 sm:flex-none bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500"
           >
             <option value="">جميع الأطوار</option>
             <option value="primary">الطور الابتدائي</option>
@@ -176,7 +176,7 @@ export default function AssessmentStatisticsView() {
 
           <button
             onClick={fetchStats}
-            className="text-xs text-brand-700 hover:text-brand-800 font-bold flex items-center gap-1.5 py-1.5 px-3 rounded-lg hover:bg-slate-50 transition-colors"
+            className="text-xs text-brand-700 hover:text-brand-800 font-bold flex items-center gap-1.5 py-1.5 px-3 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             تحديث
@@ -190,17 +190,17 @@ export default function AssessmentStatisticsView() {
           {/* Mobile Cards (Phone View) */}
           <div className="md:hidden space-y-3">
             {assessmentStats.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <div className="p-8 text-center text-gray-500 bg-white rounded-2xl border border-gray-200 shadow-sm">
                 لا توجد بيانات تقييمات مسجلة حالياً.
               </div>
             ) : (
               assessmentStats.map((item) => (
-                <div key={item._id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+                <div key={item._id} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-3">
                   <div className="flex justify-between items-start gap-2">
                     <div>
-                      <span className="font-bold text-sm text-slate-900 block">{item.className}</span>
+                      <span className="font-bold text-sm text-gray-900 block">{item.className}</span>
                       <span className="text-xs text-brand-700 font-bold">{item.subject}</span>
-                      <span className="text-[11px] text-slate-400 block">{item.assessmentType} • {item.teacherName || '-'}</span>
+                      <span className="text-[11px] text-gray-500 block">{item.assessmentType} • {item.teacherName || '-'}</span>
                     </div>
                     <span
                       className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
@@ -208,7 +208,7 @@ export default function AssessmentStatisticsView() {
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : item.status === 'submitted'
                           ? 'bg-sky-50 text-sky-700 border-sky-200'
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
+                          : 'bg-gray-100 text-gray-700 border-gray-200'
                       }`}
                     >
                       {item.status === 'approved' && 'معتمد'}
@@ -217,24 +217,24 @@ export default function AssessmentStatisticsView() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl text-center">
+                  <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl text-center border border-gray-100">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">المعدل</span>
-                      <span className="text-sm font-black text-slate-800 font-mono">{item.average.toFixed(2)}</span>
+                      <span className="text-[10px] text-gray-500 block">المعدل</span>
+                      <span className="text-sm font-black text-gray-900 font-mono">{item.average.toFixed(2)}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block">أعلى علامة</span>
+                      <span className="text-[10px] text-gray-500 block">أعلى علامة</span>
                       <span className="text-sm font-black text-emerald-600 font-mono">{item.maxScore.toFixed(2)}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block">أدنى علامة</span>
+                      <span className="text-[10px] text-gray-500 block">أدنى علامة</span>
                       <span className="text-sm font-black text-rose-600 font-mono">{item.minScore.toFixed(2)}</span>
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-500 font-medium">نسبة النجاح ({threshold}/20):</span>
+                      <span className="text-gray-600 font-medium">نسبة النجاح ({threshold}/20):</span>
                       <span
                         className={`font-bold ${
                           item.passRate >= 70
@@ -247,7 +247,7 @@ export default function AssessmentStatisticsView() {
                         {item.passRate}% ({item.passCount}/{item.presentStudents})
                       </span>
                     </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${
                           item.passRate >= 70
@@ -266,9 +266,9 @@ export default function AssessmentStatisticsView() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-4 bg-slate-50/70 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-sm font-bold text-slate-800">
+          <div className="hidden md:block bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="p-4 bg-gray-50/70 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-sm font-bold text-gray-900">
                 جدول إحصائيات الفروض والتقييمات لكل قسم ومادة
               </h3>
             </div>
@@ -276,7 +276,7 @@ export default function AssessmentStatisticsView() {
             <div className="overflow-x-auto">
               <table className="w-full text-right border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 uppercase border-b border-slate-200 font-bold">
+                  <tr className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200 font-bold">
                     <th className="py-3 px-4">القسم</th>
                     <th className="py-3 px-4">المادة ونوع التقييم</th>
                     <th className="py-3 px-4">الأستاذ</th>
@@ -287,24 +287,24 @@ export default function AssessmentStatisticsView() {
                     <th className="py-3 px-4 text-center">الحالة</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-gray-100">
                   {assessmentStats.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-10 text-center text-slate-400">
+                      <td colSpan={8} className="py-10 text-center text-gray-500">
                         لا توجد بيانات تقييمات مسجلة حالياً.
                       </td>
                     </tr>
                   ) : (
                     assessmentStats.map((item) => (
-                      <tr key={item._id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4 font-bold text-slate-900">{item.className}</td>
+                      <tr key={item._id} className="hover:bg-gray-50/80 transition-colors">
+                        <td className="py-3 px-4 font-bold text-gray-900">{item.className}</td>
                         <td className="py-3 px-4">
                           <span className="text-brand-700 font-bold block">{item.subject}</span>
-                          <span className="text-[11px] text-slate-400">{item.assessmentType}</span>
+                          <span className="text-[11px] text-gray-500">{item.assessmentType}</span>
                         </td>
-                        <td className="py-3 px-4 text-slate-600">{item.teacherName || '-'}</td>
+                        <td className="py-3 px-4 text-gray-700">{item.teacherName || '-'}</td>
                         <td className="py-3 px-4 text-center">
-                          <span className="font-mono font-bold text-sm text-slate-900">
+                          <span className="font-mono font-bold text-sm text-gray-900">
                             {item.average.toFixed(2)}
                           </span>
                         </td>
@@ -327,7 +327,7 @@ export default function AssessmentStatisticsView() {
                             >
                               {item.passRate}% ({item.passCount}/{item.presentStudents})
                             </span>
-                            <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div className="w-24 bg-gray-100 h-1.5 rounded-full overflow-hidden">
                               <div
                                 className={`h-full ${
                                   item.passRate >= 70
@@ -348,7 +348,7 @@ export default function AssessmentStatisticsView() {
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 : item.status === 'submitted'
                                 ? 'bg-sky-50 text-sky-700 border-sky-200'
-                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                                : 'bg-gray-100 text-gray-700 border-gray-200'
                             }`}
                           >
                             {item.status === 'approved' && 'معتمد'}
@@ -372,21 +372,21 @@ export default function AssessmentStatisticsView() {
           {/* Mobile Cards (Phone View) */}
           <div className="md:hidden space-y-3">
             {teacherProgress.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <div className="p-8 text-center text-gray-500 bg-white rounded-2xl border border-gray-200 shadow-sm">
                 لا توجد بيانات إنجاز أساتذة مسجلة حالياً.
               </div>
             ) : (
               teacherProgress.map((t) => (
-                <div key={t.teacherId} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+                <div key={t.teacherId} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-3">
                   <div>
-                    <span className="font-bold text-sm text-slate-900 block">{t.teacherName}</span>
+                    <span className="font-bold text-sm text-gray-900 block">{t.teacherName}</span>
                     <span className="text-xs text-brand-700 font-semibold">{t.subjects.join('، ') || '-'}</span>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-2 bg-slate-50 p-2.5 rounded-xl text-center">
+                  <div className="grid grid-cols-4 gap-2 bg-gray-50 p-2.5 rounded-xl text-center border border-gray-100">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">الأقسام</span>
-                      <span className="text-xs font-bold text-slate-800">{t.assignedClassesCount}</span>
+                      <span className="text-[10px] text-gray-500 block">الأقسام</span>
+                      <span className="text-xs font-bold text-gray-900">{t.assignedClassesCount}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-emerald-600 block">معتمدة</span>
@@ -397,17 +397,17 @@ export default function AssessmentStatisticsView() {
                       <span className="text-xs font-bold text-sky-700">{t.submittedCount}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block">مسودات</span>
-                      <span className="text-xs font-bold text-slate-600">{t.draftCount}</span>
+                      <span className="text-[10px] text-gray-500 block">مسودات</span>
+                      <span className="text-xs font-bold text-gray-600">{t.draftCount}</span>
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-500 font-medium">نسبة الاستكمال:</span>
+                      <span className="text-gray-600 font-medium">نسبة الاستكمال:</span>
                       <span className="font-bold text-brand-700">{t.completionRate}%</span>
                     </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-brand-600"
                         style={{ width: `${Math.min(100, t.completionRate)}%` }}
@@ -420,9 +420,9 @@ export default function AssessmentStatisticsView() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-4 bg-slate-50/70 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-800">
+          <div className="hidden md:block bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="p-4 bg-gray-50/70 border-b border-gray-200">
+              <h3 className="text-sm font-bold text-gray-900">
                 تقرير متابعة إدخال النقاط ونسبة الإنجاز لطاقم التدريس
               </h3>
             </div>
@@ -430,7 +430,7 @@ export default function AssessmentStatisticsView() {
             <div className="overflow-x-auto">
               <table className="w-full text-right border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 uppercase border-b border-slate-200 font-bold">
+                  <tr className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200 font-bold">
                     <th className="py-3 px-4">اسم الأستاذ</th>
                     <th className="py-3 px-4">المواد المسندة</th>
                     <th className="py-3 px-4 text-center">الأقسام المسندة</th>
@@ -440,19 +440,19 @@ export default function AssessmentStatisticsView() {
                     <th className="py-3 px-4 text-center">نسبة استكمال الإدخال</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-gray-100">
                   {teacherProgress.map((t) => (
-                    <tr key={t.teacherId} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4 font-bold text-slate-900">{t.teacherName}</td>
-                      <td className="py-3 px-4 text-slate-600">{t.subjects.join('، ') || '-'}</td>
-                      <td className="py-3 px-4 text-center font-bold text-slate-700">{t.assignedClassesCount}</td>
+                    <tr key={t.teacherId} className="hover:bg-gray-50/80 transition-colors">
+                      <td className="py-3 px-4 font-bold text-gray-900">{t.teacherName}</td>
+                      <td className="py-3 px-4 text-gray-700">{t.subjects.join('، ') || '-'}</td>
+                      <td className="py-3 px-4 text-center font-bold text-gray-900">{t.assignedClassesCount}</td>
                       <td className="py-3 px-4 text-center text-emerald-600 font-bold">{t.approvedCount}</td>
                       <td className="py-3 px-4 text-center text-sky-600 font-bold">{t.submittedCount}</td>
-                      <td className="py-3 px-4 text-center text-slate-400 font-bold">{t.draftCount}</td>
+                      <td className="py-3 px-4 text-center text-gray-500 font-bold">{t.draftCount}</td>
                       <td className="py-3 px-4 text-center">
                         <div className="flex flex-col items-center gap-1">
                           <span className="font-bold text-brand-700">{t.completionRate}%</span>
-                          <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                          <div className="w-24 bg-gray-100 h-1.5 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-brand-600"
                               style={{ width: `${Math.min(100, t.completionRate)}%` }}

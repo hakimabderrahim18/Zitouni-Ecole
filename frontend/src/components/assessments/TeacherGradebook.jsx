@@ -119,14 +119,20 @@ export default function TeacherGradebook() {
   // Helper to initialize student records for a selected class
   const initRosterForClass = (classObj) => {
     if (!classObj || !classObj.students) return;
-    const initialRecords = classObj.students.map((st) => ({
-      student: st._id,
-      fullName: st.fullName || `${st.firstNameArabic || st.firstName} ${st.lastNameArabic || st.lastName}`,
-      registrationNumber: st.registrationNumber,
-      grade: '',
-      isAbsent: false,
-      individualRemark: '',
-    }));
+    const initialRecords = classObj.students.map((st, index) => {
+      const name =
+        st.fullName ||
+        `${st.firstNameArabic || st.firstName || ''} ${st.lastNameArabic || st.lastName || ''}`.trim() ||
+        `تلميذ ${index + 1}`;
+      return {
+        student: st._id,
+        fullName: name,
+        registrationNumber: st.registrationNumber || '',
+        grade: '',
+        isAbsent: false,
+        individualRemark: '',
+      };
+    });
     setStudentRecords(initialRecords);
     setCurrentAssessmentId(null);
     setAssessmentStatus('draft');
@@ -137,7 +143,7 @@ export default function TeacherGradebook() {
   // Handle changing class
   const handleClassChange = (classId) => {
     setSelectedClassId(classId);
-    const foundClass = assignedData.classes.find((c) => c._id === classId);
+    const foundClass = assignedData.classes.find((c) => c._id?.toString() === classId?.toString());
     if (foundClass) {
       initRosterForClass(foundClass);
     }
@@ -164,20 +170,39 @@ export default function TeacherGradebook() {
     setClassRemark(assessment.classRemark || '');
 
     // Match with current class roster
-    const foundClass = assignedData.classes.find((c) => c._id === (assessment.class?._id || assessment.class));
+    const classIdStr = (assessment.class?._id || assessment.class)?.toString();
+    const foundClass = assignedData.classes.find((c) => c._id?.toString() === classIdStr);
     const allStudents = foundClass?.students || [];
 
-    const populatedRecords = allStudents.map((st) => {
+    const populatedRecords = allStudents.length > 0 ? allStudents.map((st, index) => {
       const existingRec = (assessment.records || []).find(
-        (r) => (r.student?._id || r.student)?.toString() === st._id.toString()
+        (r) => (r.student?._id || r.student)?.toString() === st._id?.toString()
       );
+      const name =
+        st.fullName ||
+        `${st.firstNameArabic || st.firstName || ''} ${st.lastNameArabic || st.lastName || ''}`.trim() ||
+        `تلميذ ${index + 1}`;
       return {
         student: st._id,
-        fullName: st.fullName,
-        registrationNumber: st.registrationNumber,
+        fullName: name,
+        registrationNumber: st.registrationNumber || existingRec?.registrationNumber || '',
         grade: existingRec && existingRec.grade != null ? existingRec.grade : '',
         isAbsent: existingRec ? Boolean(existingRec.isAbsent) : false,
         individualRemark: existingRec ? existingRec.individualRemark || '' : '',
+      };
+    }) : (assessment.records || []).map((r, i) => {
+      const st = r.student && typeof r.student === 'object' ? r.student : {};
+      const u = st.user || r.studentUser || {};
+      const name =
+        `${u.firstNameArabic || u.firstName || st.firstNameArabic || st.firstName || ''} ${u.lastNameArabic || u.lastName || st.lastNameArabic || st.lastName || ''}`.trim() ||
+        `تلميذ ${i + 1}`;
+      return {
+        student: st._id || r.student,
+        fullName: name,
+        registrationNumber: st.registrationNumber || r.registrationNumber || '',
+        grade: r.grade != null ? r.grade : '',
+        isAbsent: Boolean(r.isAbsent),
+        individualRemark: r.individualRemark || '',
       };
     });
 
@@ -322,13 +347,13 @@ export default function TeacherGradebook() {
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2 flex-wrap">
                 <span>إدخال نقاط الفروض والتقييمات</span>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
+                <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200 shadow-2xs">
                   فضاء الأستاذ
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs sm:text-sm text-gray-600 font-medium mt-1">
                 تسيير علامات التلاميذ وملاحظاتهم الفردية والعامة مع ميزة الحفظ التلقائي والإرسال للإدارة.
               </p>
             </div>
@@ -336,13 +361,13 @@ export default function TeacherGradebook() {
         </div>
 
         {/* Navigation Sub-Tabs */}
-        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto bg-gray-100 p-1.5 rounded-xl border border-gray-200">
           <button
             onClick={() => setActiveSubTab('entry')}
             className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeSubTab === 'entry'
                 ? 'bg-brand-600 text-white shadow-md shadow-brand-600/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                : 'text-gray-700 hover:text-gray-900 hover:bg-white/60'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
@@ -356,7 +381,7 @@ export default function TeacherGradebook() {
             className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeSubTab === 'history'
                 ? 'bg-brand-600 text-white shadow-md shadow-brand-600/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                : 'text-gray-700 hover:text-gray-900 hover:bg-white/60'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -435,10 +460,10 @@ export default function TeacherGradebook() {
           )}
 
           {/* Section 3.1: Selection of Assessment Parameters */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             {/* 1. Class */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-brand-600" />
                 القسم المسند:
               </label>
@@ -446,7 +471,7 @@ export default function TeacherGradebook() {
                 disabled={isLocked}
                 value={selectedClassId}
                 onChange={(e) => handleClassChange(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white disabled:opacity-60 transition-colors"
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 font-semibold focus:outline-none focus:border-brand-600 focus:bg-white disabled:opacity-60 transition-colors"
               >
                 {assignedData.classes.map((cls) => (
                   <option key={cls._id} value={cls._id}>
@@ -458,7 +483,7 @@ export default function TeacherGradebook() {
 
             {/* 2. Subject */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-brand-600" />
                 المادة المسندة:
               </label>
@@ -466,7 +491,7 @@ export default function TeacherGradebook() {
                 disabled={isLocked}
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white disabled:opacity-60 transition-colors"
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 font-semibold focus:outline-none focus:border-brand-600 focus:bg-white disabled:opacity-60 transition-colors"
               >
                 {assignedData.subjects.map((sub, idx) => (
                   <option key={idx} value={sub}>
@@ -478,7 +503,7 @@ export default function TeacherGradebook() {
 
             {/* 3. Assessment Type */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                 <GraduationCap className="w-3.5 h-3.5 text-brand-600" />
                 نوع التقييم:
               </label>
@@ -486,7 +511,7 @@ export default function TeacherGradebook() {
                 disabled={isLocked}
                 value={assessmentType}
                 onChange={(e) => setAssessmentType(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white disabled:opacity-60 transition-colors"
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 font-semibold focus:outline-none focus:border-brand-600 focus:bg-white disabled:opacity-60 transition-colors"
               >
                 {ASSESSMENT_TYPES.map((type, idx) => (
                   <option key={idx} value={type}>
@@ -502,14 +527,14 @@ export default function TeacherGradebook() {
                   disabled={isLocked}
                   value={customType}
                   onChange={(e) => setCustomType(e.target.value)}
-                  className="mt-2 w-full bg-slate-50 border border-brand-500/50 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:bg-white"
+                  className="mt-2 w-full bg-gray-50 border border-brand-500/50 rounded-xl px-3 py-1.5 text-xs text-gray-900 focus:outline-none focus:bg-white"
                 />
               )}
             </div>
 
             {/* 4. Assessment Date */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-brand-600" />
                 تاريخ الإجراء:
               </label>
@@ -518,13 +543,13 @@ export default function TeacherGradebook() {
                 disabled={isLocked}
                 value={assessmentDate}
                 onChange={(e) => setAssessmentDate(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white disabled:opacity-60 transition-colors"
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 font-semibold focus:outline-none focus:border-brand-600 focus:bg-white disabled:opacity-60 transition-colors"
               />
             </div>
 
             {/* 5. Max Grade */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                 السلم المعتمد (/):
               </label>
               <input
@@ -532,7 +557,7 @@ export default function TeacherGradebook() {
                 disabled={isLocked}
                 value={maxGrade}
                 onChange={(e) => setMaxGrade(Number(e.target.value) || 20)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white disabled:opacity-60 transition-colors font-mono font-bold"
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-brand-600 focus:bg-white disabled:opacity-60 transition-colors font-mono font-bold"
               />
             </div>
           </div>
@@ -564,7 +589,7 @@ export default function TeacherGradebook() {
                 <button
                   onClick={() => executeSave(false, false)}
                   disabled={isLocked || savingManual}
-                  className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-2xs"
+                  className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold border border-gray-300 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   <Save className="w-3.5 h-3.5 text-brand-600" />
                   حفظ كمسودة
@@ -586,42 +611,46 @@ export default function TeacherGradebook() {
             </div>
 
             {/* Mobile Student Card View (Visible on < md screens) */}
-            <div className="md:hidden divide-y divide-slate-100 p-3 space-y-3">
+            <div className="md:hidden divide-y divide-gray-100 p-3 space-y-3">
               {studentRecords.length === 0 ? (
-                <div className="py-8 text-center text-slate-500 text-xs">
+                <div className="py-8 text-center text-gray-500 text-xs">
                   لا يوجد تلاميذ مسجلين في هذا القسم.
                 </div>
               ) : (
                 studentRecords.map((record, index) => (
                   <div
                     key={record.student}
-                    className={`p-3.5 rounded-2xl border transition-all space-y-3 ${
+                    className={`p-3.5 rounded-2xl border-2 transition-all space-y-3 shadow-2xs ${
                       record.isAbsent
-                        ? 'bg-rose-50/50 border-rose-200'
+                        ? 'bg-[#FEF2F2]/60 border-[#FCA5A5]'
                         : record.grade !== '' && record.grade >= 10
-                        ? 'bg-emerald-50/20 border-emerald-200'
+                        ? 'bg-[#FAF2F4]/50 border-[#E7C1CB]'
                         : record.grade !== '' && record.grade < 10
-                        ? 'bg-amber-50/20 border-amber-200'
-                        : 'bg-white border-slate-200'
+                        ? 'bg-[#FFF9F0]/60 border-[#EEDDAF]'
+                        : 'bg-white border-[#E8DFD0]'
                     }`}
                   >
                     {/* Student Info Header */}
                     <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-[11px] font-mono font-bold flex items-center justify-center">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-7 h-7 rounded-full bg-[#FAF2F4] text-[#7B1E3A] border border-[#E7C1CB] text-xs font-mono font-black flex items-center justify-center shadow-2xs">
                           {index + 1}
                         </span>
-                        <span className="font-bold text-slate-900 text-sm">{record.fullName}</span>
+                        <div>
+                          <span className="font-black text-[#2B2022] text-sm block leading-tight">
+                            {record.fullName || `تلميذ ${index + 1}`}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                      <span className="text-[11px] font-mono font-bold text-[#8E6E27] bg-[#FBF7ED] border border-[#EEDDAF] px-2.5 py-1 rounded-lg shadow-2xs">
                         {record.registrationNumber || '-'}
                       </span>
                     </div>
 
                     {/* Grade & Absent Controls */}
-                    <div className="flex items-center justify-between gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <div className="flex items-center justify-between gap-3 bg-[#FCFAF7] p-3 rounded-2xl border border-[#E8DFD0] shadow-2xs">
                       <div className="flex items-center gap-2">
-                        <label className="text-xs font-bold text-slate-700">النقطة /{maxGrade}:</label>
+                        <label className="text-xs font-black text-[#4A3A3D]">النقطة /{maxGrade}:</label>
                         <input
                           type="number"
                           min="0"
@@ -633,25 +662,25 @@ export default function TeacherGradebook() {
                           onChange={(e) => handleGradeChange(record.student, e.target.value)}
                           className={`w-28 h-11 text-center rounded-xl text-base font-black transition-all ${
                             record.isAbsent
-                              ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50'
+                              ? 'bg-[#F5F2ED] text-[#A8989B] border border-[#E8DFD0] cursor-not-allowed opacity-50'
                               : record.grade !== '' && record.grade >= 10
-                              ? 'border-2 border-emerald-400 bg-emerald-50 text-emerald-800'
+                              ? 'border-2 border-[#7B1E3A] bg-[#FDF2F4] text-[#7B1E3A]'
                               : record.grade !== '' && record.grade < 10
-                              ? 'border-2 border-amber-400 bg-amber-50 text-amber-800'
-                              : 'bg-white border-2 border-slate-200 text-slate-900 focus:border-brand-500'
+                              ? 'border-2 border-[#C9A24D] bg-[#FFF9F0] text-[#8E6E27]'
+                              : 'bg-white border-2 border-[#E8DFD0] text-[#2B2022] focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A]'
                           }`}
                         />
                       </div>
 
-                      <label className="inline-flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
+                      <label className="inline-flex items-center gap-2 cursor-pointer bg-white px-3.5 py-2.5 rounded-xl border border-[#E8DFD0] hover:bg-[#FAF6F0] shadow-2xs transition-colors">
                         <input
                           type="checkbox"
                           disabled={isLocked}
                           checked={record.isAbsent}
                           onChange={() => handleAbsenceToggle(record.student)}
-                          className="rounded border-slate-300 text-rose-600 focus:ring-0 w-4 h-4 cursor-pointer"
+                          className="rounded border-[#E8DFD0] text-[#7B1E3A] focus:ring-0 w-4 h-4 cursor-pointer accent-[#7B1E3A]"
                         />
-                        <span className={`text-xs font-bold ${record.isAbsent ? 'text-rose-600' : 'text-slate-600'}`}>
+                        <span className={`text-xs font-black ${record.isAbsent ? 'text-[#991B1B]' : 'text-[#574549]'}`}>
                           غائب
                         </span>
                       </label>
@@ -666,7 +695,7 @@ export default function TeacherGradebook() {
                           placeholder="ملاحظة خاصة بالتلميذ..."
                           value={record.individualRemark}
                           onChange={(e) => handleRemarkChange(record.student, e.target.value)}
-                          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white disabled:opacity-60"
+                          className="flex-1 bg-white border border-[#E8DFD0] rounded-xl px-3.5 py-2.5 text-xs text-[#2B2022] placeholder-[#A8989B] focus:outline-none focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] disabled:opacity-60 shadow-2xs"
                         />
                         {!isLocked && (
                           <select
@@ -674,11 +703,13 @@ export default function TeacherGradebook() {
                               if (e.target.value) handleRemarkChange(record.student, e.target.value);
                             }}
                             defaultValue=""
-                            className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[11px] rounded-xl px-2 py-2 focus:outline-none cursor-pointer"
+                            className="bg-[#FBF7ED] hover:bg-[#F7EFD8] border border-[#EEDDAF] text-[#8E6E27] text-xs font-bold rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#C9A24D] cursor-pointer shadow-2xs transition-colors"
                           >
-                            <option value="" disabled>اقتراحات</option>
+                            <option value="" disabled className="bg-white text-[#766065] font-bold">اقتراحات</option>
                             {SUGGESTED_REMARKS.map((sug, i) => (
-                              <option key={i} value={sug}>{sug}</option>
+                              <option key={i} value={sug} className="bg-white text-[#2B2022] font-semibold py-1">
+                                {sug}
+                              </option>
                             ))}
                           </select>
                         )}
@@ -713,17 +744,17 @@ export default function TeacherGradebook() {
                     studentRecords.map((record, index) => (
                       <tr
                         key={record.student}
-                        className={`hover:bg-slate-50/60 transition-colors ${
-                          record.isAbsent ? 'bg-rose-50/30' : ''
+                        className={`hover:bg-[#FCFAF7] transition-colors ${
+                          record.isAbsent ? 'bg-[#FEF2F2]/40' : ''
                         }`}
                       >
-                        <td className="py-3 px-4 text-center font-mono text-slate-400">
+                        <td className="py-3 px-4 text-center font-mono font-bold text-[#766065]">
                           {String(index + 1).padStart(2, '0')}
                         </td>
-                        <td className="py-3 px-4 font-bold text-slate-900">
-                          {record.fullName}
+                        <td className="py-3 px-4 font-black text-[#2B2022] text-sm">
+                          {record.fullName || `تلميذ ${index + 1}`}
                         </td>
-                        <td className="py-3 px-4 font-mono text-slate-400 text-[11px]">
+                        <td className="py-3 px-4 font-mono text-[#8E6E27] font-bold text-[11px]">
                           {record.registrationNumber || '-'}
                         </td>
                         <td className="py-3 px-4 text-center">
@@ -738,12 +769,12 @@ export default function TeacherGradebook() {
                             onChange={(e) => handleGradeChange(record.student, e.target.value)}
                             className={`w-24 text-center rounded-xl py-1.5 px-2 text-sm font-black transition-all ${
                               record.isAbsent
-                                ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed opacity-50'
+                                ? 'bg-[#F5F2ED] border border-[#E8DFD0] text-[#A8989B] cursor-not-allowed opacity-50'
                                 : record.grade !== '' && record.grade >= 10
-                                ? 'border-2 border-emerald-400 bg-emerald-50 text-emerald-800'
+                                ? 'border-2 border-[#7B1E3A] bg-[#FDF2F4] text-[#7B1E3A]'
                                 : record.grade !== '' && record.grade < 10
-                                ? 'border-2 border-amber-400 bg-amber-50 text-amber-800'
-                                : 'bg-slate-50 border-2 border-slate-200 text-slate-900 focus:bg-white focus:border-brand-500'
+                                ? 'border-2 border-[#C9A24D] bg-[#FFF9F0] text-[#8E6E27]'
+                                : 'bg-white border-2 border-[#E8DFD0] text-[#2B2022] focus:border-[#7B1E3A]'
                             }`}
                           />
                         </td>
@@ -754,9 +785,9 @@ export default function TeacherGradebook() {
                               disabled={isLocked}
                               checked={record.isAbsent}
                               onChange={() => handleAbsenceToggle(record.student)}
-                              className="rounded border-slate-300 text-rose-600 focus:ring-0 w-4 h-4 cursor-pointer"
+                              className="rounded border-[#E8DFD0] text-[#7B1E3A] focus:ring-0 w-4 h-4 cursor-pointer accent-[#7B1E3A]"
                             />
-                            <span className="text-[11px] text-slate-500 font-medium">غائب</span>
+                            <span className="text-[11px] text-[#574549] font-bold">غائب</span>
                           </label>
                         </td>
                         <td className="py-3 px-4">
@@ -767,7 +798,7 @@ export default function TeacherGradebook() {
                               placeholder="أدخل ملاحظة خاصة بالتلميذ..."
                               value={record.individualRemark}
                               onChange={(e) => handleRemarkChange(record.student, e.target.value)}
-                              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brand-500 focus:bg-white disabled:opacity-60"
+                              className="flex-1 bg-white border border-[#E8DFD0] rounded-xl px-3 py-1.5 text-xs text-[#2B2022] placeholder-[#A8989B] focus:outline-none focus:border-[#7B1E3A] disabled:opacity-60"
                             />
                             {!isLocked && (
                               <select
@@ -775,11 +806,13 @@ export default function TeacherGradebook() {
                                   if (e.target.value) handleRemarkChange(record.student, e.target.value);
                                 }}
                                 defaultValue=""
-                                className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[11px] rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer"
+                                className="bg-[#FBF7ED] hover:bg-[#F7EFD8] border border-[#EEDDAF] text-[#8E6E27] text-[11px] font-bold rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer"
                               >
-                                <option value="" disabled>اقتراحات...</option>
+                                <option value="" disabled className="bg-white text-[#766065]">اقتراحات...</option>
                                 {SUGGESTED_REMARKS.map((sug, i) => (
-                                  <option key={i} value={sug}>{sug}</option>
+                                  <option key={i} value={sug} className="bg-white text-[#2B2022] py-1 font-semibold">
+                                    {sug}
+                                  </option>
                                 ))}
                               </select>
                             )}
@@ -795,7 +828,7 @@ export default function TeacherGradebook() {
             {/* Section 3.3: Class General Remark */}
             <div className="p-4 bg-[#FFFBF5] border-t border-[#E8DFD0]">
               <label className="block text-xs font-bold text-[#7B1E3A] mb-1.5 flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-brand-600" />
+                <FileText className="w-4 h-4 text-[#7B1E3A]" />
                 <span>الملاحظة العامة للقسم (بخصوص هذا الفرض أو التقييم):</span>
               </label>
               <textarea
@@ -807,24 +840,24 @@ export default function TeacherGradebook() {
                   triggerAutoSave();
                 }}
                 placeholder="اكتب ملاحظة تشمل القسم بأكمله (مثل: ضرورة مراجعة الدروس، تحسن المستوى العام، أو ضعف النتائج في الجزء الثاني...)"
-                className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-brand-500 disabled:opacity-60 leading-relaxed transition-colors shadow-2xs"
+                className="w-full bg-white border border-[#E8DFD0] rounded-xl p-3 text-xs text-[#2B2022] placeholder-[#A8989B] focus:outline-none focus:border-[#7B1E3A] disabled:opacity-60 leading-relaxed transition-colors shadow-2xs"
               />
             </div>
           </div>
 
           {/* Bottom Action Footer */}
-          <div className="hidden sm:flex flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="text-xs text-slate-500">
-              <span>حالة الكشف الحالية: </span>
+          <div className="hidden sm:flex flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-[#E8DFD0] shadow-xs">
+            <div className="text-xs text-[#766065]">
+              <span className="font-bold">حالة الكشف الحالية: </span>
               <span
                 className={`font-bold px-2.5 py-1 rounded-full text-[11px] border ${
                   assessmentStatus === 'approved'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    ? 'bg-[#F4F9F4] text-[#2D6A4F] border-[#C6E7C8]'
                     : assessmentStatus === 'submitted'
-                    ? 'bg-sky-50 text-sky-700 border-sky-200'
+                    ? 'bg-[#FAF2F4] text-[#7B1E3A] border-[#E7C1CB]'
                     : assessmentStatus === 'returned'
-                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                    ? 'bg-[#FFF9F0] text-[#8E6E27] border-[#EEDDAF]'
+                    : 'bg-[#FAF7F2] text-[#766065] border-[#E8DFD0]'
                 }`}
               >
                 {assessmentStatus === 'draft' && 'مسودة'}
@@ -839,9 +872,9 @@ export default function TeacherGradebook() {
               <button
                 onClick={() => executeSave(false, false)}
                 disabled={isLocked || savingManual}
-                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-2xs"
+                className="px-5 py-2.5 rounded-xl bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#4A3A3D] text-xs font-bold border border-[#D5C9B8] transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-2xs"
               >
-                <Save className="w-4 h-4 text-brand-600" />
+                <Save className="w-4 h-4 text-[#7B1E3A]" />
                 حفظ كمسودة
               </button>
 
@@ -852,7 +885,7 @@ export default function TeacherGradebook() {
                   }
                 }}
                 disabled={isLocked || submittingAdmin}
-                className="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-all shadow-md shadow-brand-600/25 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#7B1E3A] to-[#60142B] hover:from-[#60142B] hover:to-[#480E20] text-white text-xs font-black transition-all shadow-md shadow-[#7B1E3A]/25 border border-[#C9A24D]/40 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 إرسال إلى الإدارة
@@ -861,13 +894,13 @@ export default function TeacherGradebook() {
           </div>
 
           {/* Sticky Mobile Floating Action Bar */}
-          <div className="sm:hidden fixed bottom-3 inset-x-3 z-40 bg-white/95 backdrop-blur-md p-2.5 rounded-2xl border border-slate-200 shadow-xl flex items-center gap-2">
+          <div className="sm:hidden fixed bottom-3 inset-x-3 z-40 bg-white/95 backdrop-blur-md p-2.5 rounded-2xl border border-[#E8DFD0] shadow-2xl flex items-center gap-2">
             <button
               onClick={() => executeSave(false, false)}
               disabled={isLocked || savingManual}
-              className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+              className="flex-1 py-3 rounded-xl bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#4A3A3D] text-xs font-black border border-[#D5C9B8] flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
             >
-              <Save className="w-4 h-4 text-brand-600" />
+              <Save className="w-4 h-4 text-[#7B1E3A]" />
               حفظ مسودة
             </button>
             <button
@@ -877,7 +910,7 @@ export default function TeacherGradebook() {
                 }
               }}
               disabled={isLocked || submittingAdmin}
-              className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-brand-600/20"
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#7B1E3A] to-[#60142B] hover:from-[#60142B] hover:to-[#480E20] text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-md shadow-[#7B1E3A]/25 border border-[#C9A24D]/40 cursor-pointer"
             >
               <Send className="w-4 h-4" />
               إرسال للإدارة
@@ -890,17 +923,17 @@ export default function TeacherGradebook() {
       {activeSubTab === 'history' && (
         <div className="space-y-4">
           {/* Filters for History */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E8DFD0] shadow-xs">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs text-slate-500 font-bold me-1">تصفية:</span>
+              <span className="text-xs text-[#766065] font-bold me-1">تصفية:</span>
               {['all', 'draft', 'submitted', 'approved', 'returned'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setHistoryFilterStatus(st)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     historyFilterStatus === st
-                      ? 'bg-brand-600 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-[#7B1E3A] text-white shadow-xs'
+                      : 'bg-[#FAF7F2] text-[#574549] hover:bg-[#F0EAE1] border border-[#E8DFD0]'
                   }`}
                 >
                   {st === 'all' && 'الكل'}
@@ -914,7 +947,7 @@ export default function TeacherGradebook() {
 
             <button
               onClick={loadHistory}
-              className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-brand-700 text-xs font-bold border border-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#FAF2F4] hover:bg-[#FCE7EC] text-[#7B1E3A] text-xs font-bold border border-[#E7C1CB] flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               تحديث السجل
@@ -924,29 +957,29 @@ export default function TeacherGradebook() {
           {/* History Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredHistory.length === 0 ? (
-              <div className="col-span-full py-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200 shadow-xs">
+              <div className="col-span-full py-12 text-center text-[#766065] bg-white rounded-2xl border border-[#E8DFD0] shadow-xs">
                 لا توجد كشوفات مسجلة بهذه التصفية.
               </div>
             ) : (
               filteredHistory.map((item) => (
                 <div
                   key={item._id}
-                  className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col justify-between hover:border-brand-300 hover:shadow-md transition-all shadow-xs space-y-3 group"
+                  className="bg-white rounded-2xl border border-[#E8DFD0] p-4 sm:p-5 flex flex-col justify-between hover:border-[#C9A24D] hover:shadow-md transition-all shadow-xs space-y-3 group"
                 >
                   <div className="space-y-2.5">
                     <div className="flex justify-between items-start gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 border border-brand-200">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FAF2F4] text-[#7B1E3A] border border-[#E7C1CB]">
                         {item.class?.name || 'قسم'}
                       </span>
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                           item.status === 'approved'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            ? 'bg-[#F4F9F4] text-[#2D6A4F] border-[#C6E7C8]'
                             : item.status === 'submitted'
-                            ? 'bg-sky-50 text-sky-700 border-sky-200'
+                            ? 'bg-[#FAF2F4] text-[#7B1E3A] border-[#E7C1CB]'
                             : item.status === 'returned'
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : 'bg-slate-100 text-slate-600 border-slate-200'
+                            ? 'bg-[#FFF9F0] text-[#8E6E27] border-[#EEDDAF]'
+                            : 'bg-[#FAF7F2] text-[#766065] border-[#E8DFD0]'
                         }`}
                       >
                         {item.status === 'draft' && 'مسودة'}
@@ -956,32 +989,32 @@ export default function TeacherGradebook() {
                       </span>
                     </div>
 
-                    <h4 className="text-sm font-bold text-slate-900">{item.assessmentType}</h4>
-                    <p className="text-xs text-slate-500">
-                      المادة: <strong className="text-slate-800">{item.subject}</strong>
+                    <h4 className="text-sm font-black text-[#2B2022]">{item.assessmentType}</h4>
+                    <p className="text-xs text-[#766065]">
+                      المادة: <strong className="text-[#7B1E3A] font-bold">{item.subject}</strong>
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-[#766065]">
                       تاريخ الإجراء:{' '}
-                      <span className="text-slate-700 font-mono">
+                      <span className="text-[#2B2022] font-mono font-bold">
                         {item.assessmentDate ? new Date(item.assessmentDate).toLocaleDateString('ar-DZ') : '-'}
                       </span>
                     </p>
-                    <p className="text-xs text-slate-500">
-                      عدد التلاميذ المسجلين: <strong className="text-slate-800 font-mono">{item.records?.length || 0}</strong>
+                    <p className="text-xs text-[#766065]">
+                      عدد التلاميذ المسجلين: <strong className="text-[#2B2022] font-mono">{item.records?.length || 0}</strong>
                     </p>
 
                     {item.status === 'returned' && item.returnReason && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-800">
-                        <strong className="block text-amber-900 mb-0.5">ملاحظات الإدارة:</strong>
+                      <div className="bg-[#FFF9F0] border border-[#EEDDAF] rounded-xl p-2.5 text-[11px] text-[#8E6E27]">
+                        <strong className="block text-[#8E6E27] font-black mb-0.5">ملاحظات الإدارة:</strong>
                         {item.returnReason}
                       </div>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div className="pt-2 border-t border-[#F0EAE1] flex items-center justify-between gap-2">
                     <button
                       onClick={() => handleEditAssessment(item)}
-                      className="flex-1 py-2 px-3 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold border border-brand-200 transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                      className="flex-1 py-2 px-3 rounded-xl bg-[#FAF2F4] hover:bg-[#FCE7EC] text-[#7B1E3A] text-xs font-bold border border-[#E7C1CB] transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
                       {item.status === 'returned' ? 'تصحيح الكشف' : item.status === 'draft' ? 'استكمال الإدخال' : 'معاينة الكشف'}
@@ -992,10 +1025,10 @@ export default function TeacherGradebook() {
                         href={`/api/assessments/${item._id}/export/pdf?type=collective`}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all shadow-2xs"
+                        className="p-2 rounded-xl bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#4A3A3D] border border-[#E8DFD0] transition-all shadow-2xs"
                         title="استخراج PDF"
                       >
-                        <Printer className="w-3.5 h-3.5 text-brand-600" />
+                        <Printer className="w-3.5 h-3.5 text-[#7B1E3A]" />
                       </a>
                     )}
                   </div>

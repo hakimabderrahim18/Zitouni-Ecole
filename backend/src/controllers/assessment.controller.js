@@ -56,15 +56,20 @@ const getMyAssignedClassesAndSubjects = async (req, res) => {
         name: cls.name,
         level: cls.level,
         modules: cls.modules || [],
-        students: classStudents.map((s) => ({
-          _id: s._id,
-          registrationNumber: s.registrationNumber || s.nationalIdDigitization || '',
-          firstName: s.user?.firstName || '',
-          lastName: s.user?.lastName || '',
-          firstNameArabic: s.user?.firstNameArabic || s.firstNameArabic || '',
-          lastNameArabic: s.user?.lastNameArabic || s.lastNameArabic || '',
-          fullName: `${s.user?.firstNameArabic || s.user?.firstName || ''} ${s.user?.lastNameArabic || s.user?.lastName || ''}`.trim(),
-        })),
+        students: classStudents.map((s, index) => {
+          const fName = s.user?.firstNameArabic || s.firstNameArabic || s.user?.firstName || s.firstName || '';
+          const lName = s.user?.lastNameArabic || s.lastNameArabic || s.user?.lastName || s.lastName || '';
+          const fullName = `${fName} ${lName}`.trim() || `تلميذ ${index + 1}`;
+          return {
+            _id: s._id,
+            registrationNumber: s.registrationNumber || s.nationalIdDigitization || '',
+            firstName: s.user?.firstName || s.firstName || '',
+            lastName: s.user?.lastName || s.lastName || '',
+            firstNameArabic: s.user?.firstNameArabic || s.firstNameArabic || '',
+            lastNameArabic: s.user?.lastNameArabic || s.lastNameArabic || '',
+            fullName,
+          };
+        }),
       };
     });
 
@@ -98,6 +103,10 @@ const getTeacherAssessments = async (req, res) => {
 
     const assessments = await Assessment.find(filter)
       .populate('class', 'name level')
+      .populate({
+        path: 'records.student',
+        populate: { path: 'user', select: 'firstName lastName firstNameArabic lastNameArabic' },
+      })
       .sort({ createdAt: -1 });
 
     res.status(200).json(assessments);

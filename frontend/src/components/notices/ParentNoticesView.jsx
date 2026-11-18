@@ -48,38 +48,38 @@ export default function ParentNoticesView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
         <div>
-          <h2 className="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2 flex-wrap">
+          <h2 className="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2 flex-wrap">
             <span>مراسلات الإدارة ومواعيد الاستقبال</span>
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
+            <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200 shadow-2xs">
               صندوق الرسائل الرسمية
             </span>
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-gray-600 font-medium mt-1">
             الاستدعاءات، مواعيد أيام استقبال الأولياء، والإعلانات الإدارية الموجهة إليكم.
           </p>
         </div>
 
         <button
           onClick={fetchNotices}
-          className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-brand-700 text-xs font-bold border border-slate-200 flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          تحديث الرسائل
+          <span>تحديث الرسائل</span>
         </button>
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-slate-400">
-          <Sparkles className="w-6 h-6 animate-spin mx-auto text-brand-500 mb-2" />
+        <div className="py-12 text-center text-gray-500 font-medium">
+          <Sparkles className="w-6 h-6 animate-spin mx-auto text-brand-600 mb-2" />
           جاري تحميل المراسلات...
         </div>
       ) : notices.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 shadow-xs">
-          <Mail className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-800">لا توجد رسائل أو استدعاءات جديدة</h3>
-          <p className="text-xs text-slate-500 mt-1">
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-600 shadow-sm font-medium">
+          <Mail className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-gray-800">لا توجد رسائل أو استدعاءات جديدة</h3>
+          <p className="text-xs text-gray-500 mt-1">
             سيتم إشعاركم فور إصدار الإدارة لأي موعد استقبال أو استدعاء أو إعلان رسمي.
           </p>
         </div>
@@ -91,23 +91,23 @@ export default function ParentNoticesView() {
             return (
               <div
                 key={notice._id}
-                className={`rounded-2xl border p-4 sm:p-5 transition-all shadow-xs space-y-4 ${
+                className={`rounded-2xl border p-4 sm:p-5 transition-all shadow-sm space-y-4 ${
                   isUnread
-                    ? 'bg-white border-s-4 border-s-brand-600 border-slate-200 shadow-md shadow-brand-500/5'
-                    : 'bg-white border-slate-200 opacity-95'
+                    ? 'bg-white border-s-4 border-s-brand-600 border-gray-200 shadow-md shadow-brand-500/5'
+                    : 'bg-white border-gray-200 opacity-95'
                 }`}
               >
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
-                      className={`px-3 py-1 rounded-full text-[11px] font-bold border ${
+                      className={`px-3 py-1 rounded-full text-xs font-black border ${
                         notice.noticeType === 'reception'
-                          ? 'bg-brand-50 text-brand-700 border-brand-200'
+                          ? 'bg-brand-50 text-brand-700 border-brand-200 shadow-2xs'
                           : notice.noticeType === 'summons'
-                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200 shadow-2xs'
                           : notice.noticeType === 'reminder'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-sky-50 text-sky-700 border-sky-200'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200 shadow-2xs'
+                          : 'bg-sky-50 text-sky-700 border-sky-200 shadow-2xs'
                       }`}
                     >
                       {notice.noticeType === 'reception' && 'موعد استقبال أولياء'}
@@ -124,10 +124,11 @@ export default function ParentNoticesView() {
                       </span>
                     )}
 
-                    <h3 className="text-sm sm:text-base font-black text-slate-900">{notice.title}</h3>
+                    <h3 className="text-sm sm:text-base font-black text-gray-900">{notice.title}</h3>
                   </div>
 
-                  <span className="text-[11px] font-mono text-slate-400 bg-slate-50 px-2.5 py-0.5 rounded-lg border border-slate-100 self-start sm:self-auto">
+                  <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-200 self-start sm:self-auto flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-gray-500" />
                     {new Date(notice.sentAt).toLocaleDateString('ar-DZ', {
                       weekday: 'short',
                       year: 'numeric',
@@ -137,40 +138,40 @@ export default function ParentNoticesView() {
                   </span>
                 </div>
 
-                {/* Message Body */}
-                <p className="text-xs sm:text-sm text-slate-800 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200/80 whitespace-pre-wrap font-sans">
+                {/* Message Body (Crystal clear text on light background) */}
+                <p className="text-xs sm:text-sm text-gray-800 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-200 whitespace-pre-wrap font-sans font-medium">
                   {notice.content}
                 </p>
 
                 {/* Appointment Box (If applicable) */}
                 {notice.appointmentDate && (
-                  <div className="p-4 bg-amber-50/80 rounded-xl border border-amber-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                  <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                     <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 font-bold text-amber-900 text-xs sm:text-sm">
+                      <div className="flex items-center gap-2 font-black text-amber-950 text-xs sm:text-sm">
                         <Calendar className="w-4 h-4 text-amber-700 shrink-0" />
                         <span>موعد الحضور والاستقبال: {new Date(notice.appointmentDate).toLocaleDateString('ar-DZ')}</span>
-                        {notice.appointmentEndTime && <span className="text-amber-800 font-mono">(إلى غاية {notice.appointmentEndTime})</span>}
+                        {notice.appointmentEndTime && <span className="text-amber-800 font-mono font-bold">(إلى غاية {notice.appointmentEndTime})</span>}
                       </div>
-                      <div className="flex items-center gap-2 text-amber-800/80">
-                        <MapPin className="w-4 h-4 text-amber-700/80 shrink-0" />
-                        <span>مكان اللقاء: <strong>{notice.appointmentLocation || 'مقر المؤسسة'}</strong></span>
+                      <div className="flex items-center gap-2 text-amber-900">
+                        <MapPin className="w-4 h-4 text-amber-700 shrink-0" />
+                        <span>مكان اللقاء: <strong className="font-bold">{notice.appointmentLocation || 'مقر المؤسسة'}</strong></span>
                       </div>
                     </div>
 
-                    <span className="text-[11px] text-amber-900 font-bold bg-amber-100/90 px-3 py-1.5 rounded-lg border border-amber-300 w-full sm:w-auto text-center">
+                    <span className="text-[11px] text-amber-950 font-bold bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-300 w-full sm:w-auto text-center">
                       يرجى الالتزام بالموعد المحدد
                     </span>
                   </div>
                 )}
 
                 {/* Footer and Mark Read */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs pt-2 border-t border-slate-100">
-                  <span className="text-slate-500 text-[11px]">المرسل: <strong className="text-slate-700">{notice.senderName || 'إدارة المدرسة'}</strong></span>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs pt-3 border-t border-gray-100">
+                  <span className="text-gray-600 text-xs">المرسل: <strong className="text-gray-900 font-bold">{notice.senderName || 'إدارة المدرسة'}</strong></span>
 
                   {isUnread && (
                     <button
                       onClick={() => handleMarkAsRead(notice._id)}
-                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       تأكيد الاطلاع

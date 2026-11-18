@@ -138,13 +138,13 @@ export default function ReportCardExtractor() {
               <Printer className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
                 استخراج وطباعة كشوف النقاط
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
                   كشوف فردية وجماعية
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-gray-600 mt-0.5">
                 معاينة الكشف على الشاشة، التصفية المتقدمة، واستخراج ملفات PDF قابلة للطباعة المباشرة.
               </p>
             </div>
@@ -165,7 +165,7 @@ export default function ReportCardExtractor() {
           <button
             onClick={handleDownloadCollectivePDF}
             disabled={!activeAssessment}
-            className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold border border-gray-300 shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Download className="w-4 h-4 text-brand-600" />
             تحميل جماعي PDF
@@ -183,14 +183,14 @@ export default function ReportCardExtractor() {
       </div>
 
       {/* Filter Bar (hidden on print) */}
-      <div className="print:hidden bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="print:hidden bg-white p-4 rounded-2xl border border-gray-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {/* 1. Cycle Filter */}
         <div>
-          <label className="text-xs font-bold text-slate-700 mb-1 block">الطور الدراسي:</label>
+          <label className="text-xs font-bold text-gray-700 mb-1 block">الطور الدراسي:</label>
           <select
             value={selectedCycle}
             onChange={(e) => setSelectedCycle(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-brand-500"
+            className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500"
           >
             <option value="all">جميع الأطوار</option>
             <option value="primary">الطور الابتدائي</option>
@@ -201,11 +201,11 @@ export default function ReportCardExtractor() {
 
         {/* 2. Class Filter */}
         <div>
-          <label className="text-xs font-bold text-slate-700 mb-1 block">القسم:</label>
+          <label className="text-xs font-bold text-gray-700 mb-1 block">القسم:</label>
           <select
             value={selectedClassId}
             onChange={(e) => setSelectedClassId(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-brand-500"
+            className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500"
           >
             <option value="all">جميع الأقسام</option>
             {classes.map((cls) => (
@@ -218,11 +218,11 @@ export default function ReportCardExtractor() {
 
         {/* 3. Subject Filter */}
         <div>
-          <label className="text-xs font-bold text-slate-700 mb-1 block">المادة:</label>
+          <label className="text-xs font-bold text-gray-700 mb-1 block">المادة:</label>
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-brand-500"
+            className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500"
           >
             <option value="all">جميع المواد</option>
             {Array.from(new Set(assessments.map((a) => a.subject))).map((sub, idx) => (
@@ -251,11 +251,11 @@ export default function ReportCardExtractor() {
 
         {/* 5. Student Filter (Specific or All) */}
         <div>
-          <label className="text-xs font-bold text-slate-700 mb-1 block">التلميذ المستهدف:</label>
+          <label className="text-xs font-bold text-gray-700 mb-1 block">التلميذ المستهدف:</label>
           <select
             value={selectedStudentId}
             onChange={(e) => setSelectedStudentId(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-brand-500"
+            className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-brand-500"
           >
             <option value="all">جميع تلاميذ القسم (كشف جماعي)</option>
             {records.map((r, i) => {
