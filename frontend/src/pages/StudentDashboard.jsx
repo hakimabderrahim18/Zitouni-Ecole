@@ -88,19 +88,19 @@ export default function StudentDashboard() {
         {activeTab === 'courses' && (
           <div className="max-w-5xl space-y-6">
             {/* Re-enrollment Notification Banner */}
-            <div className="p-5 rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-50 via-white to-amber-50/50 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-5 rounded-2xl border border-[#C9A24D]/35 bg-gradient-to-r from-[#F3E9DC]/70 via-white to-[#F3E9DC]/40 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-brand-600 flex items-center justify-center text-white shrink-0 shadow-sm shadow-brand-900/20">
-                  <RefreshCw className="w-5 h-5" />
+                <div className="w-11 h-11 rounded-xl bg-[#7B1E3A] flex items-center justify-center text-white shrink-0 shadow-sm shadow-[#7B1E3A]/25">
+                  <RefreshCw className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-gray-900">فترة إعادة التسجيل للموسم الدراسي الجديد مفتوحة</h4>
-                  <p className="text-xs text-gray-600 font-medium mt-0.5">يمكنك تأكيد رغبتك في إعادة التسجيل، اختيار القسم، وتوليد استمارة التسجيل وعقد التمدرس الرسمي.</p>
+                  <h4 className="text-sm font-black text-[#2B2022]">فترة إعادة التسجيل للموسم الدراسي الجديد مفتوحة</h4>
+                  <p className="text-xs text-[#2B2022]/70 font-medium mt-0.5">يمكنك تأكيد رغبتك في إعادة التسجيل، اختيار القسم، وتوليد استمارة التسجيل وعقد التمدرس الرسمي.</p>
                 </div>
               </div>
               <button
                 onClick={() => navigate('/dashboard/student/re-enrollment')}
-                className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-900/15 transition-all whitespace-nowrap shrink-0 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#7B1E3A] hover:bg-[#62162d] text-white font-bold text-xs shadow-md shadow-[#7B1E3A]/20 transition-all whitespace-nowrap shrink-0 cursor-pointer"
               >
                 إعادة التسجيل الآن
               </button>
@@ -110,7 +110,7 @@ export default function StudentDashboard() {
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center shadow-md shadow-brand-900/20 shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-[#7B1E3A] flex items-center justify-center shadow-md shadow-[#7B1E3A]/20 shrink-0">
                     <BookOpen className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -119,9 +119,9 @@ export default function StudentDashboard() {
                   </div>
                 </div>
                 {!loading && courses.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold w-fit">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    {courses.length} ملف متاح
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#F3E9DC] border border-[#C9A24D]/50 text-[#7B1E3A] text-xs font-black w-fit shadow-2xs">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C9A24D]" />
+                    <span className="text-[#7B1E3A] font-black">{courses.length} ملف متاح</span>
                   </span>
                 )}
               </div>
@@ -148,7 +148,7 @@ export default function StudentDashboard() {
                     return (
                       <div
                         key={c._id}
-                        className="group relative p-5 rounded-2xl bg-white border border-gray-200 hover:border-brand-400 hover:shadow-lg transition-all duration-300 overflow-hidden shadow-xs"
+                        className="group relative p-5 rounded-2xl bg-white border border-gray-200 hover:border-[#C9A24D]/60 hover:shadow-lg transition-all duration-300 overflow-hidden shadow-xs"
                       >
                         {/* Top accent bar */}
                         <div className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r ${accent}`} />
@@ -159,14 +159,14 @@ export default function StudentDashboard() {
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-black text-gray-900 text-base truncate group-hover:text-brand-700 transition-colors">{c.title}</h4>
+                            <h4 className="font-black text-gray-900 text-base truncate group-hover:text-[#7B1E3A] transition-colors">{c.title}</h4>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
                               <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 border border-gray-200 text-xs font-bold text-gray-800">
                                 {c.subject}
                               </span>
                               {teacherName && (
                                 <span className="inline-flex items-center gap-1.5 text-xs text-gray-700 font-semibold">
-                                  <span className="w-5 h-5 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center text-[10px] font-extrabold text-brand-700 uppercase">
+                                  <span className="w-5 h-5 rounded-full bg-[#7B1E3A]/10 border border-[#7B1E3A]/30 flex items-center justify-center text-[10px] font-extrabold text-[#7B1E3A] uppercase">
                                     {c.teacher?.user?.firstName?.[0]}{c.teacher?.user?.lastName?.[0]}
                                   </span>
                                   {teacherName}
@@ -184,13 +184,13 @@ export default function StudentDashboard() {
                             href={c.fileUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="mt-4 w-full py-2.5 rounded-xl bg-brand-50 hover:bg-brand-600 border border-brand-200 hover:border-brand-600 text-brand-700 hover:text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                            className="mt-4 w-full py-2.5 rounded-xl bg-[#7B1E3A] hover:bg-[#62162d] border border-[#7B1E3A] text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-sm shadow-[#7B1E3A]/20 cursor-pointer"
                           >
-                            <Download className="w-4 h-4" />
-                            <span>تحميل الملف المرفق</span>
+                            <Download className="w-4 h-4 text-[#C9A24D]" />
+                            <span className="text-white font-bold">تحميل الملف المرفق</span>
                           </a>
                         ) : (
-                          <div className="mt-4 w-full py-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-xs text-center font-semibold">
+                          <div className="mt-4 w-full py-2 rounded-xl bg-[#F3E9DC]/70 border border-[#C9A24D]/35 text-[#7B1E3A] text-xs text-center font-bold">
                             درس نصي وتوجيهي (بدون ملف)
                           </div>
                         )}

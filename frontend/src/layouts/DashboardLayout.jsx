@@ -438,7 +438,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                   <span className="font-black text-gray-900 text-base leading-tight break-words">
                     {settings?.schoolNameArabic || 'مدرسة حبر'}
                   </span>
-                  <span className="text-[11px] font-bold font-mono text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200/60 mt-0.5 inline-block w-fit">
+                  <span className="text-[11px] font-bold font-mono text-[#7B1E3A] bg-[#F3E9DC] px-2 py-0.5 rounded-md border border-[#C9A24D]/40 mt-0.5 inline-block w-fit">
                     {settings?.academicYear || '2026-2027'}
                   </span>
                 </div>
@@ -469,16 +469,20 @@ export default function DashboardLayout({ children, noPadding = false }) {
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all group text-sm relative ${
                 location.pathname === '/feed'
-                  ? 'bg-brand-50 border-brand-200 text-brand-800 font-bold shadow-xs'
+                  ? 'bg-brand-50 border-brand-300 text-[#7B1E3A] font-bold shadow-xs'
                   : 'text-gray-700 hover:text-brand-700 border-transparent hover:border-gray-200 hover:bg-gray-100/70 font-semibold'
               } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
             >
-              <Globe className={`w-4.5 h-4.5 shrink-0 transition-colors ${location.pathname === '/feed' ? 'text-brand-700' : 'text-gray-500 group-hover:text-brand-700'}`} />
-              {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-semibold">آخر الأخبار والمستجدات</span>}
+              <Globe className={`w-4.5 h-4.5 shrink-0 transition-colors ${location.pathname === '/feed' ? 'text-[#7B1E3A]' : 'text-gray-500 group-hover:text-brand-700'}`} />
+              {!sidebarCollapsed && (
+                <span className={`leading-snug break-words flex-1 text-xs sm:text-sm ${location.pathname === '/feed' ? '!text-[#7B1E3A] text-[#7B1E3A] font-bold' : 'text-gray-700 font-semibold group-hover:text-brand-700'}`}>
+                  آخر الأخبار والمستجدات
+                </span>
+              )}
               {location.pathname === '/feed' && !sidebarCollapsed && (
                 <motion.span
                   layoutId="activeBar"
-                  className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-700 rounded-e-full"
+                  className="absolute start-0 inset-y-1.5 w-1.5 bg-[#7B1E3A] rounded-e-full"
                 />
               )}
             </Link>
@@ -492,16 +496,20 @@ export default function DashboardLayout({ children, noPadding = false }) {
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all group text-sm relative ${
                     isActive
-                      ? 'bg-brand-50 border-brand-200 text-brand-800 font-bold shadow-xs'
+                      ? 'bg-brand-50 border-brand-300 text-[#7B1E3A] font-bold shadow-xs'
                       : 'text-gray-700 hover:text-brand-700 border-transparent hover:border-gray-200 hover:bg-gray-100/70 font-semibold'
                   } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
                 >
-                  <Icon className={`w-4.5 h-4.5 shrink-0 transition-colors ${isActive ? 'text-brand-700' : 'text-gray-500 group-hover:text-brand-700'}`} />
-                  {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-semibold">{link.label}</span>}
+                  <Icon className={`w-4.5 h-4.5 shrink-0 transition-colors ${isActive ? 'text-[#7B1E3A]' : 'text-gray-500 group-hover:text-brand-700'}`} />
+                  {!sidebarCollapsed && (
+                    <span className={`leading-snug break-words flex-1 text-xs sm:text-sm ${isActive ? '!text-[#7B1E3A] text-[#7B1E3A] font-bold' : 'text-gray-700 font-semibold group-hover:text-brand-700'}`}>
+                      {link.label}
+                    </span>
+                  )}
                   {isActive && !sidebarCollapsed && (
                     <motion.span 
                       layoutId="activeBar"
-                      className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-700 rounded-e-full"
+                      className="absolute start-0 inset-y-1.5 w-1.5 bg-[#7B1E3A] rounded-e-full"
                     />
                   )}
                 </Link>
@@ -512,16 +520,20 @@ export default function DashboardLayout({ children, noPadding = false }) {
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all group text-sm relative ${
                 location.pathname === '/chat'
-                  ? 'bg-brand-50 border-brand-200 text-brand-800 font-bold shadow-xs'
+                  ? 'bg-brand-50 border-brand-300 text-[#7B1E3A] font-bold shadow-xs'
                   : 'text-gray-700 hover:text-brand-700 border-transparent hover:border-gray-200 hover:bg-gray-100/70 font-semibold'
               } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
             >
-              <MessageSquare className={`w-4.5 h-4.5 shrink-0 transition-colors ${location.pathname === '/chat' ? 'text-brand-700' : 'text-gray-500 group-hover:text-brand-700'}`} />
-              {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-semibold">الرسائل والمحادثة</span>}
+              <MessageSquare className={`w-4.5 h-4.5 shrink-0 transition-colors ${location.pathname === '/chat' ? 'text-[#7B1E3A]' : 'text-gray-500 group-hover:text-brand-700'}`} />
+              {!sidebarCollapsed && (
+                <span className={`leading-snug break-words flex-1 text-xs sm:text-sm ${location.pathname === '/chat' ? '!text-[#7B1E3A] text-[#7B1E3A] font-bold' : 'text-gray-700 font-semibold group-hover:text-brand-700'}`}>
+                  الرسائل والمحادثة
+                </span>
+              )}
               {location.pathname === '/chat' && !sidebarCollapsed && (
                 <motion.span 
                   layoutId="activeBar"
-                  className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-700 rounded-e-full"
+                  className="absolute start-0 inset-y-1.5 w-1.5 bg-[#7B1E3A] rounded-e-full"
                 />
               )}
             </Link>
@@ -599,7 +611,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
             <span className="text-sm sm:text-base font-black text-gray-900 whitespace-nowrap">
               {settings?.schoolNameArabic || 'مدرسة حبر'}
             </span>
-            <span className="hidden xs:inline-block px-2 py-0.5 rounded-md bg-brand-50 border border-brand-200 text-brand-700 font-bold text-[10px] shrink-0">
+            <span className="hidden xs:inline-block px-2 py-0.5 rounded-md bg-[#F3E9DC] border border-[#C9A24D]/40 text-[#7B1E3A] font-bold text-[10px] shrink-0">
               {settings?.academicYear || '2026-2027'}
             </span>
           </div>
@@ -733,7 +745,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
               </button>{' '}
               ! أهلاً بك في فضاءك الخاص.
             </span>
-            <span className="px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 font-extrabold text-xs shadow-xs">
+            <span className="px-3 py-1 rounded-full bg-[#F3E9DC] border border-[#C9A24D]/50 text-[#7B1E3A] font-extrabold text-xs shadow-2xs">
               السنة الدراسية {settings?.academicYear || '2026-2027'}
             </span>
           </div>

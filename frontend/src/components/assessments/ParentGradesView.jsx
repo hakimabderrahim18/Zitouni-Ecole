@@ -215,10 +215,10 @@ export default function ParentGradesView() {
                     </span>
                     <button
                       onClick={() => handleDownloadReportCard(a.assessmentId, activeChild.childId)}
-                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brand-50 hover:bg-brand-600 text-brand-700 hover:text-white border border-brand-200 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer group"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#7B1E3A] hover:bg-[#62162d] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm shadow-[#7B1E3A]/20 cursor-pointer"
                     >
-                      <Download className="w-4 h-4 text-brand-600 group-hover:text-white transition-colors" />
-                      <span>تحميل كشف النقاط (PDF)</span>
+                      <Download className="w-4 h-4 text-[#C9A24D]" />
+                      <span className="text-white font-bold">تحميل كشف النقاط (PDF)</span>
                     </button>
                   </div>
                 </div>

@@ -561,7 +561,7 @@ export default function TeacherDashboard() {
                                 href={c.fileUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="p-2.5 bg-brand-50 hover:bg-brand-600 text-brand-700 hover:text-white border border-brand-200 hover:border-brand-600 rounded-xl transition-all shadow-xs"
+                                className="p-2.5 bg-[#7B1E3A] hover:bg-[#62162d] text-white border border-[#7B1E3A] rounded-xl transition-all shadow-xs cursor-pointer"
                                 title="تحميل الملف المرفق"
                               >
                                 <Download className="w-4 h-4" />

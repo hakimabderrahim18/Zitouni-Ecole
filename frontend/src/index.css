@@ -270,14 +270,17 @@
   color: var(--text-100); 
 }
 
-/* Explicitly preserve crisp white text on colored buttons & active pills */
-.theme-prestige [class*="bg-brand-500"],
-.theme-prestige [class*="bg-brand-600"],
-.theme-prestige [class*="bg-brand-700"],
-.theme-prestige [class*="bg-brand-800"],
-.theme-prestige [class~="bg-[#7B1E3A]"],
-.theme-prestige [class~="bg-[#881337]"],
-.theme-prestige [class~="bg-[#62162d]"],
+/* Explicitly preserve crisp white text on solid dark buttons & active pills */
+.theme-prestige [class~="bg-brand-500"].text-white,
+.theme-prestige [class~="bg-brand-600"].text-white,
+.theme-prestige [class~="bg-brand-700"].text-white,
+.theme-prestige [class~="bg-brand-800"].text-white,
+.theme-prestige [class~="bg-[#7B1E3A]"].text-white,
+.theme-prestige [class~="bg-[#7B1E3A]"] .text-white,
+.theme-prestige [class~="bg-[#881337]"].text-white,
+.theme-prestige [class~="bg-[#881337]"] .text-white,
+.theme-prestige [class~="bg-[#62162d]"].text-white,
+.theme-prestige [class~="bg-[#62162d]"] .text-white,
 .theme-prestige .chat-own-bubble,
 .theme-prestige button[type="submit"],
 .theme-prestige button[type="submit"] span,
@@ -286,6 +289,53 @@
 button[type="submit"] .text-white,
 button[type="submit"] span {
   color: #FFFFFF !important;
+}
+
+/* Ensure badges & light status pills always have dark high-contrast text */
+.theme-sand .bg-brand-50,
+.theme-prestige .bg-brand-50,
+.theme-sand [class*="bg-brand-50"]:not([class*="hover:bg-brand-50"]):not(.text-white),
+.theme-prestige [class*="bg-brand-50"]:not([class*="hover:bg-brand-50"]):not(.text-white),
+.theme-sand [class*="bg-[#F3E9DC]"],
+.theme-prestige [class*="bg-[#F3E9DC]"] {
+  color: #7B1E3A !important;
+}
+
+/* Sidebar & Drawer Chosen/Active Navigation Item Visibility */
+aside nav a.bg-brand-50,
+aside nav a[class*="bg-brand-50"],
+aside nav a[class*="border-[#7B1E3A]"],
+aside nav a[class*="border-brand-"],
+.theme-prestige aside nav a[class*="bg-brand-50"],
+.theme-prestige aside nav a[class*="border-brand-"],
+.theme-prestige aside nav a[class*="text-brand-800"],
+.theme-prestige aside nav a.shadow-xs {
+  color: #7B1E3A !important;
+}
+
+aside nav a.bg-brand-50 span,
+aside nav a[class*="bg-brand-50"] span,
+aside nav a[class*="border-[#7B1E3A]"] span,
+aside nav a[class*="border-brand-"] span,
+.theme-prestige aside nav a[class*="bg-brand-50"] span,
+.theme-prestige aside nav a[class*="border-brand-"] span,
+.theme-prestige aside nav a[class*="text-brand-800"] span,
+.theme-prestige aside nav a.shadow-xs span {
+  color: #7B1E3A !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+aside nav a.bg-brand-50 svg,
+aside nav a[class*="bg-brand-50"] svg,
+aside nav a[class*="border-brand-"] svg,
+.theme-prestige aside nav a[class*="bg-brand-50"] svg,
+.theme-prestige aside nav a[class*="border-brand-"] svg,
+.theme-prestige aside nav a[class*="text-brand-800"] svg,
+.theme-prestige aside nav a.shadow-xs svg {
+  color: #7B1E3A !important;
+  stroke: #7B1E3A !important;
 }
 
 .theme-sand [class*="bg-brand-"].text-white,

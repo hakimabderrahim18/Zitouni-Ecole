@@ -270,7 +270,13 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   }}
                   activeOpacity={0.75}
                 >
-                  <Text style={[styles.navItemText, isActive && styles.navItemTextActive]}>
+                  <Text
+                    style={[
+                      styles.navItemText,
+                      isActive && styles.navItemTextActive,
+                      isActive && { color: '#7B1E3A', fontWeight: '800' },
+                    ]}
+                  >
                     {item.label}
                   </Text>
 
