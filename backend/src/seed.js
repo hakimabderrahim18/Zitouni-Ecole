@@ -3468,6 +3468,15 @@ const seedDatabase = async (standalone = false) => {
       console.log('[Seed] timetableEntries.json not found, skipping timetable import.');
     }
 
+    // Seed academic assessments and pedagogical statistics
+    try {
+      const { seedAcademicAssessments } = require('./scripts/seedAcademicAssessments');
+      console.log('[Seed] Seeding academic assessments and pedagogical statistics...');
+      await seedAcademicAssessments(false);
+    } catch (assErr) {
+      console.warn('[Seed] Notice on academic assessments seeding:', assErr.message);
+    }
+
     console.log('[Seed] ========================================================');
     console.log('[Seed] COMPREHENSIVE SEEDING COMPLETED FOR ALL 30 TABLES/MODELS!');
     console.log('[Seed] ========================================================');

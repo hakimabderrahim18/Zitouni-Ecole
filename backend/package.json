@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "seed:assessments": "node src/scripts/seedAcademicAssessments.js",
+    "seed:atlas": "node src/scripts/seedAcademicAssessments.js",
+    "migrate:atlas": "node src/migrateToAtlas.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
