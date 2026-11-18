@@ -182,7 +182,7 @@ export default function TeacherDashboard() {
     const groups = effectiveGroups;
     if (classes && classes.length > 0) {
       const defaultClass = classes[0]._id;
-      const defaultGroup = groups?.find(g => (g.class === defaultClass || g.class?._id === defaultClass))?._id || '';
+      const defaultGroup = groups?.find(g => (g.class?._id || g.class)?.toString() === defaultClass.toString())?._id || '';
 
       setCourse((prev) => ({
         ...prev,
@@ -488,7 +488,7 @@ export default function TeacherDashboard() {
                     >
                       <option value="">القسم كاملاً (أو اختر الفوج)</option>
                       {effectiveGroups
-                        .filter((g) => (g.class === course.classId || g.class?._id === course.classId))
+                        .filter((g) => !course.classId || ((g.class?._id || g.class)?.toString() === course.classId.toString()))
                         .map((g) => (
                           <option key={g._id} value={g._id}>{g.name}</option>
                         ))}
@@ -636,7 +636,11 @@ export default function TeacherDashboard() {
             </div>
 
             {attendanceSubTab === 'mark' && (
-              <AttendanceManager />
+              <AttendanceManager
+                assignedClasses={effectiveClasses}
+                assignedGroups={effectiveGroups}
+                isTeacher={true}
+              />
             )}
             {false && (
               <div className="space-y-6">
@@ -1111,7 +1115,7 @@ export default function TeacherDashboard() {
                     >
                       <option value="">القسم كاملاً (بدون تخصيص فوج)</option>
                       {effectiveGroups
-                        .filter((g) => (g.class === editCourseData.classId || g.class?._id === editCourseData.classId))
+                        .filter((g) => !editCourseData.classId || ((g.class?._id || g.class)?.toString() === editCourseData.classId.toString()))
                         .map((g) => (
                           <option key={g._id} value={g._id}>{g.name}</option>
                         ))}

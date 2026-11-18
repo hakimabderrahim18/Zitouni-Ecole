@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, CheckCircle2, XCircle, Clock, AlertTriangle, ShieldCheck,
   FileText, Calendar, Save, Check, RefreshCw, Printer, AlertOctagon, CheckSquare,
-  MessageSquare, Download, ExternalLink, FileSpreadsheet, Send, Search, X
+  MessageSquare, Download, ExternalLink, FileSpreadsheet, Send, Search, X, Layers
 } from 'lucide-react';
 import AbsenceWarningLetterModal from './AbsenceWarningLetterModal';
 import DigitalExitPassModal from './DigitalExitPassModal';
@@ -15,7 +15,9 @@ import { useAuthStore } from '../store/useAuthStore';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const getToken = () => {
-  return useAuthStore.getState().accessToken || localStorage.getItem('zitouni_access_token') || localStorage.getItem('token') || '';
+  const raw = useAuthStore.getState().accessToken || localStorage.getItem('zitouni_access_token') || localStorage.getItem('token') || '';
+  if (!raw || raw === 'null' || raw === 'undefined') return '';
+  return raw.startsWith('Bearer ') ? raw.slice(7).trim() : raw.trim();
 };
 
 const STATUS_CONFIG = {
@@ -68,12 +70,18 @@ const SESSIONS = [
   { id: '15:30 - 16:30', label: '15:30 - 16:30' },
 ];
 
-export default function AttendanceManager() {
-  const [classes, setClasses] = useState([]);
+export default function AttendanceManager({
+  assignedClasses = null,
+  assignedGroups = null,
+  isTeacher = false,
+}) {
+  const [classes, setClasses] = useState(assignedClasses || []);
+  const [allGroups, setAllGroups] = useState(assignedGroups || []);
   const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedGroupId, setSelectedGroupId] = useState('all');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSession, setSelectedSession] = useState('Daily');
-  const [students, setStudents] = useState([]);
+  const [rawClassStudents, setRawClassStudents] = useState([]);
   const [attendanceMap, setAttendanceMap] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -104,11 +112,49 @@ export default function AttendanceManager() {
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
 
-  // Fetch classes on mount
+  // Sync assignedClasses prop or fetch classes
   useEffect(() => {
-    fetchClasses();
+    if (assignedClasses && Array.isArray(assignedClasses) && assignedClasses.length > 0) {
+      setClasses(assignedClasses);
+      if (!selectedClassId) {
+        setSelectedClassId(assignedClasses[0]._id);
+      }
+    } else {
+      fetchClasses();
+    }
+  }, [assignedClasses]);
+
+  // Sync assignedGroups prop or fetch groups
+  useEffect(() => {
+    if (assignedGroups && Array.isArray(assignedGroups) && assignedGroups.length > 0) {
+      setAllGroups(assignedGroups);
+    } else {
+      fetchGroups();
+    }
+  }, [assignedGroups]);
+
+  useEffect(() => {
     fetchTodayStats();
   }, []);
+
+  // Compute available groups for currently selected class
+  const availableGroups = useMemo(() => {
+    if (!selectedClassId) return [];
+    return allGroups.filter(g => {
+      const cId = (g.class?._id || g.class)?.toString();
+      return cId === selectedClassId.toString();
+    });
+  }, [allGroups, selectedClassId]);
+
+  // Reset selectedGroupId if no longer valid in selected class
+  useEffect(() => {
+    if (selectedGroupId !== 'all') {
+      const exists = availableGroups.some(g => g._id?.toString() === selectedGroupId?.toString());
+      if (!exists) {
+        setSelectedGroupId('all');
+      }
+    }
+  }, [availableGroups, selectedGroupId]);
 
   // Fetch attendance sheet when class, date or session changes
   useEffect(() => {
@@ -124,10 +170,8 @@ export default function AttendanceManager() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = Array.isArray(res.data) ? res.data : (res.data?.classes || []);
-      // Sort classes: primary, middle, secondary
       setClasses(data);
       if (data.length > 0 && !selectedClassId) {
-        // Prefer 1AM1 or 1AP if available, otherwise first
         const pref = data.find(c => c && (c.name === '1AM1' || c.name === '1AP')) || data[0];
         if (pref?._id) {
           setSelectedClassId(pref._id);
@@ -135,6 +179,19 @@ export default function AttendanceManager() {
       }
     } catch (err) {
       console.error('Error fetching classes:', err);
+    }
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const token = getToken();
+      const res = await axios.get(`${API_URL}/admin/groups`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = Array.isArray(res.data) ? res.data : (res.data?.groups || []);
+      setAllGroups(data);
+    } catch (err) {
+      console.error('Error fetching groups:', err);
     }
   };
 
@@ -169,9 +226,9 @@ export default function AttendanceManager() {
 
       // Filter by selected class if API returns all
       const classStudents = rawStudents.filter(
-        s => s && ((s.class?._id || s.class) === selectedClassId)
+        s => s && ((s.class?._id || s.class)?.toString() === selectedClassId.toString())
       );
-      setStudents(classStudents);
+      setRawClassStudents(classStudents);
 
       // 2. Fetch existing attendance records for this class & date & session
       const attRes = await axios.get(`${API_URL}/attendance/class/${selectedClassId}`, {
@@ -187,7 +244,7 @@ export default function AttendanceManager() {
       // Seed map with existing records or default to 'Present'
       classStudents.forEach(stu => {
         if (!stu || !stu._id) return;
-        const found = existingRecords.find(r => r && (r.student?._id || r.student) === stu._id);
+        const found = existingRecords.find(r => r && (r.student?._id || r.student)?.toString() === stu._id?.toString());
         if (found) {
           newMap[stu._id] = {
             recordId: found._id,
@@ -230,6 +287,17 @@ export default function AttendanceManager() {
       setLoading(false);
     }
   };
+
+  // Filter students based on selected group
+  const students = useMemo(() => {
+    if (!selectedGroupId || selectedGroupId === 'all') {
+      return rawClassStudents;
+    }
+    return rawClassStudents.filter(stu => {
+      const gId = (stu.group?._id || stu.group)?.toString();
+      return gId === selectedGroupId.toString();
+    });
+  }, [rawClassStudents, selectedGroupId]);
 
   const handleSendWhatsAppForStudent = async (student) => {
     const state = attendanceMap[student._id] || {};
@@ -329,6 +397,7 @@ export default function AttendanceManager() {
       const token = getToken();
       const records = students.map(stu => ({
         studentId: stu._id,
+        groupId: (stu.group?._id || stu.group) || (selectedGroupId !== 'all' ? selectedGroupId : null),
         status: attendanceMap[stu._id]?.status || 'Present',
         lateMinutes: attendanceMap[stu._id]?.lateMinutes || 0,
         remarks: attendanceMap[stu._id]?.remarks || '',
@@ -338,6 +407,7 @@ export default function AttendanceManager() {
         `${API_URL}/attendance/record-bulk`,
         {
           classId: selectedClassId,
+          groupId: selectedGroupId !== 'all' ? selectedGroupId : null,
           date: selectedDate,
           session: selectedSession,
           records,
@@ -370,14 +440,14 @@ export default function AttendanceManager() {
     setWarningModalOpen(true);
   };
 
-  // Count current states
+  // Count current states for currently selected group/students
   const counts = {
     total: students?.length || 0,
-    present: Object.values(attendanceMap || {}).filter(v => v?.status === 'Present').length,
-    absent: Object.values(attendanceMap || {}).filter(v => ['Absent', 'Unexcused'].includes(v?.status)).length,
-    late: Object.values(attendanceMap || {}).filter(v => v?.status === 'Late').length,
-    excused: Object.values(attendanceMap || {}).filter(v => v?.status === 'Excused').length,
-    exitPass: Object.values(attendanceMap || {}).filter(v => v?.status === 'ExitPass').length,
+    present: students.filter(s => attendanceMap[s._id]?.status === 'Present').length,
+    absent: students.filter(s => ['Absent', 'Unexcused'].includes(attendanceMap[s._id]?.status)).length,
+    late: students.filter(s => attendanceMap[s._id]?.status === 'Late').length,
+    excused: students.filter(s => attendanceMap[s._id]?.status === 'Excused').length,
+    exitPass: students.filter(s => attendanceMap[s._id]?.status === 'ExitPass').length,
   };
 
   // Filtered students list based on search and status filter
@@ -492,21 +562,38 @@ export default function AttendanceManager() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {/* Class Selector */}
-            <div className="flex items-center gap-2.5 bg-white border-2 border-[#C9A24D]/45 hover:border-[#C9A24D] focus-within:border-[#7B1E3A] focus-within:ring-2 focus-within:ring-[#7B1E3A]/20 rounded-xl px-3.5 py-2 shadow-xs transition-all min-w-[200px]">
+            <div className="flex items-center gap-2.5 bg-white border-2 border-[#C9A24D]/45 hover:border-[#C9A24D] focus-within:border-[#7B1E3A] focus-within:ring-2 focus-within:ring-[#7B1E3A]/20 rounded-xl px-3.5 py-2 shadow-xs transition-all min-w-[200px] flex-1 sm:flex-initial">
               <Users className="w-4 h-4 text-[#7B1E3A] shrink-0" />
               <select
                 value={selectedClassId}
                 onChange={e => setSelectedClassId(e.target.value)}
                 className="bg-transparent text-[#2B2022] text-xs font-bold focus:outline-none cursor-pointer w-full"
               >
-                {classes.length === 0 && (
-                  <option value="" disabled className="bg-white text-stone-400">
-                    {loading ? 'جاري تحميل الأقسام...' : 'لا توجد أقسام متاحة'}
-                  </option>
-                )}
+                <option value="" disabled className="bg-white text-stone-400">
+                  {classes.length === 0 ? (loading ? 'جاري تحميل الأقسام...' : 'لا توجد أقسام متاحة') : '-- اختر القسم --'}
+                </option>
                 {classes.map(cls => (
                   <option key={cls._id} value={cls._id} className="bg-white text-[#2B2022]">
                     {cls.name} {cls.description ? `(${cls.description})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Group Selector */}
+            <div className="flex items-center gap-2.5 bg-white border-2 border-[#C9A24D]/45 hover:border-[#C9A24D] focus-within:border-[#7B1E3A] focus-within:ring-2 focus-within:ring-[#7B1E3A]/20 rounded-xl px-3.5 py-2 shadow-xs transition-all min-w-[190px] flex-1 sm:flex-initial">
+              <Layers className="w-4 h-4 text-[#7B1E3A] shrink-0" />
+              <select
+                value={selectedGroupId}
+                onChange={e => setSelectedGroupId(e.target.value)}
+                className="bg-transparent text-[#2B2022] text-xs font-bold focus:outline-none cursor-pointer w-full"
+              >
+                <option value="all" className="bg-white text-[#2B2022] font-bold">
+                  جميع الأفواج {availableGroups.length > 0 ? `(${availableGroups.length})` : '(القسم كاملاً)'}
+                </option>
+                {availableGroups.map(grp => (
+                  <option key={grp._id} value={grp._id} className="bg-white text-[#2B2022]">
+                    {grp.name}
                   </option>
                 ))}
               </select>
@@ -755,7 +842,14 @@ export default function AttendanceManager() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-[#2B2022] text-sm truncate">{studentName}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-bold text-[#2B2022] text-sm truncate">{studentName}</p>
+                              {(stu.group?.name || (typeof stu.group === 'string' && stu.group)) && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-[#7B1E3A]/10 text-[#7B1E3A] border border-[#7B1E3A]/25 shrink-0">
+                                  {stu.group?.name || stu.group}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-[#2B2022]/60 truncate">
                               ولي الأمر: {stu.parent?.fatherNameArabic || stu.parent?.phoneNumber || '—'}
                             </p>
@@ -950,7 +1044,14 @@ export default function AttendanceManager() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-[#2B2022] text-sm truncate">{studentName}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-bold text-[#2B2022] text-sm truncate">{studentName}</p>
+                          {(stu.group?.name || (typeof stu.group === 'string' && stu.group)) && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-[#7B1E3A]/10 text-[#7B1E3A] border border-[#7B1E3A]/25 shrink-0">
+                              {stu.group?.name || stu.group}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-[#7B1E3A] font-mono font-bold truncate">
                           رقم: {stu.nationalIdDigitization || stu.registrationNumber || '—'}
                         </p>

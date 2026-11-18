@@ -1451,6 +1451,10 @@ const getStudents = async (req, res, next) => {
       filter.class = req.query.classId;
     }
 
+    if (req.query.groupId && req.query.groupId !== 'all') {
+      filter.group = req.query.groupId;
+    }
+
     const students = await Student.find(filter)
       .populate('user', 'firstName lastName firstNameArabic lastNameArabic email phoneNumber isActive role')
       .populate('class', 'name level')

@@ -61,6 +61,7 @@ const markAttendance = async (req, res, next) => {
         existingRecord.status = normalizedStatus;
         existingRecord.lateMinutes = normalizedStatus === 'Late' ? (Number(lateMinutes) || 15) : 0;
         if (remarks !== undefined) existingRecord.remarks = remarks;
+        if (groupId || item.groupId) existingRecord.group = groupId || item.groupId;
         existingRecord.recordedBy = req.user.id;
         record = await existingRecord.save();
       } else {
@@ -68,7 +69,7 @@ const markAttendance = async (req, res, next) => {
           record = await Attendance.create({
             student: studentId,
             class: classId,
-            group: groupId || null,
+            group: groupId || item.groupId || null,
             date: attendanceDate,
             session: currentSession,
             status: normalizedStatus,
