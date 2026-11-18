@@ -83,7 +83,7 @@ export default function StudentDashboard() {
         {activeTab === 'grades' && <StudentGradesView />}
         {activeTab === 're-enrollment' && <StudentReEnrollmentView />}
         {activeTab === 'lessons' && <LessonNotebook />}
-        {activeTab === 'timetable' && <TimetableGrid canImport={false} />}
+        {activeTab === 'timetable' && <TimetableGrid canImport={false} isStudentView={true} />}
 
         {activeTab === 'courses' && (
           <div className="max-w-5xl space-y-6">
@@ -205,7 +205,7 @@ export default function StudentDashboard() {
 
         {activeTab === 'schedules' && (
           <div className="space-y-8">
-            <TimetableGrid canImport={false} />
+            <TimetableGrid canImport={false} isStudentView={true} />
             <div className="border-t border-luxury-border/50 pt-8">
               <h3 className="text-base font-extrabold text-gray-900 mb-4">البرامج والمخططات المدرسية الإضافية</h3>
               <SchedulesView
