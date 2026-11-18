@@ -400,7 +400,9 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   navItemActive: {
-    backgroundColor: 'rgba(123, 30, 58, 0.08)',
+    backgroundColor: 'rgba(123, 30, 58, 0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(123, 30, 58, 0.25)',
   },
   navItemText: {
     fontSize: 12.5,
