@@ -4,104 +4,105 @@
 
 :root, .theme-default, .theme-prestige, .theme-sand {
   /* ------------------------------------------------------------------ */
-  /*  1. Prestige Académique (Bordeaux + Crème) — Grande École          */
-  /*  Principal : Bordeaux #7B1E3A                                      */
-  /*  Secondaire : Beige Crème #F3E9DC                                  */
-  /*  Accent : Or #C9A24D                                               */
-  /*  Texte : #2B2022                                                   */
-  /*  Polices : Cormorant Garamond (titres) + Lato (texte)              */
+  /*  1. Modern Prestige Académique (Royal Bordeaux + Pure White Canvas)*/
+  /*  Principal : Royal Bordeaux #881337                                */
+  /*  Fond Canvas : Ardoise Épurée #F8FAFC                              */
+  /*  Surfaces Cartes : Blanc Pur #FFFFFF                               */
+  /*  Bordures : Ardoise Douce #E2E8F0                                  */
+  /*  Accent : Or Champagne #C5A059                                     */
+  /*  Texte Principal : Encre Haute Définition #0F172A                  */
   /* ------------------------------------------------------------------ */
-  --brand-50: #FAF2F4;
-  --brand-100: #F4E2E7;
-  --brand-200: #E7C1CB;
-  --brand-300: #D399A8;
-  --brand-400: #B35870;
-  --brand-500: #7B1E3A;   /* Bordeaux Principal */
-  --brand-600: #68172F;   /* Bordeaux Profond (hover) */
-  --brand-700: #551125;
-  --brand-800: #420A1B;
-  --brand-900: #300612;
-  --brand-950: #1F030B;
+  --brand-50: #FDF2F4;
+  --brand-100: #FCE7EC;
+  --brand-200: #F8D0DB;
+  --brand-300: #EEA8BC;
+  --brand-400: #DF7192;
+  --brand-500: #881337;   /* Royal Bordeaux Principal */
+  --brand-600: #700E2C;   /* Bordeaux Profond (hover) */
+  --brand-700: #580B23;
+  --brand-800: #42081A;
+  --brand-900: #2C0511;
+  --brand-950: #19030A;
 
-  /* Beige Crème (#F3E9DC) Palette de fond et surfaces chaudes */
-  --bg-950: #F3E9DC;      /* Fond de page principal (Beige Crème exact) */
-  --bg-905: #FAF4EB;      /* Surfaces intérieures et inputs */
-  --bg-900: #FCF8F2;      /* Cartes et barres latérales */
-  --bg-850: #EAE0D1;      /* Élévation douce / hover */
-  --bg-800: #DFD3C2;      /* Bordures et séparateurs */
-  --border-700: #DFD3C2;
-  --border-650: #D3C3AF;
-  --border-600: #C4B19A;
-  --border-550: #B29D83;
+  /* Surfaces Épurées & Lumineuses */
+  --bg-950: #F8FAFC;      /* Fond de page principal (Ardoise 50 moderne et limpide) */
+  --bg-905: #F1F5F9;      /* Surfaces secondaires et inputs doux */
+  --bg-900: #FFFFFF;      /* Cartes blanches éclatantes et barres latérales */
+  --bg-850: #F8FAFC;      /* Élévation douce / hover */
+  --bg-800: #E2E8F0;      /* Bordures et séparateurs nets */
+  --border-700: #E2E8F0;  /* Bordures standard */
+  --border-650: #CBD5E1;  /* Bordures d'accentuation */
+  --border-600: #94A3B8;
+  --border-550: #64748B;
 
-  /* Texte (#2B2022) Encre d'imprimerie chaude et contrastée */
-  --text-50: #191214;
-  --text-100: #2B2022;    /* Texte courant et titres (exact #2B2022) */
-  --text-200: #3A2C2F;
-  --text-300: #4A3A3D;
-  --text-330: #574549;
-  --text-350: #665256;
-  --text-400: #766065;
-  --text-450: #887075;
-  --text-455: #887075;
-  --text-500: #9C8288;
+  /* Typographie Haute Définition */
+  --text-50: #020617;
+  --text-100: #0F172A;    /* Titres et texte fort (Slate 900 ultra-lisible) */
+  --text-200: #1E293B;    /* Texte standard */
+  --text-300: #334155;    /* Texte secondaire */
+  --text-330: #475569;
+  --text-350: #475569;
+  --text-400: #64748B;    /* Métadonnées & labels */
+  --text-450: #64748B;
+  --text-455: #64748B;
+  --text-500: #94A3B8;
 
-  /* Accent Or (#C9A24D) */
-  --accent-gold: #C9A24D;
-  --accent-gold-light: #F7EED8;
-  --accent-gold-dark: #A37E30;
+  /* Accent Or Champagne */
+  --accent-gold: #C5A059;
+  --accent-gold-light: #FEF9EE;
+  --accent-gold-dark: #96742E;
 
-  --luxury-card: rgba(252, 248, 242, 0.94);
-  --luxury-border: rgba(201, 162, 77, 0.35);  /* Liseré Or Prestige */
-  --scrollbar-track: #F3E9DC;
-  --scrollbar-thumb: #C9A24D;
-  --scrollbar-hover: #7B1E3A;
+  --luxury-card: #FFFFFF;
+  --luxury-border: #E2E8F0;
+  --scrollbar-track: #F8FAFC;
+  --scrollbar-thumb: #CBD5E1;
+  --scrollbar-hover: #881337;
 }
 
-/* Thème Nuit Prestige Académique (Velours Bordeaux Profond & Or/Crème) */
+/* Thème Nuit Prestige Académique (Charcoal Slate & Royal Bordeaux) */
 .theme-prestige-dark, .theme-blue-roi, .dark:not(.theme-sand):not(.theme-prestige) {
-  --brand-50: #FAF2F4;
-  --brand-100: #F4E2E7;
-  --brand-200: #E7C1CB;
-  --brand-300: #D399A8;
-  --brand-400: #B35870;
-  --brand-500: #962847;
-  --brand-600: #7B1E3A;   /* Bordeaux Principal */
-  --brand-700: #68172F;
-  --brand-800: #551125;
-  --brand-900: #300612;
-  --brand-950: #1A030A;
+  --brand-50: #FDF2F4;
+  --brand-100: #FCE7EC;
+  --brand-200: #F8D0DB;
+  --brand-300: #EEA8BC;
+  --brand-400: #DF7192;
+  --brand-500: #9F1239;
+  --brand-600: #881337;
+  --brand-700: #700E2C;
+  --brand-800: #580B23;
+  --brand-900: #2C0511;
+  --brand-950: #19030A;
 
-  --bg-950: #160408;      /* Fond velours bordeaux nocturne */
-  --bg-905: #21070E;
-  --bg-900: #2C0C15;
-  --bg-850: #3D121F;
-  --bg-800: #50192A;
-  --border-700: #50192A;
-  --border-650: #682237;
-  --border-600: #812E46;
-  --border-550: #A03D5A;
+  --bg-950: #0B0F17;      /* Fond sombre noble et profond */
+  --bg-905: #111827;
+  --bg-900: #1E293B;      /* Cartes sombres Slate */
+  --bg-850: #334155;
+  --bg-800: #334155;
+  --border-700: #334155;
+  --border-650: #475569;
+  --border-600: #64748B;
+  --border-550: #94A3B8;
 
   --text-50: #FFFFFF;
-  --text-100: #F3E9DC;    /* Crème éclatant pour les titres */
-  --text-200: #EADCCB;
-  --text-300: #DFCEBA;
-  --text-330: #DFCEBA;
-  --text-350: #D2BEA8;
-  --text-400: #C3AC93;
-  --text-450: #B29B81;
-  --text-455: #B29B81;
-  --text-500: #9E876F;
+  --text-100: #F8FAFC;
+  --text-200: #E2E8F0;
+  --text-300: #CBD5E1;
+  --text-330: #CBD5E1;
+  --text-350: #94A3B8;
+  --text-400: #94A3B8;
+  --text-450: #64748B;
+  --text-455: #64748B;
+  --text-500: #475569;
 
-  --accent-gold: #C9A24D;
-  --accent-gold-light: #F7EED8;
-  --accent-gold-dark: #A37E30;
+  --accent-gold: #C5A059;
+  --accent-gold-light: #FEF9EE;
+  --accent-gold-dark: #96742E;
 
-  --luxury-card: rgba(44, 12, 21, 0.88);
-  --luxury-border: rgba(201, 162, 77, 0.40);
-  --scrollbar-track: #160408;
-  --scrollbar-thumb: #7B1E3A;
-  --scrollbar-hover: #C9A24D;
+  --luxury-card: #1E293B;
+  --luxury-border: #334155;
+  --scrollbar-track: #0B0F17;
+  --scrollbar-thumb: #334155;
+  --scrollbar-hover: #9F1239;
 }
 
 @layer base {
@@ -203,35 +204,35 @@
   background: #7B1E3A;
 }
 
-/* Glassmorphism primitives — soft cream paper cards with gentle depth & gold border */
+/* Glassmorphism primitives — Crisp white elevated cards with soft modern depth */
 .glass-panel {
   background: var(--luxury-card);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--luxury-border);
-  box-shadow: 0 1px 3px rgba(43, 32, 34, 0.05), 0 14px 35px -12px rgba(123, 30, 58, 0.08);
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 10px 25px -5px rgba(15, 23, 42, 0.05);
 }
 
 .glass-panel-heavy {
-  background: rgba(252, 248, 242, 0.96);
+  background: #FFFFFF;
   backdrop-filter: blur(24px);
   border: 1px solid var(--luxury-border);
-  box-shadow: 0 2px 5px rgba(43, 32, 34, 0.06), 0 20px 45px -16px rgba(123, 30, 58, 0.12);
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 20px 25px -5px rgba(15, 23, 42, 0.07);
 }
 
-/* Premium Animated Backgrounds — Bordeaux & Crème + Gold subtle glow */
+/* Premium Animated Backgrounds — Clean Crisp Slate Canvas + Soft Bordeaux Glow */
 .mesh-gradient {
-  background-color: transparent;
+  background-color: #F8FAFC;
   background-image:
-    radial-gradient(at 0% 0%, rgba(123, 30, 58, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(201, 162, 77, 0.14) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(123, 30, 58, 0.05) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(136, 19, 55, 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(197, 160, 89, 0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(136, 19, 55, 0.02) 0px, transparent 50%);
 }
 
 .glow-orb {
   position: absolute;
   filter: blur(100px);
-  opacity: 0.5;
+  opacity: 0.3;
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
@@ -243,32 +244,39 @@
 }
 
 /* ------------------------------------------------------------------ */
-/*  Inputs & Form Controls - High Contrast Prestige Styling          */
+/*  Inputs & Form Controls - High Contrast Modern Styling             */
 /* ------------------------------------------------------------------ */
 .theme-prestige input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([type="range"]):not([type="file"]),
 .theme-prestige select,
 .theme-prestige textarea {
-  color: #2B2022;
+  color: #0F172A;
+  background-color: #FFFFFF;
+  border-color: #E2E8F0;
 }
 
 .theme-prestige input::placeholder,
 .theme-prestige textarea::placeholder {
-  color: #766065;
-  opacity: 0.7;
+  color: #94A3B8;
+  opacity: 0.85;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Prestige Académique compatibility layer                           */
-/*  Base `text-white` on surfaces becomes deep warm ink (#2B2022),     */
-/*  while white/cream is preserved on solid colored buttons.          */
+/*  Prestige Académique Modern Compatibility Layer                    */
+/*  Base `text-white` on neutral light surfaces becomes crisp ink,    */
+/*  while white is strictly preserved on solid colored buttons & pills*/
 /* ------------------------------------------------------------------ */
 .theme-sand .text-white:not([class*="bg-"]):not([class*="!text-white"]),
 .theme-prestige .text-white:not([class*="bg-"]):not([class*="!text-white"]) { 
   color: var(--text-100); 
 }
 
-/* Explicitly preserve white text on dark solid elements like burgundy buttons and own chat messages */
+/* Explicitly preserve crisp white text on colored buttons & active pills */
+.theme-prestige [class*="bg-brand-500"],
+.theme-prestige [class*="bg-brand-600"],
+.theme-prestige [class*="bg-brand-700"],
+.theme-prestige [class*="bg-brand-800"],
 .theme-prestige [class~="bg-[#7B1E3A]"],
+.theme-prestige [class~="bg-[#881337]"],
 .theme-prestige [class~="bg-[#62162d]"],
 .theme-prestige .chat-own-bubble,
 .theme-prestige button[type="submit"],
@@ -283,23 +291,36 @@ button[type="submit"] span {
 .theme-sand [class*="bg-brand-"].text-white,
 .theme-prestige [class*="bg-brand-"].text-white,
 .theme-sand [class*="bg-emerald-"].text-white,
+.theme-prestige [class*="bg-emerald-"].text-white,
 .theme-sand [class*="bg-green-"].text-white,
+.theme-prestige [class*="bg-green-"].text-white,
 .theme-sand [class*="bg-red-"].text-white,
+.theme-prestige [class*="bg-red-"].text-white,
 .theme-sand [class*="bg-rose-"].text-white,
+.theme-prestige [class*="bg-rose-"].text-white,
 .theme-sand [class*="bg-orange-"].text-white,
+.theme-prestige [class*="bg-orange-"].text-white,
 .theme-sand [class*="bg-indigo-"].text-white,
+.theme-prestige [class*="bg-indigo-"].text-white,
 .theme-sand [class*="bg-violet-"].text-white,
+.theme-prestige [class*="bg-violet-"].text-white,
 .theme-sand [class*="bg-purple-"].text-white,
+.theme-prestige [class*="bg-purple-"].text-white,
 .theme-sand [class*="bg-blue-"].text-white,
+.theme-prestige [class*="bg-blue-"].text-white,
 .theme-sand [class*="bg-sky-"].text-white,
-.theme-sand [class*="bg-cyan-"].text-white,
+.theme-prestige [class*="bg-sky-"].text-white,
 .theme-sand [class*="bg-teal-"].text-white,
+.theme-prestige [class*="bg-teal-"].text-white,
 .theme-sand [class*="bg-fuchsia-"].text-white,
+.theme-prestige [class*="bg-fuchsia-"].text-white,
 .theme-sand [class*="bg-pink-"].text-white,
+.theme-prestige [class*="bg-pink-"].text-white,
 .theme-sand [class*="bg-gold-"].text-white,
+.theme-prestige [class*="bg-gold-"].text-white,
 .theme-sand [class*="bg-gradient-to"].text-white,
 .theme-prestige [class*="bg-gradient-to"].text-white {
-  color: #ffffff;
+  color: #FFFFFF !important;
 }
 
 /* Hover state: plain `hover:text-white` on surfaces becomes ink */
@@ -311,55 +332,94 @@ button[type="submit"] span {
 .theme-sand [class*="bg-brand-"].hover\:text-white:hover,
 .theme-prestige [class*="bg-brand-"].hover\:text-white:hover,
 .theme-sand [class*="bg-emerald-"].hover\:text-white:hover,
+.theme-prestige [class*="bg-emerald-"].hover\:text-white:hover,
 .theme-sand [class*="bg-green-"].hover\:text-white:hover,
+.theme-prestige [class*="bg-green-"].hover\:text-white:hover,
 .theme-sand [class*="bg-red-"].hover\:text-white:hover,
+.theme-prestige [class*="bg-red-"].hover\:text-white:hover,
 .theme-sand [class*="bg-rose-"].hover\:text-white:hover,
+.theme-prestige [class*="bg-rose-"].hover\:text-white:hover,
 .theme-sand [class*="bg-indigo-"].hover\:text-white:hover,
+.theme-prestige [class*="bg-indigo-"].hover\:text-white:hover,
 .theme-sand [class*="bg-violet-"].hover\:text-white:hover,
+.theme-prestige [class*="bg-violet-"].hover\:text-white:hover,
 .theme-sand [class*="bg-sky-"].hover\:text-white:hover,
+.theme-prestige [class*="bg-sky-"].hover\:text-white:hover,
 .theme-sand [class*="bg-gradient-to"].hover\:text-white:hover,
 .theme-prestige [class*="bg-gradient-to"].hover\:text-white:hover {
-  color: #ffffff;
+  color: #FFFFFF !important;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Accent text legibility on cream surfaces                          */
+/*  Accent text legibility & vibrant status typography                */
 /* ------------------------------------------------------------------ */
 .theme-sand .text-brand-300,
 .theme-sand .text-brand-400,
 .theme-prestige .text-brand-300,
 .theme-prestige .text-brand-400 { 
-  color: #7B1E3A; /* Bordeaux */
+  color: #881337; /* Royal Bordeaux */
 }
 .theme-sand .text-emerald-300,
-.theme-sand .text-emerald-400 { color: #047857; }
+.theme-sand .text-emerald-400,
+.theme-prestige .text-emerald-300,
+.theme-prestige .text-emerald-400 { color: #059669; }
 .theme-sand .text-green-300,
-.theme-sand .text-green-400 { color: #15803D; }
+.theme-sand .text-green-400,
+.theme-prestige .text-green-300,
+.theme-prestige .text-green-400 { color: #16A34A; }
 .theme-sand .text-red-300,
-.theme-sand .text-red-400 { color: #7B1E3A; }
+.theme-sand .text-red-400,
+.theme-prestige .text-red-300,
+.theme-prestige .text-red-400 { color: #E11D48; }
 .theme-sand .text-rose-300,
-.theme-sand .text-rose-400 { color: #7B1E3A; }
+.theme-sand .text-rose-400,
+.theme-prestige .text-rose-300,
+.theme-prestige .text-rose-400 { color: #E11D48; }
 .theme-sand .text-amber-300,
-.theme-sand .text-amber-400 { color: #C9A24D; }
+.theme-sand .text-amber-400,
+.theme-prestige .text-amber-300,
+.theme-prestige .text-amber-400 { color: #D97706; }
 .theme-sand .text-yellow-300,
-.theme-sand .text-yellow-400 { color: #C9A24D; }
+.theme-sand .text-yellow-400,
+.theme-prestige .text-yellow-300,
+.theme-prestige .text-yellow-400 { color: #D97706; }
 .theme-sand .text-orange-300,
-.theme-sand .text-orange-400 { color: #B28B36; }
+.theme-sand .text-orange-400,
+.theme-prestige .text-orange-300,
+.theme-prestige .text-orange-400 { color: #EA580C; }
 .theme-sand .text-sky-300,
-.theme-sand .text-sky-400 { color: #0369A1; }
+.theme-sand .text-sky-400,
+.theme-prestige .text-sky-300,
+.theme-prestige .text-sky-400 { color: #0284C7; }
 .theme-sand .text-blue-300,
-.theme-sand .text-blue-400 { color: #1D4ED8; }
+.theme-sand .text-blue-400,
+.theme-prestige .text-blue-300,
+.theme-prestige .text-blue-400 { color: #2563EB; }
 .theme-sand .text-indigo-300,
-.theme-sand .text-indigo-400 { color: #4338CA; }
+.theme-sand .text-indigo-400,
+.theme-prestige .text-indigo-300,
+.theme-prestige .text-indigo-400 { color: #4F46E5; }
 .theme-sand .text-violet-300,
-.theme-sand .text-violet-400 { color: #6D28D9; }
+.theme-sand .text-violet-400,
+.theme-prestige .text-violet-300,
+.theme-prestige .text-violet-400 { color: #7C3AED; }
 .theme-sand .text-purple-300,
-.theme-sand .text-purple-400 { color: #7E22CE; }
+.theme-sand .text-purple-400,
+.theme-prestige .text-purple-300,
+.theme-prestige .text-purple-400 { color: #9333EA; }
 .theme-sand .text-cyan-300,
-.theme-sand .text-cyan-400 { color: #0E7490; }
+.theme-sand .text-cyan-400,
+.theme-prestige .text-cyan-300,
+.theme-prestige .text-cyan-400 { color: #0891B2; }
 .theme-sand .text-teal-300,
-.theme-sand .text-teal-400 { color: #0F766E; }
+.theme-sand .text-teal-400,
+.theme-prestige .text-teal-300,
+.theme-prestige .text-teal-400 { color: #0D9488; }
 .theme-sand .text-pink-300,
-.theme-sand .text-pink-400 { color: #7B1E3A; }
+.theme-sand .text-pink-400,
+.theme-prestige .text-pink-300,
+.theme-prestige .text-pink-400 { color: #DB2777; }
 .theme-sand .text-fuchsia-300,
-.theme-sand .text-fuchsia-400 { color: #7B1E3A; }
+.theme-sand .text-fuchsia-400,
+.theme-prestige .text-fuchsia-300,
+.theme-prestige .text-fuchsia-400 { color: #C026D3; }

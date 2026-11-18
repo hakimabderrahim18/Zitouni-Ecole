@@ -17,7 +17,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['message', 'post', 'course', 'schedule', 'attendance', 'warning'],
+      enum: ['message', 'post', 'course', 'schedule', 'attendance', 'warning', 'assessment', 'parent_notice'],
       required: true,
     },
     isRead: {

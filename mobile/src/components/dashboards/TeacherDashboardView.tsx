@@ -40,6 +40,7 @@ import { NavigationDrawer } from '../NavigationDrawer';
 import { Button } from '../common/Button';
 import { SchoolFeedView } from '../feed/SchoolFeedView';
 import { ConversationView } from '../chat/ConversationView';
+import { TeacherGradebookView } from '../assessments/TeacherGradebookView';
 
 interface TeacherDashboardViewProps {
   onOpenDrawer: () => void;
@@ -448,6 +449,11 @@ export const TeacherDashboardView: React.FC<TeacherDashboardViewProps> = ({
                 </Text>
               </View>
             </View>
+          )}
+
+          {/* Subview: Grades / Assessments Entry */}
+          {currentRoute === 'grades' && (
+            <TeacherGradebookView />
           )}
 
           {/* Subview 2: Courses Management */}

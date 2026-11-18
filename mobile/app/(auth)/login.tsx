@@ -121,7 +121,7 @@ export default function LoginScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>تسجيل الدخول</Text>
           <Text style={styles.cardSubtitle}>
-            أدخل رقم هاتفك أو اسم المستخدم وكلمة المرور للمتابعة
+            اسم المستخدم هو رقم الهاتف دائماً. كلمة المرور: الأستاذ pr+الهاتف، الولي p+الهاتف، التلميذ e+الهاتف
           </Text>
 
           {/* Server Error Alert Banner */}
@@ -137,8 +137,8 @@ export default function LoginScreen() {
             name="identifier"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label="المعرّف، البريد أو رقم الهاتف"
-                placeholder="مثال: 0797060052 أو admin"
+                label="رقم الهاتف (اسم المستخدم)"
+                placeholder="مثال: 0798875698 أو 0550111111"
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
@@ -195,31 +195,45 @@ export default function LoginScreen() {
             </View>
             <View style={styles.quickFillChips}>
               <TouchableOpacity
-                onPress={() => fillAccount('admin@ecole-zitouni.dz', 'Admin123!')}
+                onPress={() => fillAccount('0550000000', 'Admin123!')}
                 style={styles.roleChip}
               >
-                <Text style={styles.roleChipText}>مدير (Admin)</Text>
+                <Text style={styles.roleChipText}>مدير (0550000000)</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => fillAccount('direction@ecole-zitouni.dz', 'School123!')}
+                onPress={() => fillAccount('0550000001', 'School123!')}
                 style={styles.roleChip}
               >
                 <Text style={styles.roleChipText}>إدارة المدرسة</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => fillAccount('0550111111', '0550111111')}
+                onPress={() => fillAccount('0550111111', 'pr0550111111')}
                 style={styles.roleChip}
               >
-                <Text style={styles.roleChipText}>أستاذ (0550111111)</Text>
+                <Text style={styles.roleChipText}>أستاذ (pr0550111111)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => fillAccount('0550110011', 'p0550110011')}
+                style={styles.roleChip}
+              >
+                <Text style={styles.roleChipText}>ولي أمر (p0550110011)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => fillAccount('0798875698', 'e0798875698')}
+                style={styles.roleChip}
+              >
+                <Text style={styles.roleChipText}>تلميذ (e0798875698)</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => fillAccount('0550112233', '0550112233')}
                 style={styles.roleChip}
               >
-                <Text style={styles.roleChipText}>مراقب عام (0550112233)</Text>
+                <Text style={styles.roleChipText}>مراقب عام</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -234,20 +248,6 @@ export default function LoginScreen() {
                 style={styles.roleChip}
               >
                 <Text style={styles.roleChipText}>استقبال</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => fillAccount('0550110011', '0550110011')}
-                style={styles.roleChip}
-              >
-                <Text style={styles.roleChipText}>ولي أمر</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => fillAccount('yanis.m@ecole-zitouni.dz', '2014-03-20')}
-                style={styles.roleChip}
-              >
-                <Text style={styles.roleChipText}>تلميذ (يانيس)</Text>
               </TouchableOpacity>
             </View>
           </View>

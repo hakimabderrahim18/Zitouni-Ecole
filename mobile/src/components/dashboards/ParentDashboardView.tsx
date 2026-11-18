@@ -42,6 +42,7 @@ import { NavigationDrawer } from '../NavigationDrawer';
 import { Button } from '../common/Button';
 import { SchoolFeedView } from '../feed/SchoolFeedView';
 import { ConversationView } from '../chat/ConversationView';
+import { ParentGradesAndNoticesView } from './ParentGradesAndNoticesView';
 
 interface ParentDashboardViewProps {
   onOpenDrawer: () => void;
@@ -440,6 +441,16 @@ export const ParentDashboardView: React.FC<ParentDashboardViewProps> = ({
                 </TouchableOpacity>
               </View>
             </View>
+          )}
+
+          {/* Subview: Grades */}
+          {currentRoute === 'grades' && (
+            <ParentGradesAndNoticesView initialTab="grades" />
+          )}
+
+          {/* Subview: Official Notices & Reception */}
+          {currentRoute === 'notices' && (
+            <ParentGradesAndNoticesView initialTab="notices" />
           )}
 
           {/* Subview 2: Payments & Invoices */}

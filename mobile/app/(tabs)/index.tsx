@@ -79,6 +79,9 @@ import {
   StudentEditModal,
   StudentDossierPrintModal,
 } from '../../src/components/admin/StudentModals';
+import { AdminAssessmentsView } from '../../src/components/assessments/AdminAssessmentsView';
+import { AdminAcademicStatsView } from '../../src/components/assessments/AdminAcademicStatsView';
+import { AdminParentNoticesView } from '../../src/components/notices/AdminParentNoticesView';
 import { useLocalSearchParams } from 'expo-router';
 
 /* ==================================================================== */
@@ -2496,6 +2499,33 @@ function AdminDashboardView({
                   نظام الرقابة الأكاديمية مفعل في المنصة. جميع القنوات محمية وخاضعة لسياسة الآداب العامة.
                 </Text>
               </View>
+            </View>
+          )}
+
+          {/* ============================================================ */}
+          {/* ROUTE 21: GRADES (إدارة نقاط الفروض والتقييمات)                */}
+          {/* ============================================================ */}
+          {currentRoute === 'grades' && (
+            <View style={styles.overviewContainer}>
+              <AdminAssessmentsView />
+            </View>
+          )}
+
+          {/* ============================================================ */}
+          {/* ROUTE 22: ACADEMIC STATS (الإحصائيات ونسب الإنجاز الأكاديمية)   */}
+          {/* ============================================================ */}
+          {currentRoute === 'academic-stats' && (
+            <View style={styles.overviewContainer}>
+              <AdminAcademicStatsView />
+            </View>
+          )}
+
+          {/* ============================================================ */}
+          {/* ROUTE 23: PARENT NOTICES (مراسلات وإشعارات أولياء التلاميذ)   */}
+          {/* ============================================================ */}
+          {currentRoute === 'parent-notices' && (
+            <View style={styles.overviewContainer}>
+              <AdminParentNoticesView />
             </View>
           )}
 

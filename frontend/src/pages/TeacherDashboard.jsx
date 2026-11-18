@@ -9,6 +9,7 @@ import AttendanceManager from '../components/AttendanceManager';
 import TimetableGrid from '../components/TimetableGrid';
 import LessonNotebook from '../components/LessonNotebook';
 import AdministrativeRequestsManager from '../components/AdministrativeRequestsManager';
+import TeacherGradebook from '../components/assessments/TeacherGradebook';
 import axios from 'axios';
 
 export default function TeacherDashboard() {
@@ -18,6 +19,7 @@ export default function TeacherDashboard() {
 
   const getActiveTab = () => {
     const path = location.pathname;
+    if (path.endsWith('/grades')) return 'grades';
     if (path.endsWith('/attendance')) return 'attendance';
     if (path.endsWith('/timetable')) return 'timetable';
     if (path.endsWith('/lessons')) return 'lessons';
@@ -399,6 +401,7 @@ export default function TeacherDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-8 text-right"
       >
+        {activeTab === 'grades' && <TeacherGradebook />}
         {activeTab === 'classes' && (
           <TeacherClasses
             profile={{ ...profile, classes: effectiveClasses, groups: effectiveGroups }}

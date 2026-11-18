@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuthStore } from '../store/useAuthStore';
-import { Users, CreditCard, BookOpen, Upload, Plus, FileText, FileSpreadsheet, Calendar, ShieldAlert, Check, X, Edit2, Trash2, MessageSquare, Search, Eye, Download, Bus, Utensils, GraduationCap, ShieldCheck, Palette, Database, Clock, LogOut } from 'lucide-react';
+import { Users, CreditCard, BookOpen, Upload, Plus, FileText, FileSpreadsheet, Calendar, ShieldAlert, Check, X, Edit2, Trash2, MessageSquare, Search, Eye, Download, Bus, Utensils, GraduationCap, ShieldCheck, Palette, Database, Clock, LogOut, Printer, TrendingUp, Megaphone } from 'lucide-react';
 import ScheduleCard from '../components/ScheduleCard';
 import ScheduleTypePanel from '../components/ScheduleTypePanel';
 import SchedulesGuide from '../components/SchedulesGuide';
@@ -23,6 +23,10 @@ import StudentProfileFileModal from '../components/StudentProfileFileModal';
 import TeacherProfileFileModal from '../components/TeacherProfileFileModal';
 import TeacherExcelImportModal from '../components/TeacherExcelImportModal';
 import ErrorBoundary from '../components/ErrorBoundary';
+import AdminAssessmentsManager from '../components/assessments/AdminAssessmentsManager';
+import ReportCardExtractor from '../components/assessments/ReportCardExtractor';
+import AssessmentStatisticsView from '../components/assessments/AssessmentStatisticsView';
+import ParentNoticesManager from '../components/notices/ParentNoticesManager';
 import axios from 'axios';
 
 export default function AdminDashboard() {
@@ -33,6 +37,10 @@ export default function AdminDashboard() {
   // Determine active tab dynamically from pathname
   const getActiveTab = () => {
     const path = location.pathname;
+    if (path.endsWith('/grades')) return 'grades';
+    if (path.endsWith('/report-cards')) return 'report-cards';
+    if (path.endsWith('/academic-stats')) return 'academic-stats';
+    if (path.endsWith('/parent-notices')) return 'parent-notices';
     if (path.endsWith('/inscriptions')) return 'inscriptions';
     if (path.endsWith('/login-audit')) return 'login-audit';
     if (path.endsWith('/reported-messages')) return 'reported-messages';
@@ -59,6 +67,10 @@ export default function AdminDashboard() {
   const getNavTabs = () => {
     const tabs = [
       { id: 'overview', label: 'لوحة القيادة والمؤشرات', icon: BookOpen, path: '/dashboard/admin' },
+      { id: 'grades', label: 'إدارة نقاط الفروض والتقييمات', icon: GraduationCap, path: '/dashboard/admin/grades' },
+      { id: 'report-cards', label: 'استخراج وطباعة كشوف النقاط', icon: Printer, path: '/dashboard/admin/report-cards' },
+      { id: 'academic-stats', label: 'الإحصائيات ونسب الإنجاز', icon: TrendingUp, path: '/dashboard/admin/academic-stats' },
+      { id: 'parent-notices', label: 'مراسلات وإشعارات الأولياء', icon: Megaphone, path: '/dashboard/admin/parent-notices' },
       { id: 'users', label: 'المستخدمين والصلاحيات', icon: Users, path: '/dashboard/admin/users' },
       { id: 'teachers', label: 'قائمة الأساتذة (المادة 23)', icon: Users, path: '/dashboard/admin/teachers' },
       { id: 'students', label: 'قائمة التلاميذ', icon: Users, path: '/dashboard/admin/students' },
@@ -296,12 +308,19 @@ export default function AdminDashboard() {
         ? newUser.email.trim()
         : `${cleanPhone || username}@ecole-zitouni.dz`;
 
-      // Enforced password rules: parent = phone number, student = date of birth.
+      // Enforced password rules:
+      // Username is phone number.
+      // Password:
+      // - teacher: pr + phone number
+      // - parent: p + phone number
+      // - student: e + phone number
       let password = newUser.password;
-      if (newUser.role === 'parent' || newUser.role === 'general_supervisor' || newUser.role === 'pedagogical_supervisor' || newUser.role === 'receptionist') {
-        password = newUser.password || cleanPhone;
-      } else if (newUser.role === 'student') {
-        password = newUser.dateOfBirth;
+      if (!password) {
+        if (newUser.role === 'teacher') password = `pr${cleanPhone}`;
+        else if (newUser.role === 'parent') password = `p${cleanPhone}`;
+        else if (newUser.role === 'student') password = `e${cleanPhone}`;
+        else if (newUser.role === 'admin' || newUser.role === 'school') password = 'Admin123!';
+        else password = cleanPhone;
       }
 
       await axios.post('/api/admin/users', {
@@ -314,7 +333,7 @@ export default function AdminDashboard() {
         phoneNumber: cleanPhone,
         details
       });
-      alert('تم إنشاء الحساب بنجاح! اسم الدخول (Login) هو رقم الهاتف: ' + (cleanPhone || username));
+      alert(`تم إنشاء الحساب بنجاح!\nاسم المستخدم (Login): ${username}\nكلمة المرور: ${password}`);
       setNewUser({
         email: '',
         password: '',
@@ -886,6 +905,10 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-6 font-cairo text-right" dir="rtl">
+        {activeTab === 'grades' && <AdminAssessmentsManager />}
+        {activeTab === 'report-cards' && <ReportCardExtractor />}
+        {activeTab === 'academic-stats' && <AssessmentStatisticsView />}
+        {activeTab === 'parent-notices' && <ParentNoticesManager />}
         {activeTab === 'inscriptions' && <EnrollmentManager />}
         {activeTab === 'login-audit' && <LoginAuditView />}
         {activeTab === 'reported-messages' && <ReportedMessagesManager />}

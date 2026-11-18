@@ -429,15 +429,12 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
         : `${cleanPhone || username}@ecole-zitouni.dz`;
 
       let finalPassword = password;
-      if (
-        role === 'parent' ||
-        role === 'general_supervisor' ||
-        role === 'pedagogical_supervisor' ||
-        role === 'receptionist'
-      ) {
-        finalPassword = password || cleanPhone;
-      } else if (role === 'student') {
-        finalPassword = dateOfBirth;
+      if (!password) {
+        if (role === 'teacher') finalPassword = `pr${cleanPhone}`;
+        else if (role === 'parent') finalPassword = `p${cleanPhone}`;
+        else if (role === 'student') finalPassword = `e${cleanPhone}`;
+        else if (role === 'admin' || role === 'school') finalPassword = 'Admin123!';
+        else finalPassword = cleanPhone;
       }
 
       await apiClient.post('/api/admin/users', {
@@ -453,9 +450,7 @@ export const AdminAccountsView: React.FC<AdminAccountsViewProps> = ({
 
       Alert.alert(
         'تم بنجاح',
-        `تم إنشاء الحساب بنجاح!\nاسم الدخول (Login): ${cleanPhone || username}\nكلمة المرور: ${
-          role === 'student' ? dateOfBirth : cleanPhone || 'تلقائية'
-        }${role === 'teacher' ? '\nتم توثيق الملف المهني (المادة 23) بنجاح.' : ''}`
+        `تم إنشاء الحساب بنجاح!\nاسم المستخدم: ${username}\nكلمة المرور: ${finalPassword}`
       );
 
       // Reset form

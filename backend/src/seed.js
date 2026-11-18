@@ -279,7 +279,11 @@ const seedDatabase = async (standalone = false) => {
         uData.profilePic = AVATAR_MAP[uData.username] || ROLE_FALLBACKS[uData.role] || ROLE_FALLBACKS.student;
       }
       let existing = await User.findOne({
-        $or: [{ username: uData.username }, { email: uData.email }]
+        $or: [
+          ...(uData.username ? [{ username: uData.username }] : []),
+          ...(uData.phoneNumber ? [{ phoneNumber: uData.phoneNumber }] : []),
+          { email: uData.email }
+        ]
       }).select('+password');
       if (existing) {
         Object.assign(existing, uData);
@@ -293,7 +297,7 @@ const seedDatabase = async (standalone = false) => {
     // 5. Core Platform Users: Admin & School Director
     console.log('[Seed] Seeding Admin & School Director accounts...');
     const adminUser = await upsertUser({
-      username: 'admin',
+      username: '0550000000',
       email: 'admin@ecole-zitouni.dz',
       password: 'Admin123!',
       firstName: 'مالك',
@@ -309,7 +313,7 @@ const seedDatabase = async (standalone = false) => {
     });
 
     const schoolUser = await upsertUser({
-      username: 'school',
+      username: '0550000001',
       email: 'school@ecole-zitouni.dz',
       password: 'School123!',
       firstName: 'أمال',
@@ -327,7 +331,7 @@ const seedDatabase = async (standalone = false) => {
     // 6. Supervisors (General & Pedagogical)
     console.log('[Seed] Seeding Supervisors...');
     const genSupUser = await upsertUser({
-      username: 'superviseur.gen',
+      username: '0550112233',
       email: 'superviseur.gen@ecole-zitouni.dz',
       password: '0550112233',
       firstName: 'عمر',
@@ -353,7 +357,7 @@ const seedDatabase = async (standalone = false) => {
     }
 
     const pedSupUser = await upsertUser({
-      username: 'superviseur.ped',
+      username: '0550445566',
       email: 'superviseur.ped@ecole-zitouni.dz',
       password: '0550445566',
       firstName: 'زكية',
@@ -381,7 +385,7 @@ const seedDatabase = async (standalone = false) => {
     // 7. Receptionist
     console.log('[Seed] Seeding Receptionist...');
     const recepUser = await upsertUser({
-      username: 'receptionniste',
+      username: '0550778899',
       email: 'receptionniste@ecole-zitouni.dz',
       password: '0550778899',
       firstName: 'كريم',
@@ -500,9 +504,9 @@ const seedDatabase = async (standalone = false) => {
     const teacherUsers = [];
     for (const t of teacherConfigs) {
       const u = await upsertUser({
-        username: t.username,
+        username: t.phone,
         email: t.email,
-        password: t.phone,
+        password: `pr${t.phone}`,
         firstName: t.firstName,
         lastName: t.lastName,
         firstNameArabic: t.firstNameArabic,
@@ -665,9 +669,9 @@ const seedDatabase = async (standalone = false) => {
     const parentUsers = [];
     for (const p of parentConfigs) {
       const u = await upsertUser({
-        username: p.username,
+        username: p.phone,
         email: p.email,
-        password: p.phone,
+        password: `p${p.phone}`,
         firstName: p.firstName,
         lastName: p.lastName,
         firstNameArabic: p.firstNameArabic,
@@ -930,15 +934,31 @@ const seedDatabase = async (standalone = false) => {
       },
     ];
 
+    const studentPhones = [
+      '0798875698', // Yanis Meziane (exact example from user)
+      '0798875602', // Leila Meziane
+      '0798875603', // Meriem Belaid
+      '0798875604', // Amin Belaid
+      '0798875605', // Samir Toumi
+      '0798875606', // Lynda Toumi
+      '0798875607', // Riad Amrani
+      '0798875608', // Feriel Amrani
+      '0798875609', // Anis Slimani
+      '0798875610', // Kenza Slimani
+      '0798875611', // Bilal Zerrouki
+      '0798875612', // Yasmine Zerrouki
+    ];
+
     const studentDocs = [];
     const studentUsers = [];
-    for (const s of studentConfigs) {
+    for (let i = 0; i < studentConfigs.length; i++) {
+      const s = studentConfigs[i];
+      const sPhone = studentPhones[i] || `07988756${String(i + 1).padStart(2, '0')}`;
       const birthDate = new Date(s.dob);
-      const dobPassword = s.dob; // Exact YYYY-MM-DD
       const u = await upsertUser({
-        username: s.username,
+        username: sPhone,
         email: s.email,
-        password: dobPassword,
+        password: `e${sPhone}`,
         firstName: s.firstName,
         lastName: s.lastName,
         firstNameArabic: s.firstNameArabic,
@@ -946,6 +966,7 @@ const seedDatabase = async (standalone = false) => {
         firstNameFrench: s.firstNameFrench,
         lastNameFrench: s.lastNameFrench,
         role: 'student',
+        phoneNumber: sPhone,
         profilePic: AVATAR_MAP[s.username] || ROLE_FALLBACKS.student,
       });
       const pDoc = parentDocs[s.parentIndex];
@@ -965,6 +986,7 @@ const seedDatabase = async (standalone = false) => {
           class: s.class._id,
           group: s.group._id,
           parent: pDoc._id,
+          studentPhone: sPhone,
         });
       } else {
         Object.assign(stud, {

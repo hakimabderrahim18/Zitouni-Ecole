@@ -460,7 +460,4 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 4,
   },
-    textAlign: 'right',
-    marginTop: 4,
-  },
 });

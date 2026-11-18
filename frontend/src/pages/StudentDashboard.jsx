@@ -9,6 +9,7 @@ import AttendanceView from '../components/AttendanceView';
 import TimetableGrid from '../components/TimetableGrid';
 import LessonNotebook from '../components/LessonNotebook';
 import StudentReEnrollmentView from '../components/StudentReEnrollmentView';
+import StudentGradesView from '../components/assessments/StudentGradesView';
 import axios from 'axios';
 
 // Palette of gradient accents assigned deterministically per subject
@@ -33,6 +34,7 @@ export default function StudentDashboard() {
 
   const getActiveTab = () => {
     const path = location.pathname;
+    if (path.endsWith('/grades')) return 'grades';
     if (path.endsWith('/re-enrollment')) return 're-enrollment';
     if (path.endsWith('/schedules')) return 'schedules';
     if (path.endsWith('/timetable')) return 'timetable';
@@ -78,6 +80,7 @@ export default function StudentDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-8 text-right"
       >
+        {activeTab === 'grades' && <StudentGradesView />}
         {activeTab === 're-enrollment' && <StudentReEnrollmentView />}
         {activeTab === 'lessons' && <LessonNotebook />}
         {activeTab === 'timetable' && <TimetableGrid canImport={false} />}

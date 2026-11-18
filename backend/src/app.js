@@ -31,7 +31,10 @@ const timetableRoutes = require('./routes/timetable.routes');
 const lessonNotebookRoutes = require('./routes/lessonNotebook.routes');
 const backupRoutes = require('./routes/backup.routes');
 const administrativeRequestRoutes = require('./routes/administrativeRequest.routes');
+const assessmentRoutes = require('./routes/assessment.routes');
+const parentNoticeRoutes = require('./routes/parentNotice.routes');
 const { initAutomatedBackups } = require('./services/backup.service');
+const { initScheduledTasks } = require('./services/scheduler.service');
 
 const app = express();
 const server = http.createServer(app);
@@ -130,6 +133,8 @@ const apiRoutes = [
   ['/lessons', lessonNotebookRoutes],
   ['/backups', backupRoutes],
   ['/administrative-requests', administrativeRequestRoutes],
+  ['/assessments', assessmentRoutes],
+  ['/parent-notices', parentNoticeRoutes],
 ];
 
 apiRoutes.forEach(([routePath, routeHandler]) => {
@@ -145,6 +150,8 @@ server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   // Initialize periodic automated encrypted backups (Art. 65)
   initAutomatedBackups();
+  // Initialize scheduler for Parent Notices and Assessment Auto-Publishing
+  initScheduledTasks();
 });
 
 module.exports = { app, server };

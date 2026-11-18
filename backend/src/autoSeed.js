@@ -24,9 +24,15 @@ const ensureCoreAccounts = async () => {
     }
 
     // List of core accounts with their required credentials and properties
+    // Rule:
+    // Username must be phone number
+    // Password (mdp):
+    // - teacher: pr + phone number (e.g. pr0550111111)
+    // - parent: p + phone number (e.g. p0550110011)
+    // - student: e + phone number (e.g. e0798875698)
     const coreUsers = [
       {
-        username: 'admin',
+        username: '0550000000',
         email: 'admin@ecole-zitouni.dz',
         password: 'Admin123!',
         firstName: 'عبد الرحيم',
@@ -37,7 +43,7 @@ const ensureCoreAccounts = async () => {
         profilePic: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
-        username: 'school',
+        username: '0550000001',
         email: 'direction@ecole-zitouni.dz',
         password: 'School123!',
         firstName: 'إدارة',
@@ -48,9 +54,9 @@ const ensureCoreAccounts = async () => {
         profilePic: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
-        username: 'teacher.math',
+        username: '0550111111',
         email: 'teacher.math@ecole-zitouni.dz',
-        password: '0550111111',
+        password: 'pr0550111111',
         firstName: 'كمال',
         lastName: 'دحماني',
         role: 'teacher',
@@ -59,7 +65,7 @@ const ensureCoreAccounts = async () => {
         profilePic: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
-        username: 'superviseur.gen',
+        username: '0550112233',
         email: 'general.sup@ecole-zitouni.dz',
         password: '0550112233',
         firstName: 'رضا',
@@ -70,7 +76,7 @@ const ensureCoreAccounts = async () => {
         profilePic: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
-        username: 'superviseur.ped',
+        username: '0550445566',
         email: 'pedagogical.sup@ecole-zitouni.dz',
         password: '0550445566',
         firstName: 'سارة',
@@ -81,7 +87,7 @@ const ensureCoreAccounts = async () => {
         profilePic: 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
-        username: 'receptionniste',
+        username: '0550778899',
         email: 'reception@ecole-zitouni.dz',
         password: '0550778899',
         firstName: 'أمين',
@@ -92,20 +98,20 @@ const ensureCoreAccounts = async () => {
         profilePic: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
-        username: 'student.yanis',
+        username: '0798875698',
         email: 'yanis.m@ecole-zitouni.dz',
-        password: '2014-03-20',
-        firstName: 'أنيس',
+        password: 'e0798875698',
+        firstName: 'يانيس',
         lastName: 'مزيان',
         role: 'student',
-        phoneNumber: '0550110022',
+        phoneNumber: '0798875698',
         profilePic: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&w=400&h=400&q=80',
       },
       {
-        username: 'parent.meziane',
+        username: '0550110011',
         email: 'parent.meziane@ecole-zitouni.dz',
-        password: '0550110011',
-        firstName: 'رشيد',
+        password: 'p0550110011',
+        firstName: 'سفيان',
         lastName: 'مزيان',
         role: 'parent',
         phoneNumber: '0550110011',
@@ -115,7 +121,7 @@ const ensureCoreAccounts = async () => {
 
     for (const u of coreUsers) {
       let userDoc = await User.findOne({
-        $or: [{ username: u.username }, { email: u.email }]
+        $or: [{ username: u.username }, { phoneNumber: u.phoneNumber }, { email: u.email }]
       }).select('+password');
 
       if (!userDoc) {
@@ -174,10 +180,14 @@ const ensureCoreAccounts = async () => {
             cycle: 'الابتدائي',
             class: c1._id,
             group: g1._id,
+            studentPhone: u.phoneNumber,
           });
+        } else {
+          sDoc.studentPhone = u.phoneNumber;
+          await sDoc.save();
         }
       } else if (u.role === 'parent') {
-        const sUser = await User.findOne({ username: 'student.yanis' });
+        const sUser = await User.findOne({ role: 'student' });
         const stDoc = sUser ? await Student.findOne({ user: sUser._id }) : null;
         const pDoc = await Parent.findOne({ user: userDoc._id });
         if (!pDoc) {

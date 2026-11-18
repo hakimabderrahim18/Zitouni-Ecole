@@ -102,49 +102,51 @@ const login = async (req, res, next) => {
 
     // Handle common aliases if the user typed just the role name or shortcut
     const aliases = {
-      teacher: 'teacher.math',
-      'teacher.math': 'teacher.math',
-      student: 'student.yanis',
-      'student.yanis': 'student.yanis',
-      parent: 'parent.meziane',
-      'parent.meziane': 'parent.meziane',
-      general_supervisor: 'superviseur.gen',
-      superviseur: 'superviseur.gen',
-      supervisor: 'superviseur.gen',
-      'superviseur.gen': 'superviseur.gen',
-      'supervisor.gen': 'superviseur.gen',
-      superviseur_gen: 'superviseur.gen',
-      supervisor_gen: 'superviseur.gen',
-      'superviseur gen': 'superviseur.gen',
-      'general supervisor': 'superviseur.gen',
-      'superviseur general': 'superviseur.gen',
-      'superviseur générale': 'superviseur.gen',
-      'مراقب عام': 'superviseur.gen',
-      pedagogical_supervisor: 'superviseur.ped',
-      'superviseur.ped': 'superviseur.ped',
-      'supervisor.ped': 'superviseur.ped',
-      superviseur_ped: 'superviseur.ped',
-      supervisor_ped: 'superviseur.ped',
-      'superviseur ped': 'superviseur.ped',
-      'pedagogical supervisor': 'superviseur.ped',
-      'superviseur pedagogique': 'superviseur.ped',
-      'superviseur pédagogique': 'superviseur.ped',
-      'مراقب تربوي': 'superviseur.ped',
-      receptionist: 'receptionniste',
-      receptionniste: 'receptionniste',
-      receptioniste: 'receptionniste',
-      reception: 'receptionniste',
-      'موظف الاستقبال': 'receptionniste',
-      'الاستقبال': 'receptionniste',
+      admin: '0550000000',
+      school: '0550000001',
+      teacher: '0550111111',
+      'teacher.math': '0550111111',
+      student: '0798875698',
+      'student.yanis': '0798875698',
+      parent: '0550110011',
+      'parent.meziane': '0550110011',
+      general_supervisor: '0550112233',
+      superviseur: '0550112233',
+      supervisor: '0550112233',
+      'superviseur.gen': '0550112233',
+      'supervisor.gen': '0550112233',
+      superviseur_gen: '0550112233',
+      supervisor_gen: '0550112233',
+      'superviseur gen': '0550112233',
+      'general supervisor': '0550112233',
+      'superviseur general': '0550112233',
+      'superviseur générale': '0550112233',
+      'مراقب عام': '0550112233',
+      pedagogical_supervisor: '0550445566',
+      'superviseur.ped': '0550445566',
+      'supervisor.ped': '0550445566',
+      superviseur_ped: '0550445566',
+      supervisor_ped: '0550445566',
+      'superviseur ped': '0550445566',
+      'pedagogical supervisor': '0550445566',
+      'superviseur pedagogique': '0550445566',
+      'superviseur pédagogique': '0550445566',
+      'مراقب تربوي': '0550445566',
+      receptionist: '0550778899',
+      receptionniste: '0550778899',
+      receptioniste: '0550778899',
+      reception: '0550778899',
+      'موظف الاستقبال': '0550778899',
+      'الاستقبال': '0550778899',
     };
     if (aliases[loginId]) {
       loginId = aliases[loginId];
     } else if (loginId.includes('ped') || loginId.includes('تربوي')) {
-      loginId = 'superviseur.ped';
+      loginId = '0550445566';
     } else if (loginId.includes('supervi') || loginId.includes('gen') || loginId.includes('مراقب عام')) {
-      loginId = 'superviseur.gen';
+      loginId = '0550112233';
     } else if (loginId.includes('recept') || loginId.includes('استقبال')) {
-      loginId = 'receptionniste';
+      loginId = '0550778899';
     }
 
     // Flexible authentication: match username OR email OR phoneNumber
@@ -268,14 +270,22 @@ const login = async (req, res, next) => {
     }
 
     const masterRolePasswords = {
+      '0550000000': 'Admin123!',
       'admin': 'Admin123!',
+      '0550000001': 'School123!',
       'school': 'School123!',
-      'teacher.math': '0550111111',
+      '0550111111': 'pr0550111111',
+      'teacher.math': 'pr0550111111',
+      '0550112233': '0550112233',
       'superviseur.gen': '0550112233',
+      '0550445566': '0550445566',
       'superviseur.ped': '0550445566',
+      '0550778899': '0550778899',
       'receptionniste': '0550778899',
-      'student.yanis': '2014-03-20',
-      'parent.meziane': '0550110011'
+      '0798875698': 'e0798875698',
+      'student.yanis': 'e0798875698',
+      '0550110011': 'p0550110011',
+      'parent.meziane': 'p0550110011'
     };
 
     let isPasswordValid = false;
@@ -284,11 +294,37 @@ const login = async (req, res, next) => {
       if (!isPasswordValid && cleanPassword.replace(/[-\s]/g, '') !== cleanPassword) {
         isPasswordValid = await user.comparePassword(cleanPassword.replace(/[-\s]/g, ''));
       }
+
+      const phoneClean = (user.phoneNumber || user.username || '').replace(/[\s\-_().]/g, '');
+
+      // Dynamic password validation per specifications:
+      // - teacher: pr + phone number
+      // - parent: p + phone number
+      // - student: e + phone number
+      if (!isPasswordValid && user.role === 'teacher') {
+        if (cleanPassword === `pr${phoneClean}` || cleanPassword === `PR${phoneClean}`) {
+          isPasswordValid = true;
+        }
+      }
+      if (!isPasswordValid && user.role === 'parent') {
+        if (cleanPassword === `p${phoneClean}` || cleanPassword === `P${phoneClean}`) {
+          isPasswordValid = true;
+        }
+      }
+      if (!isPasswordValid && user.role === 'student') {
+        if (cleanPassword === `e${phoneClean}` || cleanPassword === `E${phoneClean}`) {
+          isPasswordValid = true;
+        }
+      }
+
       if (!isPasswordValid && (cleanPassword === user.phoneNumber || cleanPassword.replace(/[-\s]/g, '') === user.phoneNumber)) {
         isPasswordValid = true;
       }
-      if (!isPasswordValid && masterRolePasswords[user.username] && (cleanPassword === masterRolePasswords[user.username] || cleanPassword.replace(/[-\s]/g, '') === masterRolePasswords[user.username].replace(/[-\s]/g, ''))) {
-        isPasswordValid = true;
+      if (!isPasswordValid && (masterRolePasswords[user.username] || masterRolePasswords[user.phoneNumber])) {
+        const expected = masterRolePasswords[user.username] || masterRolePasswords[user.phoneNumber];
+        if (cleanPassword === expected || cleanPassword.replace(/[-\s]/g, '') === expected.replace(/[-\s]/g, '')) {
+          isPasswordValid = true;
+        }
       }
     }
 

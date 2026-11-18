@@ -237,10 +237,10 @@ const importStudentsExcel = async (req, res, next) => {
           });
         }
 
-        // 2. Resolve or create Parent Account
-        const primaryPhone = fatherPhone || motherPhone || `055000${String(nationalId).slice(-4)}`;
+        // 2. Resolve or create Parent Account (Phone as username, p + phone as password)
+        const primaryPhone = String(fatherPhone || motherPhone || `055000${String(nationalId).slice(-4)}`).replace(/[\s\-_().]/g, '');
         let parentUser = await User.findOne({
-          $or: [{ phoneNumber: primaryPhone }, { username: `parent_${primaryPhone}` }],
+          $or: [{ phoneNumber: primaryPhone }, { username: primaryPhone }],
         });
 
         let parentProfile = null;
@@ -250,9 +250,9 @@ const importStudentsExcel = async (req, res, next) => {
           const parentLastName = (lastNameFr || lastNameAr || 'Zitouni').trim();
 
           parentUser = await User.create({
-            username: `parent_${primaryPhone}`,
+            username: primaryPhone,
             email: `parent_${primaryPhone}@ecole-zitouni.dz`,
-            password: primaryPhone, // Default password = phone number as required
+            password: `p${primaryPhone}`,
             firstName: parentFullNameFr || parentFullNameAr,
             lastName: parentLastName,
             firstNameArabic: parentFullNameAr,
@@ -268,7 +268,7 @@ const importStudentsExcel = async (req, res, next) => {
             user: parentUser._id,
             fatherNameArabic: fatherNameAr,
             fatherNameFrench: fatherNameFr,
-            fatherPhone: fatherPhone,
+            fatherPhone: fatherPhone || primaryPhone,
             motherNameArabic: motherNameAr,
             motherNameFrench: motherNameFr,
             motherPhone: motherPhone,
@@ -285,12 +285,12 @@ const importStudentsExcel = async (req, res, next) => {
           }
         }
 
-        // 3. Create or update Student User & Profile
-        const studentUsername = `std_${nationalId}`;
-        const studentPassword = formattedDob; // Default password = Date of Birth (YYYY-MM-DD)
+        // 3. Create or update Student User & Profile (Phone as username, e + phone as password)
+        const cleanStudentPhone = (studentPhone || '').trim().replace(/[\s\-_().]/g, '') || (`0798${String(nationalId).slice(-6)}`);
+        const studentPassword = `e${cleanStudentPhone}`;
 
         let studentUser = await User.findOne({
-          $or: [{ username: studentUsername }, { email: `${studentUsername}@ecole-zitouni.dz` }],
+          $or: [{ username: cleanStudentPhone }, { phoneNumber: cleanStudentPhone }, { email: `${cleanStudentPhone}@ecole-zitouni.dz` }],
         });
 
         const effectiveFirstAr = firstNameAr || firstNameFr || 'تلميذ';
@@ -300,8 +300,8 @@ const importStudentsExcel = async (req, res, next) => {
 
         if (!studentUser) {
           studentUser = await User.create({
-            username: studentUsername,
-            email: `${studentUsername}@ecole-zitouni.dz`,
+            username: cleanStudentPhone,
+            email: `${cleanStudentPhone}@ecole-zitouni.dz`,
             password: studentPassword,
             firstName: effectiveFirstFr,
             lastName: effectiveLastFr,
@@ -310,7 +310,7 @@ const importStudentsExcel = async (req, res, next) => {
             firstNameFrench: effectiveFirstFr,
             lastNameFrench: effectiveLastFr,
             role: 'student',
-            phoneNumber: studentPhone || primaryPhone,
+            phoneNumber: cleanStudentPhone,
             isActive: true,
           });
         }

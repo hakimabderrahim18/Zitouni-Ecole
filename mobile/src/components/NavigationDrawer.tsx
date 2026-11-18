@@ -25,6 +25,10 @@ import {
   MessageSquare,
   LogOut,
   Sparkles,
+  GraduationCap,
+  Megaphone,
+  BarChart2,
+  Printer,
 } from 'lucide-react-native';
 import { SchoolLogo } from './SchoolLogo';
 import { theme } from '../theme/tokens';
@@ -40,6 +44,9 @@ export interface NavItem {
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   { id: 'feed', label: 'آخر الأخبار والمستجدات', icon: Globe },
   { id: 'overview', label: 'لوحة القيادة والمؤشرات', icon: BookOpen },
+  { id: 'grades', label: 'إدارة نقاط الفروض والتقييمات', icon: GraduationCap },
+  { id: 'academic-stats', label: 'الإحصائيات ونسب الإنجاز', icon: BarChart2 },
+  { id: 'parent-notices', label: 'مراسلات وإشعارات الأولياء', icon: Megaphone },
   { id: 'users', label: 'المستخدمين والصلاحيات', icon: Users },
   { id: 'teachers', label: 'قائمة الأساتذة (المادة 23)', icon: Users },
   { id: 'students', label: 'قائمة التلاميذ', icon: Users },
@@ -64,6 +71,7 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
 export const TEACHER_NAV_ITEMS: NavItem[] = [
   { id: 'feed', label: 'آخر الأخبار والمستجدات', icon: Globe },
   { id: 'overview', label: 'لوحة الأستاذ والمهام', icon: BookOpen },
+  { id: 'grades', label: 'إدخال نقاط الفروض والتقييمات', icon: GraduationCap },
   { id: 'courses', label: 'الدروس والملفات المرفوعة', icon: FileText },
   { id: 'classes', label: 'الأقسام المسندة وتلاميذها', icon: Users },
   { id: 'attendance', label: 'تسجيل حضور وغياب التلاميذ', icon: CheckSquare },
@@ -76,6 +84,8 @@ export const TEACHER_NAV_ITEMS: NavItem[] = [
 export const PARENT_NAV_ITEMS: NavItem[] = [
   { id: 'feed', label: 'مستجدات وإعلانات المؤسسة', icon: Globe },
   { id: 'overview', label: 'متابعة الأبناء والتمدرس', icon: Users },
+  { id: 'grades', label: 'كشوف النقاط ونتائج الأبناء', icon: GraduationCap },
+  { id: 'notices', label: 'مراسلات ومواعيد الإدارة', icon: Megaphone },
   { id: 'payments', label: 'الفواتير والرسوم المدرسية والوصولات', icon: CreditCard },
   { id: 'exit-passes', label: 'أذونات وتصاريح الخروج', icon: ShieldCheck },
   { id: 'timetable', label: 'جدول توقيت الأبناء', icon: Calendar },
@@ -88,6 +98,7 @@ export const PARENT_NAV_ITEMS: NavItem[] = [
 export const STUDENT_NAV_ITEMS: NavItem[] = [
   { id: 'feed', label: 'إعلانات المدرسة', icon: Globe },
   { id: 'overview', label: 'ملخص تمدرسي ودروسي', icon: BookOpen },
+  { id: 'grades', label: 'كشف النقاط ونتائجي', icon: GraduationCap },
   { id: 'courses', label: 'الدروس والملخصات والواجبات', icon: FileText },
   { id: 'timetable', label: 'جدول توقيت القسم', icon: Calendar },
   { id: 'attendance', label: 'سجل غياباتي وتأخيراتي', icon: CheckSquare },

@@ -261,7 +261,7 @@ export default function Login() {
                     disabled={lockCountdown > 0}
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="مثال: 0550112233 أو username أو البريد"
+                    placeholder="رقم الهاتف (اسم المستخدم) مثال: 0798875698 أو 0550111111"
                     className="w-full ps-12 pe-4 py-3.5 bg-white border-2 border-[#C9A24D]/40 hover:border-[#C9A24D] focus:border-[#7B1E3A] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#7B1E3A]/15 shadow-sm hover:shadow transition-all duration-300 text-[#2B2022] placeholder-[#2B2022]/40 text-start text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                 </div>
@@ -340,19 +340,22 @@ export default function Login() {
 
               {/* Quick Login Helper for Testing All 8 Roles */}
               <div className="pt-4 border-t border-[#C9A24D]/25 text-right">
-                <span className="text-[11px] font-black text-[#2B2022] block mb-2">
-                  حسابات التجربة السريعة للأدوار الثمانية (انقر للملء الفوري):
+                <span className="text-[11px] font-black text-[#2B2022] block mb-1">
+                  حسابات الدخول الموحدة (اسم المستخدم: رقم الهاتف | كلمة المرور: بادئة + الهاتف):
+                </span>
+                <span className="text-[10px] text-[#7B1E3A] font-bold block mb-2">
+                  • الأستاذ: pr + الهاتف | • الولي: p + الهاتف | • التلميذ: e + الهاتف
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
                   {[
-                    { label: 'المدير العام', id: 'admin', p: 'Admin123!', role: 'admin' },
-                    { label: 'المدرسة', id: 'school', p: 'School123!', role: 'school' },
-                    { label: 'مراقب عام', id: 'superviseur.gen', p: '0550112233', role: 'general_supervisor' },
-                    { label: 'مراقب تربوي', id: 'superviseur.ped', p: '0550445566', role: 'pedagogical_supervisor' },
-                    { label: 'استقبال', id: 'receptionniste', p: '0550778899', role: 'receptionist' },
-                    { label: 'أستاذ', id: 'teacher.math', p: '0550111111', role: 'teacher' },
-                    { label: 'ولي أمر', id: 'parent.meziane', p: '0550110011', role: 'parent' },
-                    { label: 'تلميذ', id: 'student.yanis', p: '2014-03-20', role: 'student' },
+                    { label: 'المدير العام', id: '0550000000', p: 'Admin123!', role: 'admin' },
+                    { label: 'المدرسة', id: '0550000001', p: 'School123!', role: 'school' },
+                    { label: 'أستاذ (0550111111)', id: '0550111111', p: 'pr0550111111', role: 'teacher' },
+                    { label: 'ولي أمر (0550110011)', id: '0550110011', p: 'p0550110011', role: 'parent' },
+                    { label: 'تلميذ (0798875698)', id: '0798875698', p: 'e0798875698', role: 'student' },
+                    { label: 'مراقب عام', id: '0550112233', p: '0550112233', role: 'general_supervisor' },
+                    { label: 'مراقب تربوي', id: '0550445566', p: '0550445566', role: 'pedagogical_supervisor' },
+                    { label: 'استقبال', id: '0550778899', p: '0550778899', role: 'receptionist' },
                   ].map((acc) => (
                     <button
                       key={acc.id}

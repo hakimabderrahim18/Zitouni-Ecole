@@ -28,6 +28,7 @@ import { DashboardHeader } from '../DashboardHeader';
 import { NavigationDrawer } from '../NavigationDrawer';
 import { SchoolFeedView } from '../feed/SchoolFeedView';
 import { ConversationView } from '../chat/ConversationView';
+import { StudentGradesView } from './StudentGradesView';
 
 interface StudentDashboardViewProps {
   onOpenDrawer: () => void;
@@ -213,6 +214,11 @@ export const StudentDashboardView: React.FC<StudentDashboardViewProps> = ({
                 ))
               )}
             </View>
+          )}
+
+          {/* Subview: Grades */}
+          {currentRoute === 'grades' && (
+            <StudentGradesView />
           )}
 
           {/* Subview 2: All Courses */}

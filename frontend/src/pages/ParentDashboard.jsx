@@ -10,6 +10,8 @@ import LessonNotebook from '../components/LessonNotebook';
 import AdministrativeRequestsManager from '../components/AdministrativeRequestsManager';
 import ParentReEnrollmentView from '../components/ParentReEnrollmentView';
 import ParentExitPassManager from '../components/ParentExitPassManager';
+import ParentGradesView from '../components/assessments/ParentGradesView';
+import ParentNoticesView from '../components/notices/ParentNoticesView';
 import { Users, CreditCard, Calendar, Download, CheckCircle, Clock, Baby, Bus, Soup, Banknote, Globe, FileText, X, Receipt, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 
@@ -18,6 +20,8 @@ export default function ParentDashboard() {
   const navigate = useNavigate();
   const getActiveTab = () => {
     const path = location.pathname;
+    if (path.endsWith('/grades')) return 'grades';
+    if (path.endsWith('/notices')) return 'notices';
     if (path.endsWith('/re-enrollment')) return 're-enrollment';
     if (path.endsWith('/payments')) return 'payments';
     if (path.endsWith('/schedules')) return 'schedules';
@@ -188,6 +192,8 @@ export default function ParentDashboard() {
           </div>
         )}
 
+        {activeTab === 'grades' && <ParentGradesView />}
+        {activeTab === 'notices' && <ParentNoticesView />}
         {activeTab === 're-enrollment' && <ParentReEnrollmentView />}
         {activeTab === 'lessons' && (
           <LessonNotebook

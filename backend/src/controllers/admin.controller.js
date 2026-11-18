@@ -60,27 +60,38 @@ const createUser = async (req, res, next) => {
       return res.status(400).json({ message: 'يوجد حساب مسجل مسبقاً برقم الهاتف أو المعرف هذا (Compte déjà existant avec ce numéro ou identifiant).' });
     }
 
-    // Enforce business rules for account passwords:
-    //  - Parent / Teacher / Supervisor / Receptionist password defaults to phone number if not explicitly set
-    //  - Student password defaults to date of birth (YYYY-MM-DD)
+    // Enforce business rules for account username & password:
+    // - Username must be the phone number
+    // - Password:
+    //   * teacher: pr + phone number (e.g. pr0798875698)
+    //   * parent: p + phone number (e.g. p0798875698)
+    //   * student: e + phone number (e.g. e0798875698)
     let finalPassword = password;
-    if (role === 'parent' || role === 'teacher' || role === 'general_supervisor' || role === 'pedagogical_supervisor' || role === 'receptionist') {
+    if (role === 'teacher') {
       if (!password && !cleanPhone) {
-        return res.status(400).json({ message: `Le numéro de téléphone (ou mot de passe) est requis pour le rôle ${role}` });
+        return res.status(400).json({ message: 'رقم الهاتف إلزامي لحسابات الأساتذة لإنشاء اسم المستخدم وكلمة المرور' });
       }
-      finalPassword = password || String(cleanPhone);
+      finalPassword = password || `pr${cleanPhone}`;
+    } else if (role === 'parent') {
+      if (!password && !cleanPhone) {
+        return res.status(400).json({ message: 'رقم الهاتف إلزامي لحسابات الأولياء لإنشاء اسم المستخدم وكلمة المرور' });
+      }
+      finalPassword = password || `p${cleanPhone}`;
     } else if (role === 'student') {
-      const dob = details && details.dateOfBirth;
-      if (!password && !dob) {
-        return res.status(400).json({ message: 'Date of birth is required for student accounts (used as default password)' });
+      if (!password && !cleanPhone) {
+        return res.status(400).json({ message: 'رقم الهاتف إلزامي لحساب التلميذ لإنشاء اسم المستخدم وكلمة المرور (مثل: 0798875698)' });
       }
-      finalPassword = password || (dob ? new Date(dob).toISOString().split('T')[0] : 'Zitouni2026!');
+      finalPassword = password || `e${cleanPhone}`;
     } else if (role === 'admin' || role === 'school') {
-      finalPassword = password || String(cleanPhone || 'Admin123!');
+      finalPassword = password || String(cleanPhone ? 'Admin123!' : 'Admin123!');
+    } else {
+      finalPassword = password || String(cleanPhone || 'Zitouni2026!');
     }
 
+    const finalUsername = cleanPhone || username;
+
     const user = await User.create({
-      username,
+      username: finalUsername,
       email: finalEmail,
       password: finalPassword,
       firstName: firstName || role,
@@ -234,33 +245,37 @@ const bulkImportStudents = async (req, res, next) => {
       if (userExists) continue;
 
       // Find or create parent
-      let parentUser = await User.findOne({ email: parentEmail });
+      const cleanParentPhone = String(row.parentPhone || row.fatherPhone || row.motherPhone || '').replace(/[\s\-_().]/g, '');
+      let parentUser = cleanParentPhone ? await User.findOne({ phoneNumber: cleanParentPhone }) : await User.findOne({ email: parentEmail });
       let parentProfile;
       if (!parentUser) {
+        const pPhone = cleanParentPhone || `055099${Date.now().toString().slice(-4)}`;
         parentUser = await User.create({
-          email: parentEmail,
-          password: 'Password123!',
+          username: pPhone,
+          email: parentEmail || `parent_${pPhone}@ecole-zitouni.dz`,
+          password: `p${pPhone}`,
           firstName: 'ParentOf',
           lastName: firstName,
           role: 'parent',
+          phoneNumber: pPhone,
         });
-        parentProfile = await Parent.create({ user: parentUser._id });
+        parentProfile = await Parent.create({ user: parentUser._id, fatherPhone: pPhone });
       } else {
         parentProfile = await Parent.findOne({ user: parentUser._id });
       }
 
-      // Student password must be their date of birth (YYYY-MM-DD) when provided.
-      const studentPassword = dateOfBirth
-        ? new Date(dateOfBirth).toISOString().split('T')[0]
-        : password || 'Zitouni2026!';
+      // Student credentials: phone as username, e + phone as password
+      const cleanStudentPhone = String(phoneNumber || '').replace(/[\s\-_().]/g, '') || `079887${Date.now().toString().slice(-4)}`;
+      const studentPassword = password || `e${cleanStudentPhone}`;
 
       const user = await User.create({
-        email,
+        username: cleanStudentPhone,
+        email: email || `${cleanStudentPhone}@ecole-zitouni.dz`,
         password: studentPassword,
         firstName,
         lastName,
         role: 'student',
-        phoneNumber,
+        phoneNumber: cleanStudentPhone,
       });
 
       const studentProfile = await Student.create({
@@ -878,11 +893,10 @@ const createEnrollment = async (req, res, next) => {
 
     let parentProfile = null;
     if (!parentUser) {
-      const pUsername = `parent.${cleanParentPhone.slice(-6)}`;
       parentUser = await User.create({
-        username: pUsername,
-        email: parentEmail || `${pUsername}@ecole-zitouni.dz`,
-        password: cleanParentPhone,
+        username: cleanParentPhone,
+        email: parentEmail || `parent_${cleanParentPhone}@ecole-zitouni.dz`,
+        password: `p${cleanParentPhone}`,
         firstName: parentFirstName || 'ولي',
         lastName: parentLastName || lastName,
         role: 'parent',
@@ -894,6 +908,7 @@ const createEnrollment = async (req, res, next) => {
         user: parentUser._id,
         profession: parentProfession || '',
         address: parentAddress || '',
+        fatherPhone: cleanParentPhone,
         children: [],
       });
     } else {
@@ -903,21 +918,20 @@ const createEnrollment = async (req, res, next) => {
           user: parentUser._id,
           profession: parentProfession || '',
           address: parentAddress || '',
+          fatherPhone: cleanParentPhone,
           children: [],
         });
       }
     }
 
-    // 2. Create student account
-    const formattedDob = new Date(dateOfBirth).toISOString().split('T')[0];
-    const timestamp = Date.now().toString().slice(-4);
-    const sUsername = `${firstName.toLowerCase().replace(/[^a-z0-9]/g, '')}.${lastName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${timestamp}`;
-    const sEmail = `${sUsername}@ecole-zitouni.dz`;
+    // 2. Create student account with Phone Number as username and e + phone as password
+    const cleanStudentPhone = (studentPhone || '').trim().replace(/[\s\-_().]/g, '') || (`0798${Date.now().toString().slice(-6)}`);
+    const sEmail = `${cleanStudentPhone}@ecole-zitouni.dz`;
 
     const studentUser = await User.create({
-      username: sUsername,
+      username: cleanStudentPhone,
       email: sEmail,
-      password: formattedDob,
+      password: `e${cleanStudentPhone}`,
       firstName,
       lastName,
       firstNameArabic: firstNameArabic || firstName,
@@ -925,7 +939,7 @@ const createEnrollment = async (req, res, next) => {
       firstNameFrench: firstNameFrench || firstName,
       lastNameFrench: lastNameFrench || lastName,
       role: 'student',
-      phoneNumber: cleanParentPhone,
+      phoneNumber: cleanStudentPhone,
       isActive: true,
     });
 
@@ -985,6 +999,7 @@ const createEnrollment = async (req, res, next) => {
       class: classId,
       group: groupId || null,
       parent: parentProfile._id,
+      studentPhone: cleanStudentPhone,
       regime: normalizeRegime(regime),
       tuitionPaid: true,
       tuitionBaseAmount: baseAmount,
