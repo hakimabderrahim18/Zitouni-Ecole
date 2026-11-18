@@ -312,9 +312,10 @@ export default function TimetableGrid({
   // Find slots matching day and hour
   const getSlotEntries = (dayCode, hourCode) => {
     const matched = entries.filter(e => e.day === dayCode && e.hour === hourCode);
-    if (fixedGroup) {
+    const activeGroup = fixedGroup || (isStudent ? studentGroupName : null);
+    if (activeGroup) {
       const filtered = matched.filter(
-        e => !e.group || e.group === fixedGroup || e.group === 'الكل' || e.group === 'CG'
+        e => !e.group || e.group === activeGroup || e.group === 'الكل' || e.group === 'CG'
       );
       if (filtered.length > 0) return filtered;
     }
@@ -331,7 +332,9 @@ export default function TimetableGrid({
     : allDays.filter(d => d.code === selectedDayFilter || d.nameArabic === selectedDayFilter);
   const hours = metadata?.hours || DEFAULT_HOURS;
 
-  const currentTitle = viewMode === 'division'
+  const currentTitle = isStudent
+    ? `جدول توقيت قسمك: ${studentClassTitle || metadata?.divisions?.find(d => d.code === selectedDivision)?.nameArabic || selectedDivision}`
+    : viewMode === 'division'
     ? `جدول توقيت القسم: ${metadata?.divisions?.find(d => d.code === selectedDivision)?.nameArabic || selectedDivision}`
     : `جدول توقيت الأستاذ(ة): ${selectedTeacher}`;
 
@@ -340,85 +343,105 @@ export default function TimetableGrid({
       {/* Controls & Switcher (Screen Only) - Prestige Académique */}
       <div className="bg-[#FDFBF7] border border-[#C9A24D]/35 rounded-2xl p-4 sm:p-5 shadow-sm backdrop-blur-md print:hidden space-y-4">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
-          {/* Mode Switcher */}
-          {!fixedDivision && !fixedTeacher && (
-            <div className="flex items-center gap-1.5 bg-[#F3E9DC]/60 p-1.5 rounded-xl border border-[#C9A24D]/25 w-full sm:w-auto">
-              <button
-                onClick={() => setViewMode('division')}
-                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewMode === 'division'
-                    ? 'bg-[#7B1E3A] text-white shadow-md shadow-[#7B1E3A]/20'
-                    : 'text-[#2B2022]/70 hover:text-[#7B1E3A]'
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span>حسب القسم</span>
-              </button>
-              <button
-                onClick={() => setViewMode('teacher')}
-                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewMode === 'teacher'
-                    ? 'bg-[#7B1E3A] text-white shadow-md shadow-[#7B1E3A]/20'
-                    : 'text-[#2B2022]/70 hover:text-[#7B1E3A]'
-                }`}
-              >
-                <User className="w-4 h-4" />
-                <span>حسب الأستاذ</span>
-              </button>
+          
+          {/* For Student: Dedicated Private Badge instead of Mode Switcher & Dropdowns */}
+          {isStudent ? (
+            <div className="flex items-center gap-3 bg-[#F3E9DC]/80 border border-[#C9A24D]/40 rounded-xl px-4 py-2.5 shadow-2xs w-full lg:w-auto">
+              <div className="w-9 h-9 rounded-lg bg-[#7B1E3A] text-[#C9A24D] flex items-center justify-center shrink-0 shadow-xs">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div className="text-right">
+                <div className="text-[11px] font-bold text-[#7B1E3A]">جدول توقيت الحصص الأسبوعي الخاص بك:</div>
+                <div className="text-xs sm:text-sm font-black text-[#2B2022]">
+                  {studentClassTitle || metadata?.divisions?.find(d => d.code === selectedDivision)?.nameArabic || selectedDivision || 'جاري تحميل القسم...'}
+                  {studentGroupName ? ` (${studentGroupName})` : ''}
+                </div>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Mode Switcher for Non-Students */}
+              {!fixedDivision && !fixedTeacher && (
+                <div className="flex items-center gap-1.5 bg-[#F3E9DC]/60 p-1.5 rounded-xl border border-[#C9A24D]/25 w-full sm:w-auto">
+                  <button
+                    onClick={() => setViewMode('division')}
+                    className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viewMode === 'division'
+                        ? 'bg-[#7B1E3A] text-white shadow-md shadow-[#7B1E3A]/20'
+                        : 'text-[#2B2022]/70 hover:text-[#7B1E3A]'
+                    }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>حسب القسم</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('teacher')}
+                    className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viewMode === 'teacher'
+                        ? 'bg-[#7B1E3A] text-white shadow-md shadow-[#7B1E3A]/20'
+                        : 'text-[#2B2022]/70 hover:text-[#7B1E3A]'
+                    }`}
+                  >
+                    <User className="w-4 h-4" />
+                    <span>حسب الأستاذ</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Selector Dropdown for Non-Students */}
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-1 min-w-0">
+                {viewMode === 'division' && !fixedDivision && (
+                  <div className="flex items-center gap-2 bg-white border border-[#C9A24D]/35 rounded-xl px-3 py-2 shadow-sm flex-1 min-w-0">
+                    <Users className="w-4 h-4 text-[#7B1E3A] shrink-0" />
+                    <select
+                      value={selectedDivision}
+                      onChange={e => setSelectedDivision(e.target.value)}
+                      className="bg-transparent text-[#2B2022] text-xs font-bold focus:outline-none cursor-pointer w-full truncate"
+                    >
+                      {(metadata?.divisions || []).map(d => (
+                        <option key={d.code} value={d.code} className="bg-white text-[#2B2022]">
+                          {d.code} — {d.nameArabic}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {viewMode === 'teacher' && !fixedTeacher && (
+                  <div className="flex items-center gap-2 bg-white border border-[#C9A24D]/35 rounded-xl px-3 py-2 shadow-sm flex-1 min-w-0">
+                    <User className="w-4 h-4 text-[#7B1E3A] shrink-0" />
+                    <select
+                      value={selectedTeacher}
+                      onChange={e => setSelectedTeacher(e.target.value)}
+                      className="bg-transparent text-[#2B2022] text-xs font-bold focus:outline-none cursor-pointer w-full truncate"
+                    >
+                      {(metadata?.teachers || []).map(t => (
+                        <option key={t} value={t} className="bg-white text-[#2B2022]">
+                          الأستاذ(ة): {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
-          {/* Selector Dropdown */}
-          <div className="flex items-center gap-2 w-full sm:w-auto flex-1 min-w-0">
-            {viewMode === 'division' && !fixedDivision && (
-              <div className="flex items-center gap-2 bg-white border border-[#C9A24D]/35 rounded-xl px-3 py-2 shadow-sm flex-1 min-w-0">
-                <Users className="w-4 h-4 text-[#7B1E3A] shrink-0" />
-                <select
-                  value={selectedDivision}
-                  onChange={e => setSelectedDivision(e.target.value)}
-                  className="bg-transparent text-[#2B2022] text-xs font-bold focus:outline-none cursor-pointer w-full truncate"
-                >
-                  {(metadata?.divisions || []).map(d => (
-                    <option key={d.code} value={d.code} className="bg-white text-[#2B2022]">
-                      {d.code} — {d.nameArabic}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {viewMode === 'teacher' && !fixedTeacher && (
-              <div className="flex items-center gap-2 bg-white border border-[#C9A24D]/35 rounded-xl px-3 py-2 shadow-sm flex-1 min-w-0">
-                <User className="w-4 h-4 text-[#7B1E3A] shrink-0" />
-                <select
-                  value={selectedTeacher}
-                  onChange={e => setSelectedTeacher(e.target.value)}
-                  className="bg-transparent text-[#2B2022] text-xs font-bold focus:outline-none cursor-pointer w-full truncate"
-                >
-                  {(metadata?.teachers || []).map(t => (
-                    <option key={t} value={t} className="bg-white text-[#2B2022]">
-                      الأستاذ(ة): {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
+          {/* Action Buttons: Refresh, Print, Admin actions */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
             <button
               onClick={() => {
-                if (viewMode === 'division') fetchDivisionTimetable(selectedDivision);
+                if (isStudent) fetchStudentTimetable();
+                else if (viewMode === 'division') fetchDivisionTimetable(selectedDivision);
                 else fetchTeacherTimetable(selectedTeacher);
               }}
-              className="p-2.5 text-[#2B2022]/70 hover:text-[#7B1E3A] bg-white hover:bg-[#F3E9DC]/40 border border-[#C9A24D]/25 rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
+              className="p-2.5 text-[#2B2022]/70 hover:text-[#7B1E3A] bg-white hover:bg-[#F3E9DC]/40 border border-[#C9A24D]/25 rounded-xl transition-colors cursor-pointer shadow-sm shrink-0 self-center sm:self-auto"
               title="تحديث"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
-            {canImport && (
+            {canImport && !isStudent && (
               <>
                 <button
                   type="button"
@@ -544,7 +567,11 @@ export default function TimetableGrid({
           <div className="p-16 text-center text-[#2B2022]/50 border border-dashed border-[#C9A24D]/30 rounded-2xl bg-white/40">
             <Calendar className="w-12 h-12 mx-auto text-[#C9A24D]/50 mb-3" />
             <p className="font-serif font-bold text-[#7B1E3A] text-base">لا توجد حصص مسجلة لهذا الجدول حالياً.</p>
-            <p className="text-xs text-[#2B2022]/60 mt-1">يمكنك استيراد ملف RAN09.DBF.xlsx لملء الجداول آلياً بضغطة واحدة.</p>
+            {isStudent ? (
+              <p className="text-xs text-[#2B2022]/60 mt-1">سيتم عرض جدول توقيت حصص قسمك فور اعتماده من طرف إدارة المؤسسة.</p>
+            ) : (
+              <p className="text-xs text-[#2B2022]/60 mt-1">يمكنك استيراد ملف RAN09.DBF.xlsx لملء الجداول آلياً بضغطة واحدة.</p>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
