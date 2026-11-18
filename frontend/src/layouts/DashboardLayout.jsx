@@ -4,7 +4,7 @@ import { useChatStore } from '../store/useChatStore';
 import { useSchoolStore } from '../store/useSchoolStore';
 import SchoolLogo from '../components/SchoolLogo';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Menu, Bell, MessageSquare, BookOpen, CreditCard, Calendar, Users, X, Globe, ChevronLeft, ChevronRight, FileText, Palette, CheckSquare, Database, ShieldCheck, ShieldAlert, RefreshCw, Layers, AlertTriangle, Utensils, Camera, Trash2, Edit3, Save, Key, Phone, Check, AlertCircle } from 'lucide-react';
+import { LogOut, Menu, Bell, MessageSquare, BookOpen, CreditCard, Calendar, Users, X, Globe, ChevronLeft, ChevronRight, FileText, Palette, CheckSquare, Database, ShieldCheck, ShieldAlert, RefreshCw, Layers, AlertTriangle, Utensils, Camera, Trash2, Edit3, Save, Key, Phone, Check, AlertCircle, GraduationCap, Printer, TrendingUp, Megaphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { motion } from 'framer-motion';
@@ -14,38 +14,48 @@ const getNotificationIcon = (type) => {
   switch (type) {
     case 'message':
       return {
-        icon: <MessageSquare className="w-4 h-4 text-indigo-500" />,
-        bg: 'bg-indigo-500/10 border-indigo-500/30'
+        icon: <MessageSquare className="w-4 h-4 text-indigo-700 dark:text-indigo-300" />,
+        bg: 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800'
       };
     case 'course':
       return {
-        icon: <BookOpen className="w-4 h-4 text-[#7B1E3A]" />,
-        bg: 'bg-[#7B1E3A]/10 border-[#7B1E3A]/30'
+        icon: <BookOpen className="w-4 h-4 text-[#7B1E3A] dark:text-[#E7C1CB]" />,
+        bg: 'bg-[#FAF2F4] dark:bg-[#3A0F1D]/60 border-[#E7C1CB] dark:border-[#7B1E3A]/60'
       };
     case 'schedule':
       return {
-        icon: <Calendar className="w-4 h-4 text-[#C9A24D]" />,
-        bg: 'bg-[#C9A24D]/15 border-[#C9A24D]/35'
+        icon: <Calendar className="w-4 h-4 text-[#B28B36] dark:text-[#F3D78E]" />,
+        bg: 'bg-[#FFFBEB] dark:bg-[#3D2C0C]/60 border-[#FDE68A] dark:border-[#C9A24D]/60'
       };
     case 'post':
       return {
-        icon: <Globe className="w-4 h-4 text-emerald-600" />,
-        bg: 'bg-emerald-500/10 border-emerald-500/30'
+        icon: <Globe className="w-4 h-4 text-emerald-700 dark:text-emerald-300" />,
+        bg: 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800'
       };
     case 'attendance':
       return {
-        icon: <CheckSquare className="w-4 h-4 text-amber-600" />,
-        bg: 'bg-amber-500/10 border-amber-500/30'
+        icon: <CheckSquare className="w-4 h-4 text-amber-700 dark:text-amber-300" />,
+        bg: 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800'
       };
     case 'warning':
       return {
-        icon: <AlertTriangle className="w-4 h-4 text-rose-600" />,
-        bg: 'bg-rose-500/10 border-rose-500/30'
+        icon: <AlertTriangle className="w-4 h-4 text-rose-700 dark:text-rose-300" />,
+        bg: 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800'
+      };
+    case 'assessment':
+      return {
+        icon: <GraduationCap className="w-4 h-4 text-[#7B1E3A] dark:text-[#E7C1CB]" />,
+        bg: 'bg-[#FAF2F4] dark:bg-[#3A0F1D]/60 border-[#E7C1CB] dark:border-[#7B1E3A]/60'
+      };
+    case 'parent_notice':
+      return {
+        icon: <Megaphone className="w-4 h-4 text-amber-700 dark:text-amber-300" />,
+        bg: 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800'
       };
     default:
       return {
-        icon: <Bell className="w-4 h-4 text-[#7B1E3A]" />,
-        bg: 'bg-[#7B1E3A]/10 border-[#7B1E3A]/25'
+        icon: <Bell className="w-4 h-4 text-[#7B1E3A] dark:text-[#C9A24D]" />,
+        bg: 'bg-[#FAF2F4] dark:bg-[#3A0F1D]/60 border-[#E7C1CB] dark:border-[#C9A24D]/40'
       };
   }
 };
@@ -245,6 +255,14 @@ export default function DashboardLayout({ children, noPadding = false }) {
       else if (user?.role === 'pedagogical_supervisor') navigate('/dashboard/pedagogical-supervisor');
       else if (user?.role === 'receptionist') navigate('/dashboard/receptionist');
       else navigate('/dashboard/admin');
+    } else if (notif.type === 'assessment') {
+      if (user?.role === 'student') navigate('/dashboard/student/grades');
+      else if (user?.role === 'parent') navigate('/dashboard/parent/grades');
+      else if (user?.role === 'teacher') navigate('/dashboard/teacher/grades');
+      else navigate('/dashboard/admin/grades');
+    } else if (notif.type === 'parent_notice') {
+      if (user?.role === 'parent') navigate('/dashboard/parent/notices');
+      else navigate('/dashboard/admin/parent-notices');
     } else if (notif.type === 'attendance' || notif.type === 'warning') {
       if (user?.role === 'student') navigate('/dashboard/student/attendance');
       else if (user?.role === 'parent') navigate('/dashboard/parent/attendance');
@@ -263,6 +281,10 @@ export default function DashboardLayout({ children, noPadding = false }) {
       case 'school':
         return [
           { to: '/dashboard/admin', label: 'لوحة القيادة والمؤشرات', icon: BookOpen },
+          { to: '/dashboard/admin/grades', label: 'إدارة نقاط الفروض والتقييمات', icon: GraduationCap },
+          { to: '/dashboard/admin/report-cards', label: 'استخراج وطباعة كشوف النقاط', icon: Printer },
+          { to: '/dashboard/admin/academic-stats', label: 'الإحصائيات ونسب الإنجاز', icon: TrendingUp },
+          { to: '/dashboard/admin/parent-notices', label: 'مراسلات وإشعارات الأولياء', icon: Megaphone },
           { to: '/dashboard/admin/users', label: 'المستخدمين والصلاحيات', icon: Users },
           { to: '/dashboard/admin/teachers', label: 'قائمة الأساتذة (المادة 23)', icon: Users },
           { to: '/dashboard/admin/students', label: 'قائمة التلاميذ', icon: Users },
@@ -317,6 +339,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
       case 'teacher':
         return [
           { to: '/dashboard/teacher', label: 'لوحة التحكم', icon: BookOpen },
+          { to: '/dashboard/teacher/grades', label: 'إدخال نقاط الفروض والتقييمات', icon: GraduationCap },
           { to: '/dashboard/teacher/lessons', label: 'كراس الدروس والواجبات المنزلية', icon: BookOpen },
           { to: '/dashboard/teacher/timetable', label: 'جدول توقيتي الأسبوعي (RAN09)', icon: Calendar },
           { to: '/dashboard/teacher/courses', label: 'المواد والدروس', icon: BookOpen },
@@ -327,6 +350,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
       case 'student':
         return [
           { to: '/dashboard/student', label: 'لوحة التحكم', icon: BookOpen },
+          { to: '/dashboard/student/grades', label: 'كشف النقاط ونتائجي', icon: GraduationCap },
           { to: '/dashboard/student/re-enrollment', label: 'إعادة التسجيل السنوية', icon: RefreshCw },
           { to: '/dashboard/student/lessons', label: 'كراس الدروس والواجبات المنزلية', icon: BookOpen },
           { to: '/dashboard/student/timetable', label: 'جدول توقيت القسم (RAN09)', icon: Calendar },
@@ -337,6 +361,8 @@ export default function DashboardLayout({ children, noPadding = false }) {
       case 'parent':
         return [
           { to: '/dashboard/parent', label: 'لوحة التحكم', icon: BookOpen },
+          { to: '/dashboard/parent/grades', label: 'كشوف النقاط والنتائج', icon: GraduationCap },
+          { to: '/dashboard/parent/notices', label: 'مراسلات ومواعيد الإدارة', icon: Megaphone },
           { to: '/dashboard/parent/re-enrollment', label: 'إعادة تسجيل الأبناء', icon: RefreshCw },
           { to: '/dashboard/parent/lessons', label: 'كراس الدروس ومتابعة الواجبات', icon: BookOpen },
           { to: '/dashboard/parent/timetable', label: 'جدول توقيت الأبناء (RAN09)', icon: Calendar },
@@ -594,15 +620,15 @@ export default function DashboardLayout({ children, noPadding = false }) {
 
               {notificationsOpen && (
                 <div
-                  className="absolute left-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-[#FDFBF7] dark:bg-[#1E0910] border border-[#C9A24D]/40 shadow-[0_20px_50px_rgba(123,30,58,0.22)] z-50 p-3.5 space-y-3 max-h-80 overflow-y-auto text-right"
+                  className="absolute left-0 top-full mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl bg-[#FCFAF7] border border-[#D4AF37]/50 shadow-[0_20px_50px_rgba(123,30,58,0.22),_0_4px_12px_rgba(0,0,0,0.06)] z-50 p-3.5 space-y-3 max-h-80 overflow-y-auto text-right"
                   dir="rtl"
                 >
-                  <div className="flex justify-between items-center border-b border-[#C9A24D]/25 pb-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-[#7B1E3A] dark:text-[#F3E9DC] font-serif">الإشعارات</span>
+                  <div className="flex justify-between items-center border-b border-[#E8DFD0] pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-[#7B1E3A] font-serif">الإشعارات والتنبيهات</span>
                       {unreadCount > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-[#7B1E3A] text-white">
-                          {unreadCount}
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#7B1E3A] text-white shadow-xs">
+                          {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                       )}
                     </div>
@@ -611,7 +637,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                         <button
                           type="button"
                           onClick={markAllAsRead}
-                          className="text-[9px] font-semibold text-[#7B1E3A] dark:text-[#C9A24D] hover:underline transition-colors cursor-pointer"
+                          className="text-[10px] font-bold text-[#7B1E3A] hover:text-[#551125] hover:underline transition-colors cursor-pointer"
                         >
                           قراءة الكل
                         </button>
@@ -619,7 +645,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                       <button
                         type="button"
                         onClick={() => setNotificationsOpen(false)}
-                        className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        className="w-6 h-6 rounded-full bg-[#EFE8DC]/80 hover:bg-[#7B1E3A]/15 text-[#766065] hover:text-[#7B1E3A] flex items-center justify-center transition-all cursor-pointer"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -627,11 +653,14 @@ export default function DashboardLayout({ children, noPadding = false }) {
                   </div>
 
                   {notifications.length === 0 ? (
-                    <div className="text-center py-6 text-xs text-slate-500 dark:text-slate-400 italic">
-                      لا توجد إشعارات جديدة.
+                    <div className="text-center py-6 space-y-2 bg-white/70 rounded-xl border border-dashed border-[#D4AF37]/30">
+                      <div className="w-10 h-10 rounded-full bg-[#7B1E3A]/10 text-[#7B1E3A] flex items-center justify-center mx-auto">
+                        <Bell className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-medium text-[#766065]">لا توجد إشعارات جديدة حالياً.</p>
                     </div>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {notifications.map((notif) => {
                         const notifStyle = getNotificationIcon(notif.type);
                         return (
@@ -640,24 +669,24 @@ export default function DashboardLayout({ children, noPadding = false }) {
                             onClick={() => handleNotificationClick(notif)}
                             className={`p-2.5 flex gap-2.5 cursor-pointer rounded-xl border transition-all text-start ${
                               notif.isRead 
-                                ? 'bg-slate-50/70 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400' 
-                                : 'bg-[#7B1E3A]/5 dark:bg-[#7B1E3A]/15 border-[#7B1E3A]/30 text-slate-900 dark:text-slate-100 shadow-xs'
+                                ? 'bg-[#F9F6F0]/80 hover:bg-white border-[#E5DDD2] text-[#4A3A3D]' 
+                                : 'bg-white border-[#EBD0D7] border-r-4 border-r-[#7B1E3A] shadow-xs hover:shadow-md'
                             }`}
                           >
-                            <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${notifStyle.bg}`}>
+                            <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${notifStyle.bg}`}>
                               {notifStyle.icon}
                             </div>
-                            <div className="flex-1 min-w-0 space-y-0.5">
+                            <div className="flex-1 min-w-0 space-y-1">
                               <div className="flex justify-between items-start gap-1.5">
-                                <span className={`text-[10px] font-bold ${notif.isRead ? 'text-slate-700 dark:text-slate-300' : 'text-[#7B1E3A] dark:text-[#C9A24D]'}`}>
+                                <span className={`text-[11px] font-bold ${notif.isRead ? 'text-[#4A3A3D]' : 'text-[#7B1E3A]'}`}>
                                   {notif.title}
                                 </span>
                                 {!notif.isRead && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#7B1E3A] shrink-0 mt-1" />
+                                  <span className="w-2 h-2 rounded-full bg-[#7B1E3A] ring-2 ring-[#7B1E3A]/20 shrink-0 mt-0.5" />
                                 )}
                               </div>
-                              <p className="text-[9px] text-slate-600 dark:text-slate-300 leading-relaxed font-cairo">{notif.content}</p>
-                              <span className="text-[7.5px] text-slate-400 dark:text-slate-500 font-mono block text-end pt-0.5">
+                              <p className={`text-[11px] leading-relaxed font-cairo font-medium ${notif.isRead ? 'text-[#5A484C]' : 'text-[#2B2022]'}`}>{notif.content}</p>
+                              <span className="text-[8px] text-[#8C757B] font-mono block text-end pt-0.5">
                                 {new Date(notif.createdAt).toLocaleDateString('ar-DZ', { day: 'numeric', month: 'short' })} • {new Date(notif.createdAt).toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
@@ -721,32 +750,33 @@ export default function DashboardLayout({ children, noPadding = false }) {
 
               {notificationsOpen && (
                 <div
-                  className="absolute left-0 top-full mt-2 w-80 sm:w-96 rounded-2xl bg-[#FDFBF7] dark:bg-[#1E0910] border border-[#C9A24D]/40 shadow-[0_20px_50px_rgba(123,30,58,0.22)] z-50 p-4 space-y-3.5 max-h-[28rem] overflow-y-auto text-right"
+                  className="absolute left-0 top-full mt-2 w-80 sm:w-96 rounded-2xl bg-[#FCFAF7] border border-[#D4AF37]/50 shadow-[0_25px_60px_-12px_rgba(123,30,58,0.25),_0_8px_24px_rgba(43,32,34,0.08)] z-50 p-4 space-y-3.5 max-h-[30rem] overflow-y-auto text-right"
                   dir="rtl"
                 >
-                  <div className="flex justify-between items-center border-b border-[#C9A24D]/25 pb-3">
+                  <div className="flex justify-between items-center border-b border-[#E8DFD0] pb-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-[#7B1E3A] dark:text-[#F3E9DC] font-serif">الإشعارات والتنبيهات</span>
+                      <span className="text-sm font-bold text-[#7B1E3A] font-serif">الإشعارات والتنبيهات</span>
                       {unreadCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#7B1E3A] text-white">
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#7B1E3A] text-white shadow-xs">
                           {unreadCount} جديدة
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       {unreadCount > 0 && (
                         <button
                           type="button"
                           onClick={markAllAsRead}
-                          className="text-[11px] font-semibold text-[#7B1E3A] dark:text-[#C9A24D] hover:underline transition-colors cursor-pointer"
+                          className="text-xs font-bold text-[#7B1E3A] hover:text-[#551125] hover:underline transition-colors cursor-pointer"
                         >
-                          تعليم الكل كمقروء
+                          قراءة الكل
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => setNotificationsOpen(false)}
-                        className="p-1 rounded-lg hover:bg-[#7B1E3A]/10 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                        className="w-7 h-7 rounded-full bg-[#EFE8DC]/80 hover:bg-[#7B1E3A]/15 text-[#766065] hover:text-[#7B1E3A] flex items-center justify-center transition-all cursor-pointer"
+                        title="إغلاق"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -754,40 +784,41 @@ export default function DashboardLayout({ children, noPadding = false }) {
                   </div>
 
                   {notifications.length === 0 ? (
-                    <div className="text-center py-8 space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-[#7B1E3A]/10 flex items-center justify-center mx-auto text-[#7B1E3A]">
-                        <Bell className="w-5 h-5 opacity-60" />
+                    <div className="text-center py-9 space-y-2.5 bg-white/70 rounded-2xl border border-dashed border-[#D4AF37]/35">
+                      <div className="w-12 h-12 rounded-2xl bg-[#7B1E3A]/10 text-[#7B1E3A] flex items-center justify-center mx-auto border border-[#7B1E3A]/20 shadow-xs">
+                        <Bell className="w-6 h-6" />
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">لا توجد إشعارات جديدة حالياً.</p>
+                      <p className="text-sm font-bold text-[#2B2022]">لا توجد إشعارات جديدة حالياً</p>
+                      <p className="text-xs text-[#766065]">ستظهر هنا كافة الإعلانات والرسائل والتنبيهات الخاصة بك</p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       {notifications.map((notif) => {
                         const notifStyle = getNotificationIcon(notif.type);
                         return (
                           <div
                             key={notif._id}
                             onClick={() => handleNotificationClick(notif)}
-                            className={`p-3 flex gap-3 cursor-pointer rounded-xl border transition-all text-start ${
+                            className={`p-3.5 flex gap-3 cursor-pointer rounded-xl border transition-all text-start ${
                               notif.isRead 
-                                ? 'bg-slate-50/70 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-[#C9A24D]/40' 
-                                : 'bg-[#7B1E3A]/5 dark:bg-[#7B1E3A]/15 border-[#7B1E3A]/30 text-slate-900 dark:text-slate-100 shadow-xs hover:border-[#7B1E3A]/60'
+                                ? 'bg-[#F9F6F0]/80 hover:bg-white border-[#E5DDD2] text-[#4A3A3D] hover:border-[#D4AF37]/60' 
+                                : 'bg-white border-[#EBD0D7] border-r-4 border-r-[#7B1E3A] shadow-xs hover:shadow-md hover:border-[#7B1E3A]/60'
                             }`}
                           >
-                            <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${notifStyle.bg}`}>
+                            <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${notifStyle.bg}`}>
                               {notifStyle.icon}
                             </div>
                             <div className="flex-1 min-w-0 space-y-1">
                               <div className="flex justify-between items-start gap-2">
-                                <span className={`text-xs font-bold leading-snug ${notif.isRead ? 'text-slate-700 dark:text-slate-300' : 'text-[#7B1E3A] dark:text-[#C9A24D]'}`}>
+                                <span className={`text-xs font-bold leading-snug ${notif.isRead ? 'text-[#4A3A3D]' : 'text-[#7B1E3A]'}`}>
                                   {notif.title}
                                 </span>
                                 {!notif.isRead && (
-                                  <span className="w-2 h-2 rounded-full bg-[#7B1E3A] shrink-0 mt-1" />
+                                  <span className="w-2.5 h-2.5 rounded-full bg-[#7B1E3A] ring-4 ring-[#7B1E3A]/15 shrink-0 mt-0.5" />
                                 )}
                               </div>
-                              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-cairo">{notif.content}</p>
-                              <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono block text-end pt-0.5">
+                              <p className={`text-[11px] leading-relaxed font-cairo font-medium ${notif.isRead ? 'text-[#5A484C]' : 'text-[#2B2022]'}`}>{notif.content}</p>
+                              <span className="text-[9px] text-[#8C757B] font-mono block text-end pt-0.5">
                                 {new Date(notif.createdAt).toLocaleDateString('ar-DZ', { day: 'numeric', month: 'short' })} • {new Date(notif.createdAt).toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
