@@ -438,9 +438,9 @@ export default function TeacherDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Upload Course Material Column */}
-              <div className="lg:col-span-5 glass-panel p-6 md:p-8 rounded-2xl border border-luxury-border space-y-6 h-fit">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-brand-400" />
+              <div className="lg:col-span-5 bg-white p-6 md:p-8 rounded-2xl border border-gray-200 shadow-sm space-y-6 h-fit">
+                <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-brand-700" />
                   <span>رفع درس جديد</span>
                 </h3>
                 <form onSubmit={handleUploadCourse} className="space-y-4">
@@ -450,7 +450,7 @@ export default function TeacherDashboard() {
                     placeholder="عنوان الدرس"
                     value={course.title}
                     onChange={(e) => setCourse({ ...course, title: e.target.value })}
-                    className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none placeholder-slate-650"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 font-semibold focus:border-brand-600 focus:bg-white focus:outline-none placeholder-gray-400 transition-all"
                   />
                   <input
                     type="text"
@@ -458,13 +458,13 @@ export default function TeacherDashboard() {
                     placeholder="المادة (مثال: رياضيات)"
                     value={course.subject}
                     onChange={(e) => setCourse({ ...course, subject: e.target.value })}
-                    className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none placeholder-slate-650"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 font-semibold focus:border-brand-600 focus:bg-white focus:outline-none placeholder-gray-400 transition-all"
                   />
                   <textarea
                     placeholder="الوصف (اختياري)"
                     value={course.description}
                     onChange={(e) => setCourse({ ...course, description: e.target.value })}
-                    className="w-full h-24 bg-slate-900 border border-luxury-border rounded-xl p-4 text-sm focus:border-brand-500 focus:outline-none placeholder-slate-650"
+                    className="w-full h-24 bg-gray-50 border border-gray-300 rounded-xl p-4 text-sm text-gray-900 font-medium focus:border-brand-600 focus:bg-white focus:outline-none placeholder-gray-400 transition-all"
                   />
                   
                   {/* Select class and group dropdowns */}
@@ -473,7 +473,7 @@ export default function TeacherDashboard() {
                       value={course.classId}
                       required
                       onChange={(e) => setCourse({ ...course, classId: e.target.value, groupId: '' })}
-                      className="bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500"
+                      className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 font-semibold focus:outline-none focus:border-brand-600 focus:bg-white"
                     >
                       <option value="">اختر القسم *</option>
                       {effectiveClasses.map((c) => (
@@ -484,7 +484,7 @@ export default function TeacherDashboard() {
                     <select
                       value={course.groupId}
                       onChange={(e) => setCourse({ ...course, groupId: e.target.value })}
-                      className="bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500"
+                      className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 font-semibold focus:outline-none focus:border-brand-600 focus:bg-white"
                     >
                       <option value="">القسم كاملاً (أو اختر الفوج)</option>
                       {effectiveGroups
@@ -496,13 +496,13 @@ export default function TeacherDashboard() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-300 block">الملف المرفق (اختياري)</label>
+                    <label className="text-xs font-bold text-gray-700 block">الملف المرفق (اختياري)</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="file"
                         id="course-file-input"
                         onChange={(e) => setCourseFile(e.target.files[0] || null)}
-                        className="text-sm text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-brand-400 hover:file:bg-slate-850 cursor-pointer"
+                        className="text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
                       />
                       {courseFile && (
                         <button
@@ -512,17 +512,17 @@ export default function TeacherDashboard() {
                             const input = document.getElementById('course-file-input');
                             if (input) input.value = '';
                           }}
-                          className="px-2.5 py-1 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-955/20 border border-rose-900/30 rounded-lg transition-all cursor-pointer whitespace-nowrap"
+                          className="px-2.5 py-1 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-lg transition-all cursor-pointer whitespace-nowrap font-bold"
                         >
                           إلغاء الملف
                         </button>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-450">
+                    <p className="text-[11px] text-gray-500 font-medium">
                       ملاحظة: إرفاق الملف اختياري — يمكنك نشر الدرس بمحتوى توجيهي نصي فقط.
                     </p>
                   </div>
-                  <button type="submit" className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition-all cursor-pointer">
+                  <button type="submit" className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl transition-all cursor-pointer shadow-md shadow-brand-900/10">
                     نشر الدرس
                   </button>
                 </form>
@@ -530,30 +530,30 @@ export default function TeacherDashboard() {
 
               {/* Uploaded Courses Directory Column */}
               <div className="lg:col-span-7 space-y-6">
-                <div className="glass-panel p-6 rounded-2xl border border-luxury-border space-y-4">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-brand-400" />
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                  <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-brand-700" />
                     <span>الدروس المنشورة</span>
                   </h3>
 
                   {loadingCourses ? (
-                    <div className="text-slate-450 text-sm py-4">Chargement...</div>
+                    <div className="text-gray-500 text-sm py-4">Chargement...</div>
                   ) : coursesList.length === 0 ? (
-                    <div className="text-slate-550 text-sm py-8 text-center italic bg-slate-950/20 rounded-xl border border-luxury-border/30">
+                    <div className="text-gray-500 text-sm py-8 text-center italic bg-gray-50 rounded-xl border border-gray-200">
                       لم يتم نشر أي وثائق أو دروس.
                     </div>
                   ) : (
                     <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                       {coursesList.map((c) => (
-                        <div key={c._id} className="p-4 bg-slate-900/30 border border-luxury-border rounded-xl flex justify-between items-center hover:border-brand-500/20 transition-all">
+                        <div key={c._id} className="p-4 bg-gray-50/70 border border-gray-200 rounded-xl flex justify-between items-center hover:border-brand-300 hover:bg-white hover:shadow-sm transition-all">
                           <div>
-                            <h4 className="font-semibold text-white text-sm">{c.title}</h4>
-                            <p className="text-xs text-slate-400 mt-1">
-                              Matière: <span className="text-slate-200">{c.subject}</span> &bull; 
-                              Classe: <span className="text-slate-200">{c.class?.name || 'Générale'}</span>
+                            <h4 className="font-bold text-gray-900 text-sm">{c.title}</h4>
+                            <p className="text-xs text-gray-600 mt-1">
+                              Matière: <span className="text-brand-700 font-bold">{c.subject}</span> &bull; 
+                              Classe: <span className="text-gray-800 font-semibold">{c.class?.name || 'Générale'}</span>
                               {c.group && ` (${c.group?.name})`}
                             </p>
-                            {c.description && <p className="text-xs text-slate-500 mt-1.5">{c.description}</p>}
+                            {c.description && <p className="text-xs text-gray-500 mt-1.5">{c.description}</p>}
                           </div>
                           <div className="flex items-center gap-2">
                             {c.fileUrl ? (
@@ -561,26 +561,26 @@ export default function TeacherDashboard() {
                                 href={c.fileUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="p-2.5 bg-slate-800 hover:bg-slate-750 text-brand-400 border border-luxury-border rounded-xl transition-all"
+                                className="p-2.5 bg-brand-50 hover:bg-brand-600 text-brand-700 hover:text-white border border-brand-200 hover:border-brand-600 rounded-xl transition-all shadow-xs"
                                 title="تحميل الملف المرفق"
                               >
                                 <Download className="w-4 h-4" />
                               </a>
                             ) : (
-                              <span className="px-2.5 py-1 text-[11px] font-medium bg-slate-800/60 text-slate-400 border border-luxury-border/40 rounded-lg whitespace-nowrap" title="درس نصي بدون ملف">
+                              <span className="px-2.5 py-1 text-[11px] font-bold bg-gray-100 text-gray-600 border border-gray-200 rounded-lg whitespace-nowrap" title="درس نصي بدون ملف">
                                 بدون ملف
                               </span>
                             )}
                             <button
                               onClick={() => handleOpenEditCourse(c)}
-                              className="p-2.5 bg-brand-500/10 hover:bg-brand-500/25 text-brand-400 border border-brand-500/30 rounded-xl transition-all cursor-pointer"
+                              className="p-2.5 bg-gray-100 hover:bg-brand-50 text-gray-700 hover:text-brand-700 border border-gray-200 hover:border-brand-200 rounded-xl transition-all cursor-pointer"
                               title="تعديل الدرس المنشور"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteCourse(c._id)}
-                              className="p-2.5 bg-red-955/20 hover:bg-red-955/40 text-red-400 border border-red-900/40 rounded-xl transition-all cursor-pointer"
+                              className="p-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl transition-all cursor-pointer"
                               title="Supprimer"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1018,7 +1018,7 @@ export default function TeacherDashboard() {
         {/* Edit Course Modal */}
         {editingCourse && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto"
             dir="rtl"
             onClick={() => !updatingCourse && setEditingCourse(null)}
           >
@@ -1026,23 +1026,23 @@ export default function TeacherDashboard() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg glass-panel border border-luxury-border rounded-3xl p-6 md:p-8 space-y-6 text-right"
+              className="w-full max-w-lg bg-white border border-gray-200 rounded-3xl p-6 md:p-8 space-y-6 text-right shadow-2xl relative my-8"
             >
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-luxury-border/50 pb-4">
+              <div className="flex items-center justify-between border-b border-gray-200 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-300">
+                  <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-700">
                     <Edit2 className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">تعديل الدرس المنشور</h3>
-                    <p className="text-xs text-slate-400">تحديث تفاصيل الدرس أو استبدال الملف المرفق</p>
+                    <h3 className="text-lg font-black text-gray-900">تعديل الدرس المنشور</h3>
+                    <p className="text-xs text-gray-600 font-medium">تحديث تفاصيل الدرس أو استبدال الملف المرفق</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => !updatingCourse && setEditingCourse(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1051,49 +1051,49 @@ export default function TeacherDashboard() {
               {/* Form */}
               <form onSubmit={handleSaveEditCourse} className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1.5">عنوان الدرس *</label>
+                  <label className="text-xs font-bold text-gray-700 block mb-1.5">عنوان الدرس *</label>
                   <input
                     type="text"
                     required
                     value={editCourseData.title}
                     onChange={(e) => setEditCourseData({ ...editCourseData, title: e.target.value })}
                     placeholder="عنوان الدرس"
-                    className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 font-semibold focus:border-brand-600 focus:bg-white focus:outline-none placeholder-gray-400"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1.5">المادة الدراسية *</label>
+                  <label className="text-xs font-bold text-gray-700 block mb-1.5">المادة الدراسية *</label>
                   <input
                     type="text"
                     required
                     value={editCourseData.subject}
                     onChange={(e) => setEditCourseData({ ...editCourseData, subject: e.target.value })}
                     placeholder="مثال: رياضيات، علوم، لغة عربية"
-                    className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 font-semibold focus:border-brand-600 focus:bg-white focus:outline-none placeholder-gray-400"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1.5">الوصف والتوجيهات (اختياري)</label>
+                  <label className="text-xs font-bold text-gray-700 block mb-1.5">الوصف والتوجيهات (اختياري)</label>
                   <textarea
                     value={editCourseData.description}
                     onChange={(e) => setEditCourseData({ ...editCourseData, description: e.target.value })}
                     placeholder="توجيهات للدرس، إرشادات للحل..."
                     rows={3}
-                    className="w-full bg-slate-900/90 border border-luxury-border rounded-xl p-3.5 text-sm text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3.5 text-sm text-gray-900 font-medium focus:border-brand-600 focus:bg-white focus:outline-none placeholder-gray-400"
                   />
                 </div>
 
                 {/* Class and Group */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1.5">القسم الموجه إليه *</label>
+                    <label className="text-xs font-bold text-gray-700 block mb-1.5">القسم الموجه إليه *</label>
                     <select
                       value={editCourseData.classId}
                       required
                       onChange={(e) => setEditCourseData({ ...editCourseData, classId: e.target.value, groupId: '' })}
-                      className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 font-semibold focus:border-brand-600 focus:bg-white focus:outline-none"
                     >
                       <option value="">اختر القسم</option>
                       {effectiveClasses.map((c) => (
@@ -1103,11 +1103,11 @@ export default function TeacherDashboard() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1.5">الفوج (اختياري)</label>
+                    <label className="text-xs font-bold text-gray-700 block mb-1.5">الفوج (اختياري)</label>
                     <select
                       value={editCourseData.groupId}
                       onChange={(e) => setEditCourseData({ ...editCourseData, groupId: e.target.value })}
-                      className="w-full bg-slate-900/90 border border-luxury-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 font-semibold focus:border-brand-600 focus:bg-white focus:outline-none"
                     >
                       <option value="">القسم كاملاً (بدون تخصيص فوج)</option>
                       {effectiveGroups
@@ -1120,37 +1120,37 @@ export default function TeacherDashboard() {
                 </div>
 
                 {/* Current File and Optional Replacement */}
-                <div className="p-4 rounded-xl bg-slate-950/40 border border-luxury-border/60 space-y-2 text-xs">
-                  <span className="text-slate-400 block font-medium">الملف المرفق:</span>
+                <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-2 text-xs">
+                  <span className="text-gray-700 block font-bold">الملف المرفق:</span>
                   {editingCourse.fileUrl ? (
-                    <div className="flex items-center justify-between bg-slate-900/70 p-2.5 rounded-lg border border-luxury-border">
-                      <span className="truncate max-w-[200px] text-brand-300 font-mono text-[11px]" dir="ltr">
+                    <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-gray-200 shadow-xs">
+                      <span className="truncate max-w-[200px] text-brand-700 font-mono text-[11px] font-bold" dir="ltr">
                         {editingCourse.fileName || editingCourse.fileUrl?.split('/').pop() || 'document.pdf'}
                       </span>
                       <a
                         href={editingCourse.fileUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-brand-400 hover:text-white font-bold flex items-center gap-1"
+                        className="text-xs text-brand-700 hover:text-brand-900 font-bold flex items-center gap-1"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>معاينة</span>
                       </a>
                     </div>
                   ) : (
-                    <div className="bg-slate-900/50 p-2.5 rounded-lg border border-luxury-border/40 text-slate-450 italic text-[11px]">
+                    <div className="bg-white p-2.5 rounded-lg border border-gray-200 text-gray-500 italic text-[11px]">
                       لا يوجد ملف مرفق بهذا الدرس حالياً (درس نصي).
                     </div>
                   )}
 
                   <div className="pt-2">
-                    <label className="text-slate-400 block font-medium mb-1.5">
+                    <label className="text-gray-700 block font-bold mb-1.5">
                       {editingCourse.fileUrl ? 'استبدال الملف بملف جديد (اختياري):' : 'إرفاق ملف جديد للدرس (اختياري):'}
                     </label>
                     <input
                       type="file"
                       onChange={(e) => setEditCourseFile(e.target.files[0] || null)}
-                      className="text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-500 cursor-pointer"
+                      className="text-xs text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -1161,14 +1161,14 @@ export default function TeacherDashboard() {
                     type="button"
                     disabled={updatingCourse}
                     onClick={() => setEditingCourse(null)}
-                    className="flex-1 py-3 bg-slate-900 border border-luxury-border text-slate-300 hover:text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
                   >
                     إلغاء
                   </button>
                   <button
                     type="submit"
                     disabled={updatingCourse}
-                    className="flex-1 py-3 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                    className="flex-1 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                   >
                     {updatingCourse ? 'جاري حفظ التعديلات...' : 'حفظ التعديلات'}
                   </button>

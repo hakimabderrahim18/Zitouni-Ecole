@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Calendar, Clock, Users, User, BookOpen, Printer,
   RefreshCw, CheckCircle, AlertCircle, FileSpreadsheet,
-  Plus, Edit2, Trash2, X, Save
+  Plus, Edit2, Trash2, X, Save, GraduationCap
 } from 'lucide-react';
 import { useSchoolStore } from '../store/useSchoolStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -79,12 +79,23 @@ const DEFAULT_HOURS = [
   { code: '15H30', timeSlot: '15:30 - 16:30' },
 ];
 
-export default function TimetableGrid({ canImport = true, fixedDivision = null, fixedTeacher = null, fixedGroup = null }) {
+export default function TimetableGrid({
+  canImport = true,
+  fixedDivision = null,
+  fixedTeacher = null,
+  fixedGroup = null,
+  isStudentView = false,
+}) {
   const { settings } = useSchoolStore();
-  const [viewMode, setViewMode] = useState(fixedTeacher ? 'teacher' : 'division'); // 'division' | 'teacher'
+  const user = useAuthStore.getState().user;
+  const isStudent = isStudentView || user?.role === 'student';
+
+  const [viewMode, setViewMode] = useState(isStudent ? 'division' : (fixedTeacher ? 'teacher' : 'division')); // 'division' | 'teacher'
   const [metadata, setMetadata] = useState(null);
   const [selectedDivision, setSelectedDivision] = useState(fixedDivision || '1AM1');
   const [selectedTeacher, setSelectedTeacher] = useState(fixedTeacher || '');
+  const [studentClassTitle, setStudentClassTitle] = useState('');
+  const [studentGroupName, setStudentGroupName] = useState('');
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -94,49 +105,64 @@ export default function TimetableGrid({ canImport = true, fixedDivision = null, 
     if (fixedDivision) setSelectedDivision(fixedDivision);
   }, [fixedDivision]);
 
-  // Fetch metadata on mount
-  useEffect(() => {
-    fetchMetadata();
-  }, []);
+  // Fetch timetable for student
+  const fetchStudentTimetable = async () => {
+    setLoading(true);
+    try {
+      const token = getToken();
+      const res = await axios.get(`${API_URL}/timetable/my-timetable`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data) {
+        if (res.data.division) {
+          setSelectedDivision(res.data.division);
+        }
+        setStudentClassTitle(res.data.divisionArabic || res.data.division || '');
+        setStudentGroupName(res.data.group || '');
+        setEntries(res.data.entries || []);
+      }
+    } catch (err) {
+      console.error('Error fetching student timetable:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Fetch entries when viewMode, division or teacher changes
+  // Fetch metadata and initial schedule on mount
   useEffect(() => {
+    if (isStudent) {
+      fetchStudentTimetable();
+    }
+    fetchMetadata();
+  }, [isStudent]);
+
+  // Fetch entries when viewMode, division or teacher changes (for non-students only)
+  useEffect(() => {
+    if (isStudent) return;
     if (viewMode === 'division' && selectedDivision) {
       fetchDivisionTimetable(selectedDivision);
     } else if (viewMode === 'teacher' && selectedTeacher) {
       fetchTeacherTimetable(selectedTeacher);
     }
-  }, [viewMode, selectedDivision, selectedTeacher]);
+  }, [isStudent, viewMode, selectedDivision, selectedTeacher]);
 
   const fetchMetadata = async () => {
     try {
       const token = getToken();
-      const user = useAuthStore.getState().user;
-      if (user?.role === 'student' && !fixedDivision) {
-        try {
-          const myRes = await axios.get(`${API_URL}/timetable/my`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (myRes.data?.division) {
-            setSelectedDivision(myRes.data.division);
-            if (myRes.data.group) setSelectedGroupFilter(myRes.data.group);
-            setEntries(myRes.data.entries || []);
-          }
-        } catch (_) {}
-      }
-
       const res = await axios.get(`${API_URL}/timetable/metadata`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMetadata(res.data);
-      if (res.data.divisions && res.data.divisions.length > 0 && !fixedDivision && (!user || user.role !== 'student')) {
-        if (!selectedDivision || !res.data.divisions.some(d => d.code === selectedDivision)) {
-          setSelectedDivision(res.data.divisions[0].code);
+      if (!isStudent) {
+        if (res.data.divisions && res.data.divisions.length > 0 && !fixedDivision) {
+          if (!selectedDivision || !res.data.divisions.some(d => d.code === selectedDivision)) {
+            setSelectedDivision(res.data.divisions[0].code);
+          }
         }
-      }
-      if (res.data.teachers && res.data.teachers.length > 0 && !fixedTeacher) {
-        if (!selectedTeacher || !res.data.teachers.includes(selectedTeacher)) {
-          setSelectedTeacher(res.data.teachers[0]);
+        if (res.data.teachers && res.data.teachers.length > 0 && !fixedTeacher) {
+          if (!selectedTeacher || !res.data.teachers.includes(selectedTeacher)) {
+            setSelectedTeacher(res.data.teachers[0]);
+          }
         }
       }
     } catch (err) {

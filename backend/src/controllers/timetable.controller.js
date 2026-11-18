@@ -320,6 +320,17 @@ const getTimetableByDivision = async (req, res, next) => {
     const { academicYear, group } = req.query;
 
     const trimmed = (division || '').trim();
+
+    // Security: Students can only view their own class timetable
+    if (req.user?.role === 'student') {
+      const student = await Student.findOne({ user: req.user._id || req.user.id }).populate('class');
+      const studentClass = student?.class?.name;
+      const allowedAliases = [studentClass, ...(ALIAS_MAP[studentClass] || [])].filter(Boolean).map(s => s.toLowerCase());
+      if (!studentClass || !allowedAliases.includes(trimmed.toLowerCase())) {
+        return res.status(403).json({ message: 'غير مصرح للتلميذ بالاطلاع على جداول الأقسام الأخرى.' });
+      }
+    }
+
     const query = { division: trimmed };
     if (academicYear) query.academicYear = academicYear;
     if (group && group !== 'all') {
@@ -359,6 +370,11 @@ const getTimetableByDivision = async (req, res, next) => {
 // 3. Get Timetable for a specific Teacher
 const getTimetableByTeacher = async (req, res, next) => {
   try {
+    // Security: Students cannot query or browse teachers' timetables
+    if (req.user?.role === 'student') {
+      return res.status(403).json({ message: 'غير مصرح للتلاميذ بالاطلاع على جداول الأساتذة.' });
+    }
+
     const { teacherName } = req.params;
     const { academicYear } = req.query;
 
@@ -404,9 +420,9 @@ const getMyTimetable = async (req, res, next) => {
     const user = req.user;
 
     if (user.role === 'student') {
-      const student = await Student.findOne({ user: user.id }).populate('class').populate('group');
+      const student = await Student.findOne({ user: user._id || user.id }).populate('class').populate('group');
       if (!student || !student.class) {
-        return res.status(200).json({ entries: [], message: 'Classe non encore assignée.' });
+        return res.status(200).json({ entries: [], message: 'القسم غير مخصص لهذا التلميذ بعد.' });
       }
       const division = student.class.name;
       let entries = await TimetableEntry.find({ division }).sort({ day: 1, hour: 1 });
@@ -424,6 +440,7 @@ const getMyTimetable = async (req, res, next) => {
         division,
         divisionArabic: DIVISION_MAP[division] || division,
         group: student.group?.name || '',
+        studentName: `${student.firstName || ''} ${student.lastName || ''}`.trim(),
         entries,
       });
     }
@@ -486,6 +503,37 @@ const getChildTimetable = async (req, res, next) => {
 const getTimetableMetadata = async (req, res, next) => {
   try {
     const academicYear = req.query.academicYear || '2025-2026';
+
+    // If student, do not expose the roster of all teachers and other divisions
+    if (req.user?.role === 'student') {
+      const student = await Student.findOne({ user: req.user._id || req.user.id }).populate('class').populate('group');
+      const divName = student?.class?.name || '';
+      return res.status(200).json({
+        academicYear,
+        totalEntries: 0,
+        divisions: divName ? [{ code: divName, nameArabic: DIVISION_MAP[divName] || divName }] : [],
+        teachers: [], // Strictly empty for students to prevent viewing teacher timetables
+        subjects: [],
+        rooms: [],
+        groups: student?.group?.name ? [student.group.name] : [],
+        days: [
+          { code: 'Dimanche', nameArabic: 'الأحد' },
+          { code: 'Lundi', nameArabic: 'الإثنين' },
+          { code: 'Mardi', nameArabic: 'الثلاثاء' },
+          { code: 'Mercredi', nameArabic: 'الأربعاء' },
+          { code: 'Jeudi', nameArabic: 'الخميس' },
+        ],
+        hours: [
+          { code: '8H30', timeSlot: '08:30 - 09:30' },
+          { code: '9H30', timeSlot: '09:30 - 10:30' },
+          { code: '10H30', timeSlot: '10:30 - 11:30' },
+          { code: '11H30', timeSlot: '11:30 - 12:30' },
+          { code: '13H30', timeSlot: '13:30 - 14:30' },
+          { code: '14H30', timeSlot: '14:30 - 15:30' },
+          { code: '15H30', timeSlot: '15:30 - 16:30' },
+        ],
+      });
+    }
 
     const divisions = await TimetableEntry.distinct('division', { academicYear });
     const teachers = await TimetableEntry.distinct('teacherName', { academicYear });

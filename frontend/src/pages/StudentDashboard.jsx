@@ -88,41 +88,38 @@ export default function StudentDashboard() {
         {activeTab === 'courses' && (
           <div className="max-w-5xl space-y-6">
             {/* Re-enrollment Notification Banner */}
-            <div className="glass-panel p-5 rounded-2xl border border-brand-500/30 bg-gradient-to-r from-brand-950/40 via-brand-900/20 to-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-5 rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-50 via-white to-amber-50/50 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-300 shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-brand-600 flex items-center justify-center text-white shrink-0 shadow-sm shadow-brand-900/20">
                   <RefreshCw className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-100">فترة إعادة التسجيل للموسم الدراسي الجديد مفتوحة</h4>
-                  <p className="text-xs text-slate-400">يمكنك تأكيد رغبتك في إعادة التسجيل، اختيار القسم، وتوليد استمارة التسجيل وعقد التمدرس الرسمي.</p>
+                  <h4 className="text-sm font-black text-gray-900">فترة إعادة التسجيل للموسم الدراسي الجديد مفتوحة</h4>
+                  <p className="text-xs text-gray-600 font-medium mt-0.5">يمكنك تأكيد رغبتك في إعادة التسجيل، اختيار القسم، وتوليد استمارة التسجيل وعقد التمدرس الرسمي.</p>
                 </div>
               </div>
               <button
                 onClick={() => navigate('/dashboard/student/re-enrollment')}
-                className="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md transition-colors whitespace-nowrap shrink-0"
+                className="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-900/15 transition-all whitespace-nowrap shrink-0 cursor-pointer"
               >
                 إعادة التسجيل الآن
               </button>
             </div>
 
-            <div className="glass-panel p-6 md:p-8 rounded-3xl border border-luxury-border space-y-7 relative overflow-hidden">
-              {/* Decorative ambient glow */}
-              <div className="absolute -top-24 -left-24 w-64 h-64 bg-brand-500/10 rounded-full blur-[90px] pointer-events-none" />
-
+            <div className="glass-panel p-6 md:p-8 rounded-3xl border border-gray-200 space-y-7 relative overflow-hidden bg-white shadow-sm">
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-[0_8px_25px_rgba(123,30,58,0.25)] shrink-0">
-                    <BookOpen className="w-6 h-6 text-[#050505]" />
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center shadow-md shadow-brand-900/20 shrink-0">
+                    <BookOpen className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-extrabold text-slate-100">المواد والدعائم الدراسية</h3>
-                    <p className="text-xs text-slate-450 font-medium mt-0.5">دروسك وملفاتك التعليمية متاحة للتحميل في أي وقت</p>
+                    <h3 className="text-xl font-black text-gray-900">المواد والدعائم الدراسية</h3>
+                    <p className="text-xs text-gray-600 font-semibold mt-0.5">دروسك وملفاتك التعليمية متاحة للتحميل في أي وقت</p>
                   </div>
                 </div>
                 {!loading && courses.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-bold w-fit">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold w-fit">
                     <Sparkles className="w-3.5 h-3.5" />
                     {courses.length} ملف متاح
                   </span>
@@ -132,16 +129,16 @@ export default function StudentDashboard() {
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-28 rounded-2xl bg-slate-900/40 border border-luxury-border animate-pulse" />
+                    <div key={i} className="h-28 rounded-2xl bg-gray-100 border border-gray-200 animate-pulse" />
                   ))}
                 </div>
               ) : courses.length === 0 ? (
-                <div className="relative z-10 flex flex-col items-center justify-center text-center py-14 rounded-2xl border border-dashed border-luxury-border bg-slate-900/20">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-900/60 border border-luxury-border flex items-center justify-center mb-4">
-                    <FileText className="w-7 h-7 text-slate-600" />
+                <div className="relative z-10 flex flex-col items-center justify-center text-center py-14 rounded-2xl border border-dashed border-gray-300 bg-gray-50/50">
+                  <div className="w-16 h-16 rounded-2xl bg-white border border-gray-200 flex items-center justify-center mb-4 shadow-xs">
+                    <FileText className="w-7 h-7 text-gray-400" />
                   </div>
-                  <p className="text-slate-300 font-bold text-sm">لا توجد دروس أو مواد متاحة حالياً</p>
-                  <p className="text-slate-550 text-xs mt-1">سيتم عرض الملفات هنا فور نشرها من طرف الأساتذة.</p>
+                  <p className="text-gray-900 font-bold text-sm">لا توجد دروس أو مواد متاحة حالياً</p>
+                  <p className="text-gray-500 text-xs mt-1">سيتم عرض الملفات هنا فور نشرها من طرف الأساتذة.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
@@ -151,25 +148,25 @@ export default function StudentDashboard() {
                     return (
                       <div
                         key={c._id}
-                        className="group relative p-5 rounded-2xl bg-slate-900/40 border border-luxury-border hover:border-brand-500/40 hover:bg-slate-900/60 transition-all duration-300 overflow-hidden"
+                        className="group relative p-5 rounded-2xl bg-white border border-gray-200 hover:border-brand-400 hover:shadow-lg transition-all duration-300 overflow-hidden shadow-xs"
                       >
                         {/* Top accent bar */}
-                        <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${accent} opacity-80`} />
+                        <div className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r ${accent}`} />
 
                         <div className="flex items-start gap-4">
-                          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${accent} flex items-center justify-center shrink-0 shadow-lg`}>
+                          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${accent} flex items-center justify-center shrink-0 shadow-md`}>
                             <BookOpen className="w-6 h-6 text-white" />
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-slate-100 truncate group-hover:text-white transition-colors">{c.title}</h4>
+                            <h4 className="font-black text-gray-900 text-base truncate group-hover:text-brand-700 transition-colors">{c.title}</h4>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-950/60 border border-luxury-border text-[11px] font-bold text-slate-300">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 border border-gray-200 text-xs font-bold text-gray-800">
                                 {c.subject}
                               </span>
                               {teacherName && (
-                                <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-450 font-medium">
-                                  <span className="w-5 h-5 rounded-full bg-brand-900/40 border border-brand-800/40 flex items-center justify-center text-[9px] font-bold text-brand-400 uppercase">
+                                <span className="inline-flex items-center gap-1.5 text-xs text-gray-700 font-semibold">
+                                  <span className="w-5 h-5 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center text-[10px] font-extrabold text-brand-700 uppercase">
                                     {c.teacher?.user?.firstName?.[0]}{c.teacher?.user?.lastName?.[0]}
                                   </span>
                                   {teacherName}
@@ -177,7 +174,7 @@ export default function StudentDashboard() {
                               )}
                             </div>
                             {c.description && (
-                              <p className="text-xs text-slate-500 mt-3 leading-relaxed line-clamp-2">{c.description}</p>
+                              <p className="text-xs text-gray-600 mt-2.5 leading-relaxed line-clamp-2 font-medium">{c.description}</p>
                             )}
                           </div>
                         </div>
@@ -187,13 +184,13 @@ export default function StudentDashboard() {
                             href={c.fileUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="mt-4 w-full py-2.5 rounded-xl bg-brand-500/10 hover:bg-brand-500 border border-brand-500/30 hover:border-brand-500 text-brand-400 hover:text-[#050505] font-bold text-xs transition-all duration-300 flex items-center justify-center gap-2"
+                            className="mt-4 w-full py-2.5 rounded-xl bg-brand-50 hover:bg-brand-600 border border-brand-200 hover:border-brand-600 text-brand-700 hover:text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                           >
                             <Download className="w-4 h-4" />
                             <span>تحميل الملف المرفق</span>
                           </a>
                         ) : (
-                          <div className="mt-4 w-full py-2 rounded-xl bg-slate-900/50 border border-luxury-border/30 text-slate-400 text-xs text-center font-medium">
+                          <div className="mt-4 w-full py-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-xs text-center font-semibold">
                             درس نصي وتوجيهي (بدون ملف)
                           </div>
                         )}
@@ -210,7 +207,7 @@ export default function StudentDashboard() {
           <div className="space-y-8">
             <TimetableGrid canImport={false} />
             <div className="border-t border-luxury-border/50 pt-8">
-              <h3 className="text-base font-bold text-white mb-4">البرامج والمخططات المدرسية الإضافية</h3>
+              <h3 className="text-base font-extrabold text-gray-900 mb-4">البرامج والمخططات المدرسية الإضافية</h3>
               <SchedulesView
                 schedules={schedules}
                 loading={loading}

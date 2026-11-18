@@ -435,10 +435,10 @@ export default function DashboardLayout({ children, noPadding = false }) {
               <SchoolLogo size={36} />
               {!sidebarCollapsed && (
                 <div className="flex flex-col min-w-0">
-                  <span className="font-black text-slate-100 text-base leading-tight break-words">
+                  <span className="font-black text-gray-900 text-base leading-tight break-words">
                     {settings?.schoolNameArabic || 'مدرسة حبر'}
                   </span>
-                  <span className="text-[10px] font-mono text-brand-400 font-bold">
+                  <span className="text-[11px] font-bold font-mono text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200/60 mt-0.5 inline-block w-fit">
                     {settings?.academicYear || '2026-2027'}
                   </span>
                 </div>
@@ -448,14 +448,14 @@ export default function DashboardLayout({ children, noPadding = false }) {
             <div className="flex gap-1.5 items-center">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="hidden md:flex p-1.5 hover:bg-slate-900 rounded-lg text-slate-400 border border-luxury-border/30 hover:border-brand-500/25 transition-all"
+                className="hidden md:flex p-1.5 hover:bg-gray-100 rounded-lg text-gray-600 border border-gray-200 hover:border-brand-300 transition-all cursor-pointer"
                 title={sidebarCollapsed ? "توسيع القائمة" : "طي القائمة"}
               >
-                {sidebarCollapsed ? <ChevronLeft className="w-4 h-4 text-brand-500" /> : <ChevronRight className="w-4 h-4 text-brand-500" />}
+                {sidebarCollapsed ? <ChevronLeft className="w-4 h-4 text-brand-700" /> : <ChevronRight className="w-4 h-4 text-brand-700" />}
               </button>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-1 hover:bg-slate-900 rounded-lg text-slate-400 md:hidden"
+                className="p-1 hover:bg-gray-100 rounded-lg text-gray-600 md:hidden cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -467,16 +467,18 @@ export default function DashboardLayout({ children, noPadding = false }) {
             <Link
               to="/feed"
               onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
-                location.pathname === '/feed' ? 'bg-brand-500/10 border-brand-500/20 text-brand-600 font-semibold' : ''
+              className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all group text-sm relative ${
+                location.pathname === '/feed'
+                  ? 'bg-brand-50 border-brand-200 text-brand-800 font-bold shadow-xs'
+                  : 'text-gray-700 hover:text-brand-700 border-transparent hover:border-gray-200 hover:bg-gray-100/70 font-semibold'
               } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
             >
-              <Globe className={`w-4.5 h-4.5 shrink-0 group-hover:text-brand-500 transition-colors ${location.pathname === '/feed' ? 'text-brand-500' : 'text-brand-400'}`} />
-              {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-medium">آخر الأخبار والمستجدات</span>}
+              <Globe className={`w-4.5 h-4.5 shrink-0 transition-colors ${location.pathname === '/feed' ? 'text-brand-700' : 'text-gray-500 group-hover:text-brand-700'}`} />
+              {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-semibold">آخر الأخبار والمستجدات</span>}
               {location.pathname === '/feed' && !sidebarCollapsed && (
                 <motion.span
                   layoutId="activeBar"
-                  className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-500 rounded-e-full"
+                  className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-700 rounded-e-full"
                 />
               )}
             </Link>
@@ -488,16 +490,18 @@ export default function DashboardLayout({ children, noPadding = false }) {
                   key={link.to}
                   to={link.to}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
-                    isActive ? 'bg-brand-500/10 border-brand-500/20 text-brand-600 font-semibold' : ''
+                  className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all group text-sm relative ${
+                    isActive
+                      ? 'bg-brand-50 border-brand-200 text-brand-800 font-bold shadow-xs'
+                      : 'text-gray-700 hover:text-brand-700 border-transparent hover:border-gray-200 hover:bg-gray-100/70 font-semibold'
                   } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
                 >
-                  <Icon className={`w-4.5 h-4.5 shrink-0 group-hover:text-brand-500 transition-colors ${isActive ? 'text-brand-500' : 'text-brand-400'}`} />
-                  {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-medium">{link.label}</span>}
+                  <Icon className={`w-4.5 h-4.5 shrink-0 transition-colors ${isActive ? 'text-brand-700' : 'text-gray-500 group-hover:text-brand-700'}`} />
+                  {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-semibold">{link.label}</span>}
                   {isActive && !sidebarCollapsed && (
                     <motion.span 
                       layoutId="activeBar"
-                      className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-500 rounded-e-full"
+                      className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-700 rounded-e-full"
                     />
                   )}
                 </Link>
@@ -506,16 +510,18 @@ export default function DashboardLayout({ children, noPadding = false }) {
             <Link
               to="/chat"
               onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative ${
-                location.pathname === '/chat' ? 'bg-brand-500/10 border-brand-500/20 text-brand-600 font-semibold' : ''
+              className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all group text-sm relative ${
+                location.pathname === '/chat'
+                  ? 'bg-brand-50 border-brand-200 text-brand-800 font-bold shadow-xs'
+                  : 'text-gray-700 hover:text-brand-700 border-transparent hover:border-gray-200 hover:bg-gray-100/70 font-semibold'
               } ${sidebarCollapsed ? 'md:justify-center md:px-0' : ''}`}
             >
-              <MessageSquare className={`w-4.5 h-4.5 shrink-0 group-hover:text-brand-500 transition-colors ${location.pathname === '/chat' ? 'text-brand-500' : 'text-brand-400'}`} />
-              {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-medium">الرسائل والمحادثة</span>}
+              <MessageSquare className={`w-4.5 h-4.5 shrink-0 transition-colors ${location.pathname === '/chat' ? 'text-brand-700' : 'text-gray-500 group-hover:text-brand-700'}`} />
+              {!sidebarCollapsed && <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-semibold">الرسائل والمحادثة</span>}
               {location.pathname === '/chat' && !sidebarCollapsed && (
                 <motion.span 
                   layoutId="activeBar"
-                  className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-500 rounded-e-full"
+                  className="absolute start-0 inset-y-1.5 w-1.5 bg-brand-700 rounded-e-full"
                 />
               )}
             </Link>
@@ -524,13 +530,13 @@ export default function DashboardLayout({ children, noPadding = false }) {
                 onClick={() => handleDownloadDocument(documentButton.url, documentButton.fileName)}
                 disabled={downloadingDoc}
                 title={documentButton.label}
-                className={`w-full flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-luxury-border/40 hover:bg-slate-905/30 transition-all group text-sm text-slate-400 hover:text-brand-600 relative disabled:opacity-50 ${
+                className={`w-full flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-100/70 transition-all group text-sm text-gray-700 hover:text-brand-700 relative disabled:opacity-50 cursor-pointer ${
                   sidebarCollapsed ? 'md:justify-center md:px-0' : ''
                 }`}
               >
-                <FileText className="w-4.5 h-4.5 shrink-0 text-brand-400 group-hover:text-brand-500 transition-colors" />
+                <FileText className="w-4.5 h-4.5 shrink-0 text-gray-500 group-hover:text-brand-700 transition-colors" />
                 {!sidebarCollapsed && (
-                  <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-medium text-start">
+                  <span className="leading-snug break-words flex-1 text-xs sm:text-sm font-semibold text-start">
                     {downloadingDoc ? 'جاري التحميل...' : documentButton.label}
                   </span>
                 )}
@@ -539,9 +545,9 @@ export default function DashboardLayout({ children, noPadding = false }) {
           </nav>
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-luxury-border/20">
-          <div className={`flex items-center gap-3 p-2 rounded-xl bg-slate-950/20 border border-luxury-border/30 ${sidebarCollapsed ? 'justify-center p-1' : ''}`}>
-            <div className="w-9 h-9 rounded-full overflow-hidden bg-brand-900/40 flex items-center justify-center font-bold text-brand-500 uppercase text-sm border border-luxury-border/20 shrink-0 shadow-inner">
+        <div className="space-y-4 pt-4 border-t border-gray-200">
+          <div className={`flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 border border-gray-200 ${sidebarCollapsed ? 'justify-center p-1' : ''}`}>
+            <div className="w-9 h-9 rounded-full overflow-hidden bg-brand-100 flex items-center justify-center font-bold text-brand-700 uppercase text-sm border border-brand-200 shrink-0 shadow-xs">
               {user?.profilePic ? (
                 <img src={user.profilePic} className="w-full h-full object-cover" alt="" />
               ) : (
@@ -550,8 +556,8 @@ export default function DashboardLayout({ children, noPadding = false }) {
             </div>
             {!sidebarCollapsed && (
               <div className="min-w-0 flex-1">
-                <span className="block text-xs font-semibold text-white leading-snug break-words">{user?.firstName} {user?.lastName}</span>
-                <span className="block text-[9px] uppercase tracking-wider text-slate-500 leading-tight">
+                <span className="block text-xs font-bold text-gray-900 leading-snug break-words">{user?.firstName} {user?.lastName}</span>
+                <span className="block text-[10px] font-bold tracking-wider text-brand-700 leading-tight">
                   {user?.role === 'school' ? 'إدارة المدرسة' : user?.role === 'admin' ? 'مدير المنصة' : user?.role === 'teacher' ? 'أستاذ' : user?.role === 'general_supervisor' ? 'مراقب عام' : user?.role === 'pedagogical_supervisor' ? 'مراقب تربوي' : user?.role === 'receptionist' ? 'موظف الاستقبال' : user?.role === 'student' ? 'تلميذ' : user?.role === 'parent' ? 'ولي أمر' : user?.role}
                 </span>
               </div>
@@ -580,20 +586,20 @@ export default function DashboardLayout({ children, noPadding = false }) {
       <main className="flex-1 flex flex-col min-w-0 max-w-full overflow-hidden">
         
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-3 sm:p-4 glass-panel border-b border-luxury-border/50 z-30 max-w-full relative">
+        <header className="md:hidden flex items-center justify-between p-3 sm:p-4 bg-white/95 backdrop-blur-md border-b border-gray-200 z-30 max-w-full relative shadow-xs">
           <div className="flex items-center gap-2 min-w-0">
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="p-1.5 hover:bg-slate-900 rounded-lg text-slate-400 shrink-0"
+              className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-700 shrink-0 cursor-pointer"
             >
               <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
             <SchoolLogo size={24} className="shrink-0" />
-            <span className="text-sm sm:text-base font-bold text-slate-100 whitespace-nowrap">
+            <span className="text-sm sm:text-base font-black text-gray-900 whitespace-nowrap">
               {settings?.schoolNameArabic || 'مدرسة حبر'}
             </span>
-            <span className="hidden xs:inline-block px-1.5 py-0.5 rounded bg-brand-500/10 border border-brand-500/20 text-brand-500 font-bold text-[9px] shrink-0">
+            <span className="hidden xs:inline-block px-2 py-0.5 rounded-md bg-brand-50 border border-brand-200 text-brand-700 font-bold text-[10px] shrink-0">
               {settings?.academicYear || '2026-2027'}
             </span>
           </div>
@@ -607,7 +613,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                   setNotificationsOpen((prev) => !prev);
                   if (!notificationsOpen) fetchNotifications();
                 }}
-                className="p-1.5 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-100 transition-colors relative cursor-pointer"
+                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-brand-700 transition-colors relative cursor-pointer"
                 title="الإشعارات"
               >
                 <Bell className="w-5 h-5" />
@@ -715,19 +721,21 @@ export default function DashboardLayout({ children, noPadding = false }) {
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden md:flex items-center justify-between px-8 py-4 border-b border-luxury-border/50 glass-panel relative z-30">
+        <header className="hidden md:flex items-center justify-between px-8 py-4 border-b border-gray-200 bg-white/95 backdrop-blur-md relative z-30 shadow-xs">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-350 font-medium">
+            <span className="text-sm text-gray-700 font-medium">
               مرحباً بك،{' '}
               <button
                 onClick={() => setProfileOpen(true)}
-                className="font-semibold text-brand-500 hover:text-brand-650 transition-colors hover:underline focus:outline-none cursor-pointer"
+                className="font-bold text-brand-700 hover:text-brand-800 transition-colors hover:underline focus:outline-none cursor-pointer"
               >
                 {user?.firstName} {user?.lastName}
               </button>{' '}
               ! أهلاً بك في فضاءك الخاص.
             </span>
-            <span className="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-500 font-extrabold text-xs">السنة الدراسية 2025/2026</span>
+            <span className="px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 font-extrabold text-xs shadow-xs">
+              السنة الدراسية {settings?.academicYear || '2026-2027'}
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <div ref={desktopNotifRef} className="relative">
@@ -830,22 +838,22 @@ export default function DashboardLayout({ children, noPadding = false }) {
                 </div>
               )}
             </div>
-            <div className="w-px h-5 bg-slate-800"></div>
+            <div className="w-px h-5 bg-gray-200"></div>
             
             {/* Interactive User profile widget */}
             <button
               type="button"
               onClick={() => setProfileOpen(true)}
-              className="flex items-center gap-3 p-1.5 hover:bg-slate-900/60 rounded-xl transition-all border border-transparent hover:border-luxury-border"
+              className="flex items-center gap-3 p-1.5 hover:bg-gray-100 rounded-xl transition-all border border-transparent hover:border-gray-200 cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-brand-650 flex items-center justify-center font-bold text-white uppercase text-sm border border-luxury-border/30">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-brand-650 flex items-center justify-center font-bold text-white uppercase text-sm border border-brand-500/30">
                 {user?.profilePic ? (
                   <img src={user.profilePic} className="w-full h-full object-cover" alt="" />
                 ) : (
                   <span>{user?.firstName?.[0]}{user?.lastName?.[0]}</span>
                 )}
               </div>
-              <span className="text-sm font-medium text-slate-300 hover:text-white transition-colors">{user?.firstName} {user?.lastName}</span>
+              <span className="text-sm font-bold text-gray-800 hover:text-brand-700 transition-colors">{user?.firstName} {user?.lastName}</span>
             </button>
           </div>
         </header>
@@ -856,10 +864,10 @@ export default function DashboardLayout({ children, noPadding = false }) {
 
         {/* User Profile Details & Management Modal */}
         {profileOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-            <div className="glass-panel w-full max-w-lg border border-luxury-border rounded-2xl p-6 md:p-8 space-y-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white w-full max-w-lg border border-gray-200 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
               {/* Header */}
-              <div className="flex justify-between items-start border-b border-luxury-border/40 pb-4">
+              <div className="flex justify-between items-start border-b border-gray-200 pb-4">
                 <div className="flex items-center gap-4">
                   {/* Avatar with Upload & Delete Controls */}
                   <div className="relative group w-16 h-16 rounded-full overflow-hidden bg-brand-650 flex items-center justify-center font-bold text-white uppercase text-xl shrink-0 border-2 border-brand-500/40 shadow-inner">
@@ -892,20 +900,20 @@ export default function DashboardLayout({ children, noPadding = false }) {
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-white truncate">{user?.firstName} {user?.lastName}</h3>
+                      <h3 className="text-base font-black text-gray-900 truncate">{user?.firstName} {user?.lastName}</h3>
                       {user?.profilePic && (
                         <button
                           type="button"
                           onClick={handleAvatarDelete}
                           disabled={avatarDeleting}
                           title="حذف الصورة والرجوع للحروف الأولى"
-                          className="p-1 rounded-lg bg-red-955/20 hover:bg-red-955/40 text-red-400 border border-red-900/30 transition-all text-xs"
+                          className="p-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-all text-xs cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
-                    <span className="inline-block px-2.5 py-0.5 text-[9px] uppercase font-bold tracking-wider rounded-full bg-brand-100 text-brand-700 border border-brand-300/40 mt-1">
+                    <span className="inline-block px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-full bg-brand-50 text-brand-700 border border-brand-200 mt-1">
                       {user?.role === 'school' ? 'إدارة المدرسة' : user?.role === 'admin' ? 'مدير المنصة' : user?.role === 'teacher' ? 'أستاذ' : user?.role === 'general_supervisor' ? 'مراقب عام' : user?.role === 'pedagogical_supervisor' ? 'مراقب تربوي' : user?.role === 'receptionist' ? 'موظف الاستقبال' : user?.role === 'student' ? 'تلميذ' : user?.role === 'parent' ? 'ولي أمر' : user?.role}
                     </span>
                   </div>
@@ -919,7 +927,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                     setShowDeleteConfirm(false);
                     setProfileMsg(null);
                   }}
-                  className="p-1.5 hover:bg-slate-900 rounded-lg border border-luxury-border/50 text-slate-400 hover:text-white transition-all"
+                  className="p-1.5 hover:bg-gray-100 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-900 transition-all cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -929,8 +937,8 @@ export default function DashboardLayout({ children, noPadding = false }) {
               {profileMsg && (
                 <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
                   profileMsg.type === 'success'
-                    ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-300'
-                    : 'bg-red-955/40 border-red-900/40 text-red-300'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-bold'
+                    : 'bg-red-50 border-red-200 text-red-800 font-bold'
                 }`}>
                   {profileMsg.type === 'success' ? <Check className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
                   <span>{profileMsg.text}</span>
@@ -938,14 +946,14 @@ export default function DashboardLayout({ children, noPadding = false }) {
               )}
 
               {/* Mode Selector Tabs */}
-              <div className="flex bg-[#F3E9DC]/60 p-1 rounded-xl border border-[#C9A24D]/35 gap-1">
+              <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 gap-1">
                 <button
                   type="button"
                   onClick={() => setIsEditingProfile(false)}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                     !isEditingProfile
-                      ? 'bg-white text-[#7B1E3A] border border-[#C9A24D]/40 shadow-sm'
-                      : 'text-[#2B2022]/70 hover:text-[#7B1E3A]'
+                      ? 'bg-white text-brand-700 border border-gray-200 shadow-xs'
+                      : 'text-gray-600 hover:text-brand-700'
                   }`}
                 >
                   نظرة عامة
@@ -953,80 +961,80 @@ export default function DashboardLayout({ children, noPadding = false }) {
                 <button
                   type="button"
                   onClick={() => setIsEditingProfile(true)}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     isEditingProfile
-                      ? 'bg-white text-[#7B1E3A] border border-[#C9A24D]/40 shadow-sm'
-                      : 'text-[#2B2022]/70 hover:text-[#7B1E3A]'
+                      ? 'bg-white text-brand-700 border border-gray-200 shadow-xs'
+                      : 'text-gray-600 hover:text-brand-700'
                   }`}
                 >
-                  <Edit3 className={`w-3.5 h-3.5 ${isEditingProfile ? 'text-[#7B1E3A]' : 'text-[#C9A24D]'}`} />
+                  <Edit3 className={`w-3.5 h-3.5 ${isEditingProfile ? 'text-brand-700' : 'text-gray-500'}`} />
                   <span>تعديل البيانات</span>
                 </button>
               </div>
 
               {/* View Mode */}
               {!isEditingProfile && (
-                <div className="space-y-3.5 text-sm text-slate-330 text-right">
-                  <div className="flex justify-between items-center bg-slate-900/20 p-2.5 rounded-xl border border-luxury-border/30">
-                    <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold">البريد الإلكتروني:</span>
-                    <span className="text-white select-all text-xs truncate max-w-[220px]" title={user?.email}>{user?.email}</span>
+                <div className="space-y-3.5 text-sm text-gray-800 text-right">
+                  <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide font-bold">البريد الإلكتروني:</span>
+                    <span className="text-gray-900 font-bold select-all text-xs truncate max-w-[220px]" title={user?.email}>{user?.email}</span>
                   </div>
                   {user?.phoneNumber && (
-                    <div className="flex justify-between items-center bg-slate-900/20 p-2.5 rounded-xl border border-luxury-border/30">
-                      <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">الهاتف:</span>
-                      <span className="text-white select-all font-mono text-xs">{user?.phoneNumber}</span>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200">
+                      <span className="text-xs text-gray-500 uppercase tracking-wide font-bold font-cairo">الهاتف:</span>
+                      <span className="text-gray-900 font-bold select-all font-mono text-xs">{user?.phoneNumber}</span>
                     </div>
                   )}
 
                   {/* Role-Specific details */}
                   {user?.role === 'student' && profile && (
-                    <div className="bg-slate-900/20 p-3.5 rounded-xl border border-luxury-border/30 space-y-3.5">
+                    <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">رقم التسجيل:</span>
-                        <span className="text-white font-mono text-xs">{profile.registrationNumber || '—'}</span>
+                        <span className="text-xs text-gray-500 uppercase tracking-wide font-bold font-cairo">رقم التسجيل:</span>
+                        <span className="text-gray-900 font-bold font-mono text-xs">{profile.registrationNumber || '—'}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">القسم:</span>
-                        <span className="text-white text-xs">{profile.class?.name || '—'}</span>
+                        <span className="text-xs text-gray-500 uppercase tracking-wide font-bold font-cairo">القسم:</span>
+                        <span className="text-gray-900 font-bold text-xs">{profile.class?.name || '—'}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">الفوج:</span>
-                        <span className="text-white text-xs">{profile.group?.name || '—'}</span>
+                        <span className="text-xs text-gray-500 uppercase tracking-wide font-bold font-cairo">الفوج:</span>
+                        <span className="text-gray-900 font-bold text-xs">{profile.group?.name || '—'}</span>
                       </div>
                     </div>
                   )}
 
                   {user?.role === 'teacher' && profile && (
-                    <div className="bg-slate-900/20 p-3.5 rounded-xl border border-luxury-border/30 space-y-2">
-                      <span className="block text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">المواد الموكلة:</span>
+                    <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-2">
+                      <span className="block text-xs text-gray-500 uppercase tracking-wide font-bold font-cairo">المواد الموكلة:</span>
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {profile.subjects?.map((sub, idx) => (
-                          <span key={idx} className="bg-slate-950 border border-luxury-border/50 px-2.5 py-1 rounded-lg text-xs text-brand-600 font-medium">{sub}</span>
-                        )) || <span className="text-xs text-slate-550 italic">لا توجد مواد.</span>}
+                          <span key={idx} className="bg-white border border-gray-200 px-2.5 py-1 rounded-lg text-xs text-brand-700 font-bold">{sub}</span>
+                        )) || <span className="text-xs text-gray-500 italic">لا توجد مواد.</span>}
                       </div>
                     </div>
                   )}
 
                   {user?.role === 'parent' && profile && (
-                    <div className="bg-slate-900/20 p-3.5 rounded-xl border border-luxury-border/30 space-y-3">
+                    <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">المهنة:</span>
-                        <span className="text-white text-xs">{profile.profession || '—'}</span>
+                        <span className="text-xs text-gray-500 uppercase tracking-wide font-bold font-cairo">المهنة:</span>
+                        <span className="text-gray-900 font-bold text-xs">{profile.profession || '—'}</span>
                       </div>
-                      <div className="flex flex-col gap-1.5 pt-1 border-b border-luxury-border/10 pb-3">
-                        <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">العنوان الشخصي:</span>
-                        <span className="text-white text-xs bg-slate-950/40 p-2.5 rounded-lg border border-luxury-border/35 leading-relaxed">{profile.address || '—'}</span>
+                      <div className="flex flex-col gap-1.5 pt-1 border-b border-gray-200 pb-3">
+                        <span className="text-xs text-gray-500 uppercase tracking-wide font-bold font-cairo">العنوان الشخصي:</span>
+                        <span className="text-gray-900 font-semibold text-xs bg-white p-2.5 rounded-lg border border-gray-200 leading-relaxed block">{profile.address || '—'}</span>
                       </div>
                       {profile.children && profile.children.length > 0 && (
                         <div className="flex flex-col gap-2 pt-1">
-                          <span className="text-xs text-slate-500 uppercase tracking-wide font-semibold font-cairo">الأبناء المتمدرسون:</span>
+                          <span className="text-xs text-gray-500 uppercase tracking-wide font-bold font-cairo">الأبناء المتمدرسون:</span>
                           <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
                             {profile.children.map((child, idx) => (
-                              <div key={idx} className="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-luxury-border/25">
-                                <span className="text-white font-medium text-xs">
+                              <div key={idx} className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-200 shadow-xs">
+                                <span className="text-gray-900 font-bold text-xs">
                                   {child.user?.firstName || child.firstName || '—'} {child.user?.lastName || child.lastName || '—'}
                                 </span>
-                                <span className="text-brand-600 text-[10px] font-semibold bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200/30">
+                                <span className="text-brand-700 text-xs font-bold bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
                                   {child.class?.name || '—'}
                                 </span>
                               </div>
@@ -1044,23 +1052,23 @@ export default function DashboardLayout({ children, noPadding = false }) {
                 <form onSubmit={handleSaveProfile} className="space-y-4 text-right">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-350">الاسم الأول</label>
+                      <label className="text-xs font-bold text-gray-700">الاسم الأول</label>
                       <input
                         type="text"
                         value={editFormData.firstName}
                         onChange={(e) => setEditFormData({ ...editFormData, firstName: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-luxury-border text-white text-xs focus:outline-none focus:border-brand-500"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-300 text-gray-900 text-xs font-semibold focus:outline-none focus:border-brand-600 focus:bg-white transition-all"
                         placeholder="الاسم"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-350">اللقب</label>
+                      <label className="text-xs font-bold text-gray-700">اللقب</label>
                       <input
                         type="text"
                         value={editFormData.lastName}
                         onChange={(e) => setEditFormData({ ...editFormData, lastName: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-luxury-border text-white text-xs focus:outline-none focus:border-brand-500"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-300 text-gray-900 text-xs font-semibold focus:outline-none focus:border-brand-600 focus:bg-white transition-all"
                         placeholder="اللقب"
                         required
                       />
@@ -1068,29 +1076,29 @@ export default function DashboardLayout({ children, noPadding = false }) {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-350 flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-700 flex items-center justify-between">
                       <span>رقم الهاتف</span>
-                      <Phone className="w-3.5 h-3.5 text-slate-500" />
+                      <Phone className="w-3.5 h-3.5 text-gray-400" />
                     </label>
                     <input
                       type="tel"
                       value={editFormData.phoneNumber}
                       onChange={(e) => setEditFormData({ ...editFormData, phoneNumber: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-luxury-border text-white text-xs focus:outline-none focus:border-brand-500 text-left font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-300 text-gray-900 text-xs font-semibold focus:outline-none focus:border-brand-600 focus:bg-white text-left font-mono transition-all"
                       placeholder="0797060052"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-350 flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-700 flex items-center justify-between">
                       <span>تغيير كلمة المرور (اتركها فارغة للإبقاء على الحالية)</span>
-                      <Key className="w-3.5 h-3.5 text-slate-500" />
+                      <Key className="w-3.5 h-3.5 text-gray-400" />
                     </label>
                     <input
                       type="password"
                       value={editFormData.password}
                       onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-luxury-border text-white text-xs focus:outline-none focus:border-brand-500 text-left"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-300 text-gray-900 text-xs font-semibold focus:outline-none focus:border-brand-600 focus:bg-white text-left transition-all"
                       placeholder="••••••••"
                       minLength={6}
                     />
@@ -1100,7 +1108,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                     <button
                       type="submit"
                       disabled={savingProfile}
-                      className="flex-1 py-2.5 rounded-xl bg-brand-650 hover:bg-brand-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md"
+                      className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer"
                     >
                       <Save className="w-3.5 h-3.5" />
                       <span>{savingProfile ? 'جاري الحفظ...' : 'حفظ التعديلات'}</span>
@@ -1108,7 +1116,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                     <button
                       type="button"
                       onClick={() => setIsEditingProfile(false)}
-                      className="py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-luxury-border text-slate-400 text-xs font-bold transition-all"
+                      className="py-2.5 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-xs font-bold transition-all cursor-pointer"
                     >
                       إلغاء
                     </button>
@@ -1117,23 +1125,23 @@ export default function DashboardLayout({ children, noPadding = false }) {
               )}
 
               {/* Account Deletion Area (App Store Guideline 5.1.1(v) Compliant) */}
-              <div className="border-t border-luxury-border/30 pt-3">
+              <div className="border-t border-gray-200 pt-3">
                 {!showDeleteConfirm ? (
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="text-[11px] text-red-400/80 hover:text-red-400 underline transition-colors block text-center w-full"
+                    className="text-[11px] text-red-600/80 hover:text-red-700 underline transition-colors block text-center w-full cursor-pointer font-medium"
                   >
                     حذف الحساب نهائياً (App Store 5.1.1(v))
                   </button>
                 ) : (
-                  <div className="bg-red-955/20 border border-red-900/40 rounded-xl p-3 space-y-2 text-right">
-                    <p className="text-xs text-red-300 font-semibold">هل أنت متأكد من رغبتك في حذف هذا الحساب نهائياً؟ سيتم حذف جميع بياناتك ولا يمكن استرجاعها.</p>
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2 text-right">
+                    <p className="text-xs text-red-800 font-semibold">هل أنت متأكد من رغبتك في حذف هذا الحساب نهائياً؟ سيتم حذف جميع بياناتك ولا يمكن استرجاعها.</p>
                     <div className="flex gap-2 justify-end">
                       <button
                         type="button"
                         onClick={() => setShowDeleteConfirm(false)}
-                        className="px-3 py-1.5 rounded-lg bg-slate-900 text-slate-300 text-xs font-medium"
+                        className="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 text-xs font-medium cursor-pointer"
                       >
                         تراجع
                       </button>
@@ -1141,7 +1149,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                         type="button"
                         onClick={handleDeleteAccount}
                         disabled={deletingAccount}
-                        className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold"
+                        className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold cursor-pointer"
                       >
                         {deletingAccount ? 'جاري الحذف...' : 'نعم، حذف الحساب'}
                       </button>
@@ -1151,7 +1159,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t border-luxury-border/40 pt-4 flex gap-3">
+              <div className="border-t border-gray-200 pt-4 flex gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -1160,7 +1168,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                     setShowDeleteConfirm(false);
                     setProfileMsg(null);
                   }}
-                  className="flex-1 py-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-luxury-border text-slate-350 hover:text-white transition-all text-xs font-bold"
+                  className="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-800 transition-all text-xs font-bold cursor-pointer"
                 >
                   إغلاق
                 </button>
@@ -1171,7 +1179,7 @@ export default function DashboardLayout({ children, noPadding = false }) {
                     logout();
                     navigate('/');
                   }}
-                  className="py-3 px-5 rounded-xl bg-red-955/20 border border-red-900/40 hover:bg-red-955/40 text-red-500 transition-all text-xs font-bold"
+                  className="py-3 px-5 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 transition-all text-xs font-bold cursor-pointer"
                 >
                   تسجيل الخروج
                 </button>

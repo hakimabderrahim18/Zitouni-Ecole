@@ -20,6 +20,7 @@ router.get('/metadata', timetableController.getTimetableMetadata);
 
 // 3. User's own timetable (Student or Teacher)
 router.get('/my-timetable', timetableController.getMyTimetable);
+router.get('/my', timetableController.getMyTimetable);
 
 // 4. Timetable by Division (Class)
 router.get('/division/:division', timetableController.getTimetableByDivision);
