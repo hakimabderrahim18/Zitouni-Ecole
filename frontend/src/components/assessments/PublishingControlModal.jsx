@@ -17,19 +17,19 @@ import {
 } from 'lucide-react';
 
 export default function PublishingControlModal({ assessment, isOpen, onClose, onUpdated }) {
-  if (!isOpen || !assessment) return null;
-
   const [publishMode, setPublishMode] = useState(
-    assessment.publishScope && assessment.publishScope !== 'none' ? assessment.publishScope : 'general'
+    assessment?.publishScope && assessment?.publishScope !== 'none' ? assessment.publishScope : 'general'
   );
   const [selectedStudentIds, setSelectedStudentIds] = useState(
-    (assessment.records || []).filter((r) => r.isPublished).map((r) => r.student?._id || r.student)
+    (assessment?.records || []).filter((r) => r.isPublished).map((r) => r.student?._id || r.student)
   );
   const [scheduledDate, setScheduledDate] = useState(
-    assessment.scheduledPublishAt ? new Date(assessment.scheduledPublishAt).toISOString().slice(0, 16) : ''
+    assessment?.scheduledPublishAt ? new Date(assessment.scheduledPublishAt).toISOString().slice(0, 16) : ''
   );
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  if (!isOpen || !assessment) return null;
 
   const records = assessment.records || [];
 

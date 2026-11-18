@@ -7,6 +7,7 @@ import { useSchoolStore } from '../store/useSchoolStore';
 export default function AbsenceWarningLetterModal({ isOpen, onClose, warning, student }) {
   const { settings } = useSchoolStore();
   const printRef = useRef(null);
+  const [whatsappSent, setWhatsappSent] = useState(false);
 
   if (!isOpen || (!warning && !student)) return null;
 
@@ -20,8 +21,6 @@ export default function AbsenceWarningLetterModal({ isOpen, onClose, warning, st
     : new Date().toLocaleDateString('ar-DZ');
 
   const absenceDates = warning?.absenceDates || [];
-
-  const [whatsappSent, setWhatsappSent] = useState(false);
 
   const handlePrint = () => {
     window.print();

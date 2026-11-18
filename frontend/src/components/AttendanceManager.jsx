@@ -1072,37 +1072,45 @@ export default function AttendanceManager() {
       </div>
 
       {/* 3-Absence Warning Letter Modal (Article 26) */}
-      <AbsenceWarningLetterModal
-        isOpen={warningModalOpen}
-        onClose={() => setWarningModalOpen(false)}
-        warning={selectedWarning}
-        student={selectedStudentForLetter}
-      />
+      {warningModalOpen && (
+        <AbsenceWarningLetterModal
+          isOpen={warningModalOpen}
+          onClose={() => setWarningModalOpen(false)}
+          warning={selectedWarning}
+          student={selectedStudentForLetter}
+        />
+      )}
 
       {/* Digital Exit Pass Modal (Article 28) */}
-      <DigitalExitPassModal
-        isOpen={exitPassModalOpen}
-        onClose={() => setExitPassModalOpen(false)}
-        pass={selectedPassForModal}
-        student={selectedStudentForPass}
-      />
+      {exitPassModalOpen && (
+        <DigitalExitPassModal
+          isOpen={exitPassModalOpen}
+          onClose={() => setExitPassModalOpen(false)}
+          pass={selectedPassForModal}
+          student={selectedStudentForPass}
+        />
+      )}
 
       {/* Justification Review Modal (Article 26) */}
-      <AttendanceJustificationModal
-        isOpen={justificationModalOpen}
-        onClose={() => setJustificationModalOpen(false)}
-        attendanceRecord={selectedAttendanceForReview}
-        student={selectedStudentForJustification}
-        onReviewed={fetchClassAttendance}
-      />
+      {justificationModalOpen && (
+        <AttendanceJustificationModal
+          isOpen={justificationModalOpen}
+          onClose={() => setJustificationModalOpen(false)}
+          attendanceRecord={selectedAttendanceForReview}
+          student={selectedStudentForJustification}
+          onReviewed={fetchClassAttendance}
+        />
+      )}
 
       {/* Periodical Attendance Report Modal (Article 26) */}
-      <AttendanceReportModal
-        isOpen={reportModalOpen}
-        onClose={() => setReportModalOpen(false)}
-        defaultClassId={selectedClassId}
-        classes={classes}
-      />
+      {reportModalOpen && (
+        <AttendanceReportModal
+          isOpen={reportModalOpen}
+          onClose={() => setReportModalOpen(false)}
+          defaultClassId={selectedClassId}
+          classes={classes}
+        />
+      )}
     </div>
   );
 }
