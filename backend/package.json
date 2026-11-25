@@ -7,6 +7,8 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "seed": "node src/seed.js",
+    "seed:timetable": "node src/scripts/generateFromTimetable.js",
+    "generate:timetable": "node src/scripts/generateFromTimetable.js",
     "seed:assessments": "node src/scripts/seedAcademicAssessments.js",
     "seed:atlas": "node src/scripts/seedAcademicAssessments.js",
     "migrate:atlas": "node src/migrateToAtlas.js"
