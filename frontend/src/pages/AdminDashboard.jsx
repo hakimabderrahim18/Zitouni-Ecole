@@ -1208,44 +1208,44 @@ export default function AdminDashboard() {
             className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-right"
           >
             {/* Create User manual Form */}
-            <div className="glass-panel p-6 md:p-8 rounded-2xl border border-luxury-border space-y-6">
-              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2 border-b border-luxury-border/30 pb-3">
-                <Plus className="w-5 h-5 text-brand-500" />
+            <div className="glass-panel p-5 sm:p-6 md:p-8 rounded-2xl border border-slate-200 bg-white space-y-6 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
+                <Plus className="w-5 h-5 text-[#7B1E3A]" />
                 <span>إنشاء حساب جديد</span>
               </h3>
               <form onSubmit={handleCreateUser} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs text-slate-450 font-bold block">الاسم الأول</label>
+                    <label className="text-xs text-slate-800 font-bold block">الاسم الأول *</label>
                     <input
                       type="text"
                       required
                       placeholder="الاسم الأول"
                       value={newUser.firstName}
                       onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
-                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] focus:outline-none placeholder-slate-400 font-medium shadow-2xs"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-slate-450 font-bold block">اللقب</label>
+                    <label className="text-xs text-slate-800 font-bold block">اللقب *</label>
                     <input
                       type="text"
                       required
                       placeholder="اللقب"
                       value={newUser.lastName}
                       onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
-                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] focus:outline-none placeholder-slate-400 font-medium shadow-2xs"
                     />
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs text-slate-300 font-bold block">نوع الحساب *</label>
+                    <label className="text-xs text-slate-800 font-bold block">نوع الحساب *</label>
                     <select
                       value={newUser.role}
                       onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none text-slate-100 font-semibold cursor-pointer"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] focus:outline-none text-slate-900 font-bold cursor-pointer shadow-2xs"
                     >
                       <option value="student">تلميذ (Student)</option>
                       <option value="teacher">أستاذ (Teacher)</option>
@@ -1258,9 +1258,9 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-brand-400 font-bold block flex items-center justify-between">
+                    <label className="text-xs text-[#7B1E3A] font-bold block flex items-center justify-between">
                       <span>رقم الهاتف (معرف الدخول الرسمي / Login) *</span>
-                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">أرقام نقية فقط (Login)</span>
+                      <span className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300 font-bold">أرقام نقية فقط (Login)</span>
                     </label>
                     <input
                       type="tel"
@@ -1268,73 +1268,73 @@ export default function AdminDashboard() {
                       placeholder="مثال: 0797060052"
                       value={newUser.phoneNumber}
                       onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
-                      className="w-full bg-slate-900 border border-brand-500/40 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none text-right font-mono font-bold"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] focus:outline-none text-right font-mono font-bold shadow-2xs"
                     />
-                    <span className="text-[10px] text-slate-400 block">
+                    <span className="text-xs text-slate-600 block font-normal">
                       يُعتمد مباشرة كمعرف رسمي لتسجيل الدخول (أرقام مثل 0797060052 دون @ أو .com).
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-400 font-medium block flex items-center justify-between">
+                  <label className="text-xs text-slate-800 font-bold block flex items-center justify-between">
                     <span>البريد الإلكتروني (اختياري)</span>
-                    <span className="text-[10px] text-slate-500">يُنشأ تلقائياً برقم الهاتف إن تُرك فارغاً</span>
+                    <span className="text-xs text-slate-500 font-normal">يُنشأ تلقائياً برقم الهاتف إن تُرك فارغاً</span>
                   </label>
                   <input
                     type="email"
                     placeholder="اختياري (يمكن تركه فارغاً)"
                     value={newUser.email}
                     onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none text-right"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] focus:outline-none text-right placeholder-slate-400 font-medium shadow-2xs"
                   />
                 </div>
                 
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-300 font-bold block">كلمة المرور</label>
+                  <label className="text-xs text-slate-800 font-bold block">كلمة المرور</label>
                   {newUser.role === 'teacher' || newUser.role === 'admin' || newUser.role === 'school' ? (
                     <input
                       type="password"
                       placeholder="كلمة المرور (أو تُحدد تلقائياً كرقم الهاتف)"
                       value={newUser.password}
                       onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                      className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:border-brand-500 focus:outline-none text-right"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] focus:outline-none text-right placeholder-slate-400 font-medium shadow-2xs"
                     />
                   ) : newUser.role === 'parent' || newUser.role === 'general_supervisor' || newUser.role === 'pedagogical_supervisor' || newUser.role === 'receptionist' ? (
-                    <div className="w-full bg-slate-950/60 border border-brand-500/20 rounded-xl px-4 py-2.5 text-xs text-brand-300 text-right">
+                    <div className="w-full bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-xs text-amber-900 text-right font-medium">
                       كلمة المرور تُحدَّد تلقائياً = رقم الهاتف نفسه
-                      <span className="block text-slate-400 font-mono font-bold mt-1">{newUser.phoneNumber || '— أدخل رقم الهاتف أعلاه —'}</span>
+                      <span className="block text-slate-800 font-mono font-bold mt-1">{newUser.phoneNumber || '— أدخل رقم الهاتف أعلاه —'}</span>
                     </div>
                   ) : (
-                    <div className="w-full bg-slate-950/60 border border-brand-500/20 rounded-xl px-4 py-2.5 text-xs text-brand-300 text-right">
+                    <div className="w-full bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-xs text-amber-900 text-right font-medium">
                       كلمة المرور تُحدَّد تلقائياً = تاريخ ميلاد التلميذ
-                      <span className="block text-slate-400 font-mono font-bold mt-1">{newUser.dateOfBirth || '— أدخل تاريخ الميلاد —'}</span>
+                      <span className="block text-slate-800 font-mono font-bold mt-1">{newUser.dateOfBirth || '— أدخل تاريخ الميلاد —'}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Conditional fields based on Student registration */}
                 {newUser.role === 'student' && (
-                  <div className="space-y-3 p-4 bg-slate-950/40 border border-luxury-border rounded-xl">
-                    <span className="text-xs font-semibold text-slate-450 block">الربط المدرسي والتفاصيل</span>
+                  <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                    <span className="text-xs font-bold text-[#7B1E3A] uppercase block">الربط المدرسي والتفاصيل</span>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase text-slate-450 font-semibold">تاريخ الميلاد (كلمة المرور)</label>
+                      <label className="text-xs text-slate-700 font-bold">تاريخ الميلاد (كلمة المرور) *</label>
                       <input
                         type="date"
                         required
                         value={newUser.dateOfBirth}
                         onChange={(e) => setNewUser({ ...newUser, dateOfBirth: e.target.value })}
-                        className="bg-slate-900 border border-luxury-border rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500"
+                        className="bg-white border border-slate-300 rounded-xl p-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] font-medium shadow-2xs"
                       />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase text-slate-450 font-semibold">القسم</label>
+                        <label className="text-xs text-slate-700 font-bold">القسم *</label>
                         <select
                           value={newUser.classId}
                           required
                           onChange={(e) => setNewUser({ ...newUser, classId: e.target.value, groupId: '' })}
-                          className="bg-slate-900 border border-luxury-border rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500"
+                          className="bg-white border border-slate-300 rounded-xl p-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] font-bold cursor-pointer shadow-2xs"
                         >
                           <option value="">اختر القسم</option>
                           {classes.map((c) => (
@@ -1344,12 +1344,12 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase text-slate-455 font-semibold">الفوج</label>
+                        <label className="text-xs text-slate-700 font-bold">الفوج *</label>
                         <select
                           value={newUser.groupId}
                           required
                           onChange={(e) => setNewUser({ ...newUser, groupId: e.target.value })}
-                          className="bg-slate-900 border border-luxury-border rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500"
+                          className="bg-white border border-slate-300 rounded-xl p-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] font-bold cursor-pointer shadow-2xs"
                         >
                           <option value="">اختر الفوج</option>
                           {groups.filter(g => g.class === newUser.classId || g.class?._id === newUser.classId).map((g) => (
@@ -1359,12 +1359,12 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase text-slate-455 font-semibold">ولي الأمر الكفيل</label>
+                        <label className="text-xs text-slate-700 font-bold">ولي الأمر الكفيل *</label>
                         <select
                           value={newUser.parentId}
                           required
                           onChange={(e) => setNewUser({ ...newUser, parentId: e.target.value })}
-                          className="bg-slate-900 border border-luxury-border rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500"
+                          className="bg-white border border-slate-300 rounded-xl p-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] font-bold cursor-pointer shadow-2xs"
                         >
                           <option value="">اختر ولي الأمر</option>
                           {parents.map((p) => (
@@ -1717,7 +1717,7 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                <button type="submit" className="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl shadow-md shadow-brand-500/10 transition-all">
+                <button type="submit" className="w-full py-3 bg-[#7B1E3A] hover:bg-[#62162d] text-white font-bold rounded-xl shadow-md shadow-[#7B1E3A]/20 transition-all text-sm cursor-pointer">
                   إنشاء الحساب الجديد
                 </button>
               </form>
@@ -1725,23 +1725,23 @@ export default function AdminDashboard() {
 
             {/* Excel uploader and User Toggle Grid */}
             <div className="space-y-6">
-              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-luxury-border space-y-4">
-                <div className="flex items-center justify-between border-b border-luxury-border/30 pb-3">
-                  <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                    <Upload className="w-5 h-5 text-brand-500" />
+              <div className="glass-panel p-5 sm:p-6 md:p-8 rounded-2xl border border-slate-200 bg-white space-y-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Upload className="w-5 h-5 text-[#7B1E3A]" />
                     <span>استيراد جماعي عبر Excel</span>
                   </h3>
                   <button
                     type="button"
                     onClick={() => setIsTeacherImportModalOpen(true)}
-                    className="px-3.5 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    className="px-3.5 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer self-start sm:self-auto"
                   >
                     <FileSpreadsheet className="w-3.5 h-3.5 text-[#C9A24D]" />
                     <span>استيراد أساتذة وموظفين (المادة 23)</span>
                   </button>
                 </div>
                 <form onSubmit={handleExcelUpload} className="space-y-4">
-                  <div className="border border-dashed border-luxury-border rounded-xl p-6 text-center relative cursor-pointer hover:bg-slate-900/20 transition-all">
+                  <div className="border border-dashed border-slate-300 hover:border-[#7B1E3A] rounded-xl p-6 text-center relative cursor-pointer bg-slate-50 hover:bg-slate-100/60 transition-all">
                     <input
                       type="file"
                       required
@@ -1749,23 +1749,23 @@ export default function AdminDashboard() {
                       onChange={(e) => setExcelFile(e.target.files[0])}
                       className="absolute inset-0 opacity-0 cursor-pointer"
                     />
-                    <FileText className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                    <span className="text-xs text-slate-450 block">{excelFile ? excelFile.name : 'انقر أو اسحب ملف Excel هنا لتحديده'}</span>
+                    <FileText className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                    <span className="text-xs text-slate-600 font-medium block">{excelFile ? excelFile.name : 'انقر أو اسحب ملف Excel هنا لتحديده'}</span>
                   </div>
-                  <button type="submit" className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-sm transition-all">
+                  <button type="submit" className="w-full py-2.5 bg-[#7B1E3A] hover:bg-[#62162d] text-white font-bold rounded-xl text-sm transition-all shadow-sm cursor-pointer">
                     تحميل القائمة بالكامل
                   </button>
                 </form>
               </div>
 
               {/* Activation / Deactivation List */}
-              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-luxury-border space-y-4">
-                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2 border-b border-luxury-border/30 pb-3">
-                  <ShieldAlert className="w-5 h-5 text-brand-500" />
+              <div className="glass-panel p-5 sm:p-6 md:p-8 rounded-2xl border border-slate-200 bg-white space-y-4 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
+                  <ShieldAlert className="w-5 h-5 text-[#7B1E3A]" />
                   <span>تنشيط وتعديل حسابات النظام</span>
                 </h3>
                 
-                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
                   {systemUsers.length === 0 ? (
                     <div className="text-xs text-slate-500 italic text-center py-6">لا يوجد مستخدمون حالياً.</div>
                   ) : (
@@ -1773,52 +1773,52 @@ export default function AdminDashboard() {
                       const roleConfig = {
                         admin: { label: 'مدير المنصة (Admin)', bg: 'bg-[#7B1E3A]/10', text: 'text-[#7B1E3A]', border: 'border-[#7B1E3A]/25' },
                         school: { label: 'إدارة المدرسة', bg: 'bg-[#7B1E3A]/10', text: 'text-[#7B1E3A]', border: 'border-[#7B1E3A]/25' },
-                        teacher: { label: 'أستاذ وموظف (المادة 23)', bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-300' },
-                        general_supervisor: { label: 'مراقب عام', bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-300' },
-                        pedagogical_supervisor: { label: 'مراقب تربوي', bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-300' },
-                        receptionist: { label: 'موظف الاستقبال', bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-300' },
-                        student: { label: 'تلميذ مسجل', bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-300' },
-                        parent: { label: 'ولي أمر', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-300' },
+                        teacher: { label: 'أستاذ وموظف (المادة 23)', bg: 'bg-emerald-50', text: 'text-emerald-900', border: 'border-emerald-300' },
+                        general_supervisor: { label: 'مراقب عام', bg: 'bg-indigo-50', text: 'text-indigo-900', border: 'border-indigo-300' },
+                        pedagogical_supervisor: { label: 'مراقب تربوي', bg: 'bg-purple-50', text: 'text-purple-900', border: 'border-purple-300' },
+                        receptionist: { label: 'موظف الاستقبال', bg: 'bg-teal-50', text: 'text-teal-900', border: 'border-teal-300' },
+                        student: { label: 'تلميذ مسجل', bg: 'bg-blue-50', text: 'text-blue-900', border: 'border-blue-300' },
+                        parent: { label: 'ولي أمر', bg: 'bg-amber-50', text: 'text-amber-900', border: 'border-amber-300' },
                       };
-                      const roleMeta = roleConfig[u.role] || { label: u.role, bg: 'bg-stone-50', text: 'text-stone-700', border: 'border-stone-300' };
+                      const roleMeta = roleConfig[u.role] || { label: u.role, bg: 'bg-stone-50', text: 'text-stone-800', border: 'border-stone-300' };
 
                       return (
                         <div
                           key={u._id}
-                          className="p-4 rounded-2xl bg-[#FCF8F2] border-2 border-[#DFD3C2] hover:border-[#C9A24D]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition-all text-right"
+                          className="p-4 rounded-2xl bg-[#FCF8F2] border border-[#DFD3C2] hover:border-[#7B1E3A]/40 flex flex-col gap-3 shadow-2xs transition-all text-right"
                           dir="rtl"
                         >
-                          {/* User info */}
+                          {/* User info row */}
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-[#7B1E3A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                            <div className="w-11 h-11 rounded-xl bg-[#7B1E3A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                               {u.profilePic ? (
                                 <img src={u.profilePic} alt="" className="w-full h-full object-cover rounded-xl" />
                               ) : (
                                 `${u.firstName?.[0] || ''}${u.lastName?.[0] || ''}` || 'م'
                               )}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-serif font-black text-sm text-[#2B2022] truncate">
+                                <span className="font-serif font-black text-sm text-slate-900 truncate">
                                   {u.firstName} {u.lastName}
                                 </span>
-                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${roleMeta.bg} ${roleMeta.text} ${roleMeta.border}`}>
+                                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold border ${roleMeta.bg} ${roleMeta.text} ${roleMeta.border}`}>
                                   {roleMeta.label}
                                 </span>
                               </div>
-                              <span className="text-xs text-[#2B2022]/60 truncate block font-mono mt-0.5">
+                              <span className="text-xs text-slate-600 truncate block font-mono font-medium mt-0.5 select-all">
                                 {u.email}
                               </span>
                             </div>
                           </div>
 
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-2 flex-wrap shrink-0">
+                          {/* Action Buttons Toolbar Row */}
+                          <div className="flex items-center justify-end gap-2 flex-wrap pt-2.5 border-t border-[#DFD3C2]/50">
                             {['teacher', 'general_supervisor', 'pedagogical_supervisor', 'receptionist'].includes(u.role) && (
                               <button
                                 type="button"
                                 onClick={() => setSelectedTeacherForDossier(u._id)}
-                                className="px-3 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                className="px-3 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
                                 title="عرض وطباعة الملف المهني الشامل (المادة 23)"
                               >
                                 <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
@@ -1841,7 +1841,7 @@ export default function AdminDashboard() {
                                     console.error(err);
                                   }
                                 }}
-                                className="px-3 py-1.5 bg-[#7B1E3A]/10 hover:bg-[#7B1E3A] hover:text-white text-[#7B1E3A] border border-[#7B1E3A]/30 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                className="px-3 py-1.5 bg-[#7B1E3A]/10 hover:bg-[#7B1E3A] hover:text-white text-[#7B1E3A] border border-[#7B1E3A]/30 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
                                 title="عرض الملف الإداري المدرسي للتلميذ"
                               >
                                 <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
@@ -1855,8 +1855,8 @@ export default function AdminDashboard() {
                               onClick={() => handleToggleStatus(u._id)}
                               className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer border shadow-2xs ${
                                 u.isActive
-                                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-300'
-                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-300'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
                               }`}
                             >
                               {u.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب'}
@@ -1866,7 +1866,7 @@ export default function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => handleOpenEdit(u)}
-                              className="p-2 bg-white hover:bg-[#FAF4EB] text-[#2B2022] border border-[#DFD3C2] hover:border-[#7B1E3A] rounded-xl transition-all cursor-pointer shadow-2xs"
+                              className="p-2 bg-white hover:bg-[#FAF4EB] text-slate-800 border border-slate-300 hover:border-[#7B1E3A] rounded-xl transition-all cursor-pointer shadow-2xs"
                               title="تعديل بيانات الحساب"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -1876,7 +1876,7 @@ export default function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => handleDeleteUser(u._id)}
-                              className="p-2 bg-rose-50/60 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+                              className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition-all cursor-pointer shadow-2xs"
                               title="حذف الحساب"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1900,27 +1900,27 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6 text-right"
           >
-            <div className="glass-panel p-6 rounded-2xl border border-luxury-border space-y-5">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-luxury-border/30 pb-4">
-                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5 text-brand-500" />
+            <div className="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-200 bg-white space-y-5 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-[#7B1E3A]" />
                   <span>تنشيط وتعديل حسابات النظام</span>
                 </h3>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col sm:flex-row gap-2.5">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       placeholder="بحث بالاسم أو البريد..."
                       value={accountSearch}
                       onChange={(e) => setAccountSearch(e.target.value)}
-                      className="bg-slate-900 border border-luxury-border rounded-xl pr-9 pl-4 py-2 text-sm text-slate-100 focus:border-brand-500 focus:outline-none"
+                      className="w-full sm:w-64 bg-white border border-slate-300 rounded-xl pr-9 pl-4 py-2 text-sm text-slate-900 focus:border-[#7B1E3A] focus:outline-none placeholder-slate-400 font-medium"
                     />
                   </div>
                   <select
                     value={accountRoleFilter}
                     onChange={(e) => setAccountRoleFilter(e.target.value)}
-                    className="bg-slate-900 border border-luxury-border rounded-xl px-3 py-2 text-sm text-white focus:border-brand-500 focus:outline-none"
+                    className="bg-white border border-slate-300 rounded-xl px-4 py-2 text-sm text-slate-900 focus:border-[#7B1E3A] focus:outline-none font-bold cursor-pointer"
                   >
                     <option value="all">كل الأدوار</option>
                     <option value="teacher">الأساتذة</option>
@@ -1950,50 +1950,52 @@ export default function AdminDashboard() {
                       const roleConfig = {
                         admin: { label: 'مدير المنصة (Admin)', bg: 'bg-[#7B1E3A]/10', text: 'text-[#7B1E3A]', border: 'border-[#7B1E3A]/25' },
                         school: { label: 'إدارة المدرسة', bg: 'bg-[#7B1E3A]/10', text: 'text-[#7B1E3A]', border: 'border-[#7B1E3A]/25' },
-                        teacher: { label: 'أستاذ وموظف (المادة 23)', bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-300' },
-                        general_supervisor: { label: 'مراقب عام', bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-300' },
-                        pedagogical_supervisor: { label: 'مراقب تربوي', bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-300' },
-                        receptionist: { label: 'موظف الاستقبال', bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-300' },
-                        student: { label: 'تلميذ مسجل', bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-300' },
-                        parent: { label: 'ولي أمر', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-300' },
+                        teacher: { label: 'أستاذ وموظف (المادة 23)', bg: 'bg-emerald-50', text: 'text-emerald-900', border: 'border-emerald-300' },
+                        general_supervisor: { label: 'مراقب عام', bg: 'bg-indigo-50', text: 'text-indigo-900', border: 'border-indigo-300' },
+                        pedagogical_supervisor: { label: 'مراقب تربوي', bg: 'bg-purple-50', text: 'text-purple-900', border: 'border-purple-300' },
+                        receptionist: { label: 'موظف الاستقبال', bg: 'bg-teal-50', text: 'text-teal-900', border: 'border-teal-300' },
+                        student: { label: 'تلميذ مسجل', bg: 'bg-blue-50', text: 'text-blue-900', border: 'border-blue-300' },
+                        parent: { label: 'ولي أمر', bg: 'bg-amber-50', text: 'text-amber-900', border: 'border-amber-300' },
                       };
-                      const roleMeta = roleConfig[u.role] || { label: u.role, bg: 'bg-stone-50', text: 'text-stone-700', border: 'border-stone-300' };
+                      const roleMeta = roleConfig[u.role] || { label: u.role, bg: 'bg-stone-50', text: 'text-stone-800', border: 'border-stone-300' };
 
                       return (
                         <div
                           key={u._id}
-                          className="p-4 rounded-2xl bg-[#FCF8F2] border-2 border-[#DFD3C2] hover:border-[#C9A24D]/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition-all text-right"
+                          className="p-4 rounded-2xl bg-[#FCF8F2] border border-[#DFD3C2] hover:border-[#7B1E3A]/40 flex flex-col gap-3 shadow-2xs transition-all text-right"
                           dir="rtl"
                         >
+                          {/* User info row */}
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-[#7B1E3A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                            <div className="w-11 h-11 rounded-xl bg-[#7B1E3A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                               {u.profilePic ? (
                                 <img src={u.profilePic} alt="" className="w-full h-full object-cover rounded-xl" />
                               ) : (
                                 `${u.firstName?.[0] || ''}${u.lastName?.[0] || ''}` || 'م'
                               )}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-serif font-black text-sm text-[#2B2022] truncate">
+                                <span className="font-serif font-black text-sm text-slate-900 truncate">
                                   {u.firstName} {u.lastName}
                                 </span>
-                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${roleMeta.bg} ${roleMeta.text} ${roleMeta.border}`}>
+                                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold border ${roleMeta.bg} ${roleMeta.text} ${roleMeta.border}`}>
                                   {roleMeta.label}
                                 </span>
                               </div>
-                              <span className="text-xs text-[#2B2022]/60 truncate block font-mono mt-0.5">
+                              <span className="text-xs text-slate-600 truncate block font-mono font-medium mt-0.5 select-all">
                                 {u.email}
                               </span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 flex-wrap shrink-0">
+                          {/* Action Buttons Toolbar Row */}
+                          <div className="flex items-center justify-end gap-2 flex-wrap pt-2.5 border-t border-[#DFD3C2]/50">
                             {['teacher', 'general_supervisor', 'pedagogical_supervisor', 'receptionist'].includes(u.role) && (
                               <button
                                 type="button"
                                 onClick={() => setSelectedTeacherForDossier(u._id)}
-                                className="px-3 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                className="px-3 py-1.5 bg-[#7B1E3A] hover:bg-[#60162c] text-white border border-[#C9A24D]/40 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
                                 title="عرض وطباعة الملف المهني الشامل (المادة 23)"
                               >
                                 <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
@@ -2015,7 +2017,7 @@ export default function AdminDashboard() {
                                     console.error(err);
                                   }
                                 }}
-                                className="px-3 py-1.5 bg-[#7B1E3A]/10 hover:bg-[#7B1E3A] hover:text-white text-[#7B1E3A] border border-[#7B1E3A]/30 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                className="px-3 py-1.5 bg-[#7B1E3A]/10 hover:bg-[#7B1E3A] hover:text-white text-[#7B1E3A] border border-[#7B1E3A]/30 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
                                 title="عرض الملف الإداري المدرسي للتلميذ"
                               >
                                 <FileText className="w-3.5 h-3.5 text-[#C9A24D]" />
@@ -2028,8 +2030,8 @@ export default function AdminDashboard() {
                               onClick={() => handleToggleStatus(u._id)}
                               className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer border shadow-2xs ${
                                 u.isActive
-                                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-300'
-                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-300'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
                               }`}
                             >
                               {u.isActive ? 'تعطيل الحساب' : 'تنشيط الحساب'}
@@ -2038,7 +2040,7 @@ export default function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => handleOpenEdit(u)}
-                              className="p-2 bg-white hover:bg-[#FAF4EB] text-[#2B2022] border border-[#DFD3C2] hover:border-[#7B1E3A] rounded-xl transition-all cursor-pointer shadow-2xs"
+                              className="p-2 bg-white hover:bg-[#FAF4EB] text-slate-800 border border-slate-300 hover:border-[#7B1E3A] rounded-xl transition-all cursor-pointer shadow-2xs"
                               title="تعديل بيانات الحساب"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -2046,7 +2048,7 @@ export default function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => handleDeleteUser(u._id)}
-                              className="p-2 bg-rose-50/60 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+                              className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition-all cursor-pointer shadow-2xs"
                               title="حذف الحساب"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -2070,47 +2072,47 @@ export default function AdminDashboard() {
             className="space-y-6 text-right"
           >
             {/* Header section with Import Excel button */}
-            <div className="glass-panel p-6 md:p-8 rounded-2xl border border-luxury-border flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Users className="w-6 h-6 text-brand-400" />
+            <div className="glass-panel p-5 sm:p-6 md:p-8 rounded-2xl border border-slate-200 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2.5">
+                <Users className="w-6 h-6 text-[#7B1E3A]" />
                 <span>دليل التلاميذ والطلاب</span>
               </h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
                 <button
                   onClick={() => handleExport('students', 'students.xlsx')}
                   disabled={exporting === 'students'}
-                  className="px-5 py-2.5 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-800/60 hover:border-emerald-600 text-emerald-400 font-semibold rounded-xl text-sm transition-all flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 sm:px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-4 h-4 text-emerald-100" />
                   <span>{exporting === 'students' ? 'جاري التصدير...' : 'تصدير Excel'}</span>
                 </button>
                 <button
                   onClick={() => setIsStudentImportModalOpen(true)}
-                  className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-slate-950 font-black rounded-xl text-sm transition-all flex items-center gap-2 shadow-lg shadow-brand-500/20"
+                  className="px-4 sm:px-5 py-2.5 bg-[#7B1E3A] hover:bg-[#62162d] text-white font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center gap-2 shadow-md shadow-[#7B1E3A]/20 cursor-pointer border border-[#C9A24D]/35"
                 >
-                  <FileText className="w-4 h-4" />
+                  <FileText className="w-4 h-4 text-[#C9A24D]" />
                   <span>استيراد نموذج الرقمنة (School Story)</span>
                 </button>
                 <button
                   onClick={() => setShowExcelUpload(!showExcelUpload)}
-                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-luxury-border text-slate-300 font-semibold rounded-xl text-sm transition-all flex items-center gap-2"
+                  className="px-4 sm:px-5 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center gap-2 shadow-2xs cursor-pointer"
                 >
-                  <Upload className="w-4 h-4" />
+                  <Upload className="w-4 h-4 text-slate-600" />
                   <span>{showExcelUpload ? "إخفاء الاستيراد العادي" : "استيراد عادي"}</span>
                 </button>
               </div>
             </div>
 
             {/* Search and Filters Bar */}
-            <div className="glass-panel p-6 rounded-2xl border border-luxury-border flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="glass-panel p-4 sm:p-6 rounded-2xl border border-slate-200 bg-white flex flex-col md:flex-row gap-3 sm:gap-4 items-center justify-between shadow-sm">
               <div className="w-full md:flex-1 relative">
-                <Search className="w-4 h-4 text-slate-500 absolute left-4 top-3.5" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="البحث عن تلميذ بالاسم، رقم التسجيل، البريد الإلكتروني أو ولي الأمر..."
                   value={studentSearch}
                   onChange={(e) => setStudentSearch(e.target.value)}
-                  className="w-full bg-slate-900 border border-luxury-border rounded-xl pl-11 pr-4 py-3 text-sm focus:border-brand-500 focus:outline-none placeholder-slate-500 text-white"
+                  className="w-full bg-white border border-slate-300 rounded-xl pl-11 pr-4 py-3 text-sm focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] focus:outline-none placeholder-slate-400 text-slate-900 font-medium shadow-2xs"
                 />
               </div>
 
@@ -2118,7 +2120,7 @@ export default function AdminDashboard() {
                 <select
                   value={studentClassFilter}
                   onChange={(e) => setStudentClassFilter(e.target.value)}
-                  className="w-full bg-slate-900 border border-luxury-border rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 font-semibold"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-[#7B1E3A] focus:ring-1 focus:ring-[#7B1E3A] font-bold shadow-2xs cursor-pointer"
                 >
                   <option value="">جميع الأقسام الدراسية</option>
                   {classes.map((c) => (
@@ -2198,79 +2200,79 @@ export default function AdminDashboard() {
 
               if (displayedStudents.length === 0) {
                 return (
-                  <div className="text-slate-500 text-sm italic text-center py-10 bg-slate-950/20 rounded-xl border border-luxury-border/30">
+                  <div className="text-slate-600 text-sm italic text-center py-10 bg-slate-50 rounded-xl border border-slate-200">
                     لا يوجد تلاميذ يطابقون معايير البحث المحددة.
                   </div>
                 );
               }
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {displayedStudents.map((student) => {
                     const studentTeachers = teachers.filter((t) => 
                       t.classes?.some((c) => c._id === student.class?._id || c === student.class?._id) && 
                       t.groups?.some((g) => g._id === student.group?._id || g === student.group?._id)
                     );
                     return (
-                      <div key={student._id} className="p-5 bg-slate-900/30 border border-luxury-border rounded-2xl flex flex-col justify-between space-y-4 hover:border-brand-500/20 transition-all shadow-sm">
+                      <div key={student._id} className="p-4 sm:p-5 bg-white border border-slate-200 hover:border-[#7B1E3A]/40 rounded-2xl flex flex-col justify-between space-y-4 transition-all shadow-sm hover:shadow-md text-right">
                         <div className="space-y-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-brand-900/40 flex items-center justify-center font-bold text-brand-450 uppercase border border-brand-850/40 shrink-0">
+                            <div className="w-11 h-11 rounded-full bg-[#FAF0F3] border border-[#7B1E3A]/25 flex items-center justify-center font-bold text-[#7B1E3A] uppercase text-sm shrink-0 shadow-2xs">
                               {student.user?.firstName?.[0]}{student.user?.lastName?.[0]}
                             </div>
-                            <div className="min-w-0">
-                              <h4 className="font-bold text-white text-sm truncate" title={`${student.user?.firstName} ${student.user?.lastName}`}>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-bold text-slate-900 text-sm sm:text-base truncate" title={`${student.user?.firstName} ${student.user?.lastName}`}>
                                 {student.user?.firstName} {student.user?.lastName}
                               </h4>
-                              <span className="text-[10px] text-slate-500 font-mono block">
+                              <span className="text-xs text-slate-600 font-mono font-medium block mt-0.5">
                                 رقم التسجيل: {student.registrationNumber || student._id}
                               </span>
                             </div>
                           </div>
 
-                          <div className="space-y-2 text-xs text-slate-450 border-t border-luxury-border/30 pt-3">
+                          <div className="space-y-2 text-xs border-t border-slate-100 pt-3">
                             <div className="flex justify-between items-center gap-2">
-                              <span className="text-slate-500 text-[10px] uppercase font-semibold">القسم والفوج:</span>
-                              <span className="text-white font-medium truncate max-w-[150px]">
+                              <span className="text-slate-700 text-xs uppercase font-bold">القسم والفوج:</span>
+                              <span className="text-slate-900 font-bold truncate max-w-[170px]">
                                 {student.class?.name || '—'} &bull; {student.group?.name || '—'}
                               </span>
                             </div>
 
                             <div className="flex justify-between items-center gap-2">
-                              <span className="text-slate-500 text-[10px] uppercase font-semibold">بريد التلميذ:</span>
-                              <span className="text-slate-300 font-mono text-[10px] truncate max-w-[160px] select-all" title={student.user?.email}>
+                              <span className="text-slate-700 text-xs uppercase font-bold">بريد التلميذ:</span>
+                              <span className="text-slate-800 font-mono text-xs font-semibold truncate max-w-[170px] select-all" title={student.user?.email}>
                                 {student.user?.email}
                               </span>
                             </div>
 
                             {student.user?.phoneNumber && (
                               <div className="flex justify-between items-center gap-2">
-                                <span className="text-slate-500 text-[10px] uppercase font-semibold">هاتف التلميذ:</span>
-                                <span className="text-slate-300 font-mono text-[10px] select-all">
+                                <span className="text-slate-700 text-xs uppercase font-bold">هاتف التلميذ:</span>
+                                <span className="text-slate-800 font-mono text-xs font-semibold select-all">
                                   {student.user.phoneNumber}
                                 </span>
                               </div>
                             )}
 
                             {student.parent && (
-                              <div className="bg-slate-950/35 border border-luxury-border/30 rounded-xl p-2.5 space-y-1.5 mt-2">
-                                <span className="text-slate-550 text-[9px] uppercase font-bold block">ولي الأمر الكفيل</span>
-                                <div className="flex justify-between items-center text-[10px] gap-2">
-                                  <span className="text-slate-400">الاسم:</span>
-                                  <span className="text-white font-medium">
+                              <div className="bg-[#FAF7F2] border border-[#E8DFD0] rounded-xl p-3 space-y-1.5 mt-2 text-right">
+                                <span className="text-[#7B1E3A] text-xs uppercase font-extrabold block">ولي الأمر الكفيل</span>
+                                <div className="flex justify-between items-center text-xs gap-2">
+                                  <span className="text-slate-600 font-semibold">الاسم:</span>
+                                  <span className="text-slate-900 font-bold">
                                     {student.parent.user?.firstName} {student.parent.user?.lastName}
                                   </span>
                                 </div>
-                                <div className="flex justify-between items-center text-[10px] gap-2">
-                                  <span className="text-slate-400">البريد الإلكتروني:</span>
-                                  <span className="text-slate-350 truncate max-w-[120px] select-all" title={student.parent.user?.email}>
+                                <div className="flex justify-between items-center text-xs gap-2">
+                                  <span className="text-slate-600 font-semibold">البريد الإلكتروني:</span>
+                                  <span className="text-slate-800 font-mono text-xs truncate max-w-[140px] select-all" title={student.parent.user?.email}>
                                     {student.parent.user?.email}
                                   </span>
                                 </div>
                                 {student.parent.user?.phoneNumber && (
-                                  <div className="flex justify-between items-center text-[10px] gap-2">
-                                    <span className="text-slate-400">الهاتف:</span>
-                                    <span className="text-white font-mono select-all">
+                                  <div className="flex justify-between items-center text-xs gap-2">
+                                    <span className="text-slate-600 font-semibold">الهاتف:</span>
+                                    <span className="text-slate-900 font-mono font-bold select-all">
                                       {student.parent.user.phoneNumber}
                                     </span>
                                   </div>
@@ -2279,38 +2281,42 @@ export default function AdminDashboard() {
                             )}
 
                             <div className="pt-1">
-                              <span className="text-slate-550 text-[9px] uppercase font-bold block mb-1">الأساتذة المرتبطون:</span>
+                              <span className="text-slate-700 text-xs uppercase font-bold block mb-1.5">الأساتذة المرتبطون:</span>
                               <div className="flex flex-wrap gap-1">
                                 {studentTeachers.length > 0 ? (
                                   studentTeachers.map((t) => (
-                                    <span key={t._id} className="bg-indigo-950/40 border border-indigo-900/30 text-indigo-300 px-1.5 py-0.25 rounded text-[9px]">
+                                    <span key={t._id} className="bg-slate-100 border border-slate-300 text-slate-800 px-2.5 py-0.5 rounded-md text-xs font-medium shadow-2xs">
                                       {t.user?.firstName} {t.user?.lastName}
                                     </span>
                                   ))
                                 ) : (
-                                  <span className="text-slate-650 italic text-[9px]">لا يوجد أساتذة مرتبطون</span>
+                                  <span className="text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md text-xs font-medium">لا يوجد أساتذة مرتبطون</span>
                                 )}
                               </div>
                             </div>
 
                             {student.dateOfBirth && (
-                              <div className="flex justify-between items-center pt-1 text-[10px] gap-2">
-                                <span className="text-slate-550 uppercase font-semibold">تاريخ الميلاد:</span>
-                                <span className="text-slate-400">{new Date(student.dateOfBirth).toLocaleDateString('fr-FR')}</span>
+                              <div className="flex justify-between items-center pt-1 text-xs gap-2">
+                                <span className="text-slate-700 uppercase font-bold">تاريخ الميلاد:</span>
+                                <span className="text-slate-900 font-semibold">{new Date(student.dateOfBirth).toLocaleDateString('fr-FR')}</span>
                               </div>
                             )}
 
-                            <div className="flex justify-between items-center text-[10px] gap-2">
-                              <span className="text-slate-555 uppercase font-semibold font-sans">حالة الحساب:</span>
-                              <span className={student.user?.isActive ? 'text-emerald-450 font-bold' : 'text-red-400 font-bold'}>
+                            <div className="flex justify-between items-center text-xs gap-2">
+                              <span className="text-slate-700 uppercase font-bold">حالة الحساب:</span>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
+                                student.user?.isActive 
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300' 
+                                  : 'bg-rose-50 text-rose-800 border-rose-300'
+                              }`}>
                                 {student.user?.isActive ? 'نشط' : 'غير نشط'}
                               </span>
                             </div>
 
                             {student.todayExitPass && (
-                              <div className={`mt-2 p-2 rounded-xl border text-[11px] font-bold flex items-center justify-between ${
+                              <div className={`mt-2 p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between shadow-2xs ${
                                 student.todayExitPass.status === 'Approved'
-                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-2xs'
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
                                   : student.todayExitPass.status === 'Used'
                                   ? 'bg-slate-100 border-slate-300 text-slate-800'
                                   : 'bg-amber-50 border-amber-300 text-amber-900'
@@ -2327,7 +2333,7 @@ export default function AdminDashboard() {
                                       : 'طلب ترخيص خروج (قيد المصادقة)'}
                                   </span>
                                 </div>
-                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white border border-black/10" dir="ltr">
+                                <span className="font-mono text-xs px-2 py-0.5 rounded bg-white border border-black/10 font-bold" dir="ltr">
                                   {student.todayExitPass.exitTime}
                                 </span>
                               </div>
@@ -2335,13 +2341,13 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap justify-end gap-2 pt-2.5 border-t border-luxury-border/20">
+                        <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-100">
                           <button
                             onClick={() => setSelectedStudentForDossier(student)}
-                            className="px-3 py-1.5 bg-[#F3E9DC] hover:bg-[#ebdcc7] text-[#7B1E3A] border border-[#C9A24D]/40 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                            className="px-3 py-1.5 bg-[#FDF2F4] hover:bg-[#FCE7EC] text-[#881337] border border-[#881337]/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                             title="طباعة الملف الإداري المدرسي الشامل (Dossier Scolaire)"
                           >
-                            <FileText className="w-3.5 h-3.5" />
+                            <FileText className="w-3.5 h-3.5 text-[#881337]" />
                             طباعة الملف الإداري
                           </button>
                           <button
@@ -2349,23 +2355,23 @@ export default function AdminDashboard() {
                               setSelectedStudent(student);
                               setIsStudentDetailsOpen(true);
                             }}
-                            className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-750 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all"
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5 text-slate-600" />
                             عرض التفاصيل
                           </button>
                           <button
                             onClick={() => handleOpenEdit(student.user)}
-                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all"
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-3.5 h-3.5 text-slate-600" />
                             تعديل
                           </button>
                           <button
                             onClick={() => handleDeleteUser(student.user?._id)}
-                            className="px-3 py-1.5 bg-red-950/20 hover:bg-red-950/40 text-red-400 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all"
+                            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                             حذف
                           </button>
                         </div>
@@ -2837,10 +2843,10 @@ export default function AdminDashboard() {
             className="text-right"
           >
             {/* Display list of classes & groups */}
-            <div className="glass-panel p-6 rounded-2xl border border-luxury-border space-y-4 shadow-lg bg-slate-950/20">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-luxury-border/30 pb-3">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-brand-400" />
+            <div className="glass-panel p-5 sm:p-6 md:p-8 rounded-2xl border border-slate-200 bg-white space-y-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2.5">
+                  <BookOpen className="w-6 h-6 text-[#7B1E3A]" />
                   <span>قائمة الأقسام والأفواج الدراسية</span>
                 </h3>
                 <button
@@ -2855,62 +2861,62 @@ export default function AdminDashboard() {
                     });
                     setIsAddGroupModalOpen(true);
                   }}
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#7B1E3A] hover:bg-[#62162d] text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-[#7B1E3A]/20 cursor-pointer border border-[#C9A24D]/35 self-start sm:self-auto"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#7B1E3A] hover:bg-[#62162d] text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-[#7B1E3A]/20 cursor-pointer border border-[#C9A24D]/35 self-start sm:self-auto"
                 >
                   <Plus className="w-4 h-4 text-[#C9A24D]" />
                   <span>إضافة فوج دراسي</span>
                 </button>
               </div>
               {classes.length === 0 ? (
-                <div className="text-slate-500 text-sm">لا يوجد classe disponible.</div>
+                <div className="text-slate-500 text-sm py-8 text-center">لا يوجد أقسام دراسية متاحة حالياً.</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {classes.map((cls) => {
                     const classGroups = groups.filter((g) => g.class === cls._id || g.class?._id === cls._id);
                     const classStudents = students.filter((s) => s.class?._id === cls._id || s.class === cls._id);
                     const classTeachers = teachers.filter((t) => t.classes?.some((c) => c._id === cls._id || c === cls._id));
                     return (
-                      <div key={cls._id} className="p-5 bg-slate-900/40 border border-luxury-border rounded-xl space-y-4 shadow-sm">
-                        <div className="flex justify-between items-start border-b border-luxury-border/30 pb-2">
+                      <div key={cls._id} className="p-5 sm:p-6 bg-white border border-slate-200 hover:border-[#7B1E3A]/40 rounded-2xl space-y-4 shadow-sm hover:shadow-md transition-all text-right">
+                        <div className="flex justify-between items-start border-b border-slate-100 pb-3">
                           <div>
-                            <h4 className="font-bold text-white text-sm">{cls.name}</h4>
-                            <span className="text-[10px] text-brand-400 uppercase tracking-wider font-semibold">{cls.level}</span>
+                            <h4 className="font-bold text-slate-900 text-base sm:text-lg">{cls.name}</h4>
+                            <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-[#FAF0F3] text-[#7B1E3A] border border-[#7B1E3A]/25 uppercase tracking-wider inline-block mt-1">{cls.level}</span>
                           </div>
                           <div className="flex gap-1.5">
                             <button
                               onClick={() => setEditingClass({ _id: cls._id, name: cls.name, description: cls.description || '', level: cls.level })}
-                              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all"
+                              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl transition-all shadow-2xs"
                               title="تعديل القسم"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteClass(cls._id)}
-                              className="p-1.5 bg-red-950/20 hover:bg-red-950/40 text-red-400 rounded-lg transition-all"
+                              className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition-all shadow-2xs"
                               title="حذف القسم"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed">{cls.description || 'لا يوجد وصف.'}</p>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">{cls.description || 'لا يوجد وصف.'}</p>
                         
-                        <div className="flex flex-wrap gap-6 text-[10px] text-slate-400 bg-slate-950/35 p-3 rounded-xl border border-luxury-border/30">
+                        <div className="flex flex-wrap gap-6 text-xs text-slate-600 bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-200">
                           <div>
-                            <span className="text-slate-500 uppercase font-bold tracking-wide block">التلاميذ المسجلون</span>
-                            <span className="text-white font-extrabold text-sm block mt-0.5">{classStudents.length}</span>
+                            <span className="text-slate-600 uppercase font-bold tracking-wide block text-xs">التلاميذ المسجلون</span>
+                            <span className="text-[#7B1E3A] font-extrabold text-lg block mt-0.5">{classStudents.length}</span>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <span className="text-slate-500 uppercase font-bold tracking-wide block mb-1">الأساتذة</span>
+                            <span className="text-slate-600 uppercase font-bold tracking-wide block mb-1 text-xs">الأساتذة</span>
                             <div className="flex flex-wrap gap-1">
                               {classTeachers.length > 0 ? (
                                 classTeachers.map((t) => (
-                                  <span key={t._id} className="bg-brand-950/40 border border-brand-900/40 text-brand-300 px-2 py-0.5 rounded-lg text-[9px] font-medium">
+                                  <span key={t._id} className="bg-white border border-slate-300 text-slate-800 px-2.5 py-1 rounded-lg text-xs font-medium shadow-2xs">
                                     {t.user?.firstName} {t.user?.lastName}
                                   </span>
                                 ))
                               ) : (
-                                <span className="text-slate-600 italic">لا يوجد enseignant</span>
+                                <span className="text-slate-500 italic text-xs">لا يوجد أساتذة مرتبطون</span>
                               )}
                             </div>
                           </div>
@@ -2918,7 +2924,7 @@ export default function AdminDashboard() {
 
                         <div className="space-y-3 pt-1">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-slate-350 block uppercase tracking-wide">
+                            <span className="text-xs font-bold text-slate-800 block uppercase tracking-wide">
                               الأفواج / الأفواج الفرعية:
                             </span>
                             <button
@@ -2933,15 +2939,15 @@ export default function AdminDashboard() {
                                 });
                                 setIsAddGroupModalOpen(true);
                               }}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-950/50 hover:bg-[#7B1E3A] text-brand-300 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-brand-800/40 cursor-pointer shadow-2xs"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF0F3] hover:bg-[#F3D7DF] text-[#7B1E3A] rounded-xl text-xs font-bold transition-all border border-[#7B1E3A]/25 shadow-2xs cursor-pointer"
                               title={`إضافة فوج لقسم ${cls.name}`}
                             >
-                              <Plus className="w-3 h-3 text-[#C9A24D]" />
+                              <Plus className="w-3.5 h-3.5 text-[#C9A24D]" />
                               <span>إضافة فوج لهذا القسم</span>
                             </button>
                           </div>
                           {classGroups.length === 0 ? (
-                            <div className="p-3 bg-slate-950/30 border border-dashed border-luxury-border/30 rounded-xl flex items-center justify-between gap-2">
+                            <div className="p-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl flex items-center justify-between gap-2">
                               <span className="text-xs text-slate-500 italic">لا يوجد فوج مرتبط بهذا القسم حالياً.</span>
                               <button
                                 type="button"
@@ -2955,7 +2961,7 @@ export default function AdminDashboard() {
                                   });
                                   setIsAddGroupModalOpen(true);
                                 }}
-                                className="text-[10px] text-brand-400 hover:underline font-bold cursor-pointer"
+                                className="text-xs text-[#7B1E3A] hover:underline font-bold cursor-pointer"
                               >
                                 + إنشاء أول فوج الآن
                               </button>
@@ -2966,23 +2972,23 @@ export default function AdminDashboard() {
                                 const groupStudents = students.filter((s) => s.group?._id === g._id || s.group === g._id);
                                 const groupTeachersList = g.teachers || [];
                                 return (
-                                  <div key={g._id} className="p-3 bg-slate-950/45 border border-luxury-border/30 rounded-xl text-[10px] flex flex-col justify-between space-y-2.5">
+                                  <div key={g._id} className="p-4 bg-[#FAF7F2] border border-[#E8DFD0] rounded-xl text-xs flex flex-col justify-between space-y-3">
                                     <div className="flex justify-between items-center">
-                                      <span className="font-semibold text-white text-xs">{g.name}</span>
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-[10px] text-slate-400">
+                                      <span className="font-bold text-slate-900 text-sm">{g.name}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-slate-700 font-semibold bg-white border border-slate-300 px-2.5 py-0.5 rounded-md shadow-2xs">
                                           {groupStudents.length} / {g.capacity || 30} تلميذ
                                         </span>
                                         <button
                                           onClick={() => setEditingGroup({ _id: g._id, name: g.name, classId: g.class?._id || g.class, capacity: g.capacity || 30 })}
-                                          className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md transition-all"
+                                          className="p-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg transition-all shadow-2xs"
                                           title="تعديل الفوج"
                                         >
                                           <Edit2 className="w-3 h-3" />
                                         </button>
                                         <button
                                           onClick={() => handleDeleteGroup(g._id)}
-                                          className="p-1 bg-red-950/20 hover:bg-red-950/40 text-red-400 rounded-md transition-all"
+                                          className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg transition-all shadow-2xs"
                                           title="حذف الفوج"
                                         >
                                           <Trash2 className="w-3 h-3" />
@@ -2990,42 +2996,42 @@ export default function AdminDashboard() {
                                       </div>
                                     </div>
                                     
-                                    <div className="w-full bg-slate-900 rounded-full h-1 overflow-hidden border border-luxury-border/10">
+                                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
                                       <div
                                         className={`h-full rounded-full ${
-                                          groupStudents.length >= (g.capacity || 30) ? 'bg-red-500 animate-pulse' : 'bg-brand-500'
+                                          groupStudents.length >= (g.capacity || 30) ? 'bg-red-500 animate-pulse' : 'bg-[#7B1E3A]'
                                         }`}
                                         style={{ width: `${Math.min(100, (groupStudents.length / (g.capacity || 30)) * 100)}%` }}
                                       ></div>
                                     </div>
 
                                     <div className="pt-0.5">
-                                      <span className="text-slate-500 text-[9px] uppercase font-bold block mb-1">الأساتذة المرتبطون:</span>
+                                      <span className="text-slate-700 text-xs uppercase font-bold block mb-1">الأساتذة المرتبطون:</span>
                                       <div className="flex flex-wrap gap-1">
                                         {groupTeachersList.length > 0 ? (
                                           groupTeachersList.map((t) => {
                                             const name = t.user ? `${t.user.firstName} ${t.user.lastName}` : 'Enseignant';
                                             return (
-                                              <span key={t._id} className="bg-indigo-950/40 border border-indigo-900/35 text-indigo-300 px-2 py-0.5 rounded-lg text-[9px]" title={t.user?.email}>
+                                              <span key={t._id} className="bg-white border border-slate-300 text-slate-800 px-2.5 py-0.5 rounded-md text-xs font-medium shadow-2xs" title={t.user?.email}>
                                                 {name}
                                               </span>
                                             );
                                           })
                                         ) : (
-                                          <span className="text-slate-650 italic text-[9px]">لا يوجد أساتذة مرتبطون</span>
+                                          <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-md text-xs font-medium inline-block">لا يوجد أساتذة مرتبطون</span>
                                         )}
                                       </div>
                                     </div>
 
-                                    <div className="pt-2 border-t border-luxury-border/10 mt-1.5 space-y-1.5">
+                                    <div className="pt-2 border-t border-[#DFD3C2]/50 mt-1 space-y-1.5">
                                       <div className="flex items-center justify-between">
-                                        <span className="text-slate-400 text-[9px] uppercase font-bold tracking-wider">التلاميذ المسجلون بالفوج</span>
-                                        <span className="text-[9px] font-bold text-slate-350 bg-slate-900 border border-luxury-border/30 px-2 py-0.5 rounded-full">
+                                        <span className="text-slate-700 text-xs uppercase font-bold tracking-wider">التلاميذ المسجلون بالفوج</span>
+                                        <span className="text-xs font-bold text-slate-800 bg-white border border-slate-300 px-2.5 py-0.5 rounded-full shadow-2xs">
                                           {groupStudents.length} {groupStudents.length > 1 ? 'تلميذ' : 'élève'}
                                         </span>
                                       </div>
                                       
-                                      <div className="flex flex-wrap gap-1">
+                                      <div className="flex flex-wrap gap-1.5 pt-1">
                                         {groupStudents.length > 0 ? (
                                           groupStudents.map((s) => {
                                             const name = s.user ? `${s.user.firstName} ${s.user.lastName}` : 'Élève';
@@ -3036,16 +3042,16 @@ export default function AdminDashboard() {
                                                   setSelectedStudent(s);
                                                   setIsStudentDetailsOpen(true);
                                                 }}
-                                                className="inline-flex items-center gap-1.5 bg-slate-900/80 hover:bg-brand-950/20 border border-luxury-border/40 hover:border-brand-500/30 text-slate-300 hover:text-white px-2 py-0.75 rounded-lg text-[9px] font-medium transition-all duration-155 cursor-pointer hover:scale-[1.03]"
+                                                className="inline-flex items-center gap-1.5 bg-white hover:bg-rose-50 border border-slate-300 hover:border-[#7B1E3A]/40 text-slate-800 hover:text-[#7B1E3A] px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shadow-2xs cursor-pointer hover:scale-[1.02]"
                                                 title={`انقر لعرض تفاصيل ${name} (${s.user?.email || 'Pas d\'email'})`}
                                               >
-                                                <span className="w-1 h-1 rounded-full bg-brand-400 shrink-0"></span>
-                                                <span className="truncate max-w-[120px]">{name}</span>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-[#7B1E3A] shrink-0"></span>
+                                                <span className="truncate max-w-[130px]">{name}</span>
                                               </span>
                                             );
                                           })
                                         ) : (
-                                          <span className="text-slate-500 italic text-[9px] pl-0.5">لا يوجد élève rattaché</span>
+                                          <span className="text-slate-500 italic text-xs pl-0.5">لا يوجد تلاميذ مسجلون في هذا الفوج</span>
                                         )}
                                       </div>
                                     </div>
