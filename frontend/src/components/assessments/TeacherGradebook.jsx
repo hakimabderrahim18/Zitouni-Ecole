@@ -20,6 +20,7 @@ import {
   Printer,
   Sparkles,
 } from 'lucide-react';
+import { openAuthorizedUrl } from '../../utils/fileDownload';
 
 const SUGGESTED_REMARKS = [
   'ممتاز، استيعاب عميق ومشاركة مميزة.',
@@ -1021,15 +1022,14 @@ export default function TeacherGradebook() {
                     </button>
 
                     {item.status === 'approved' && (
-                      <a
-                        href={`/api/assessments/${item._id}/export/pdf?type=collective`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-2 rounded-xl bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#4A3A3D] border border-[#E8DFD0] transition-all shadow-2xs"
+                      <button
+                        type="button"
+                        onClick={() => openAuthorizedUrl(`/api/assessments/${item._id}/export/pdf?type=collective`)}
+                        className="p-2 rounded-xl bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#4A3A3D] border border-[#E8DFD0] transition-all shadow-2xs cursor-pointer"
                         title="استخراج PDF"
                       >
                         <Printer className="w-3.5 h-3.5 text-[#7B1E3A]" />
-                      </a>
+                      </button>
                     )}
                   </div>
                 </div>

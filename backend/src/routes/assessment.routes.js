@@ -86,7 +86,7 @@ router.get(
 router.get(
   '/:id/export/excel',
   protect,
-  authorize('admin', 'school', 'teacher', 'general_supervisor'),
+  authorize('admin', 'school', 'teacher', 'general_supervisor', 'pedagogical_supervisor'),
   exportReportCardExcel
 );
 

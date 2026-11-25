@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileSpreadsheet, Download, CheckCircle, AlertTriangle, X, RefreshCw, Users, BookOpen } from 'lucide-react';
+import { openAuthorizedUrl } from '../utils/fileDownload';
 
 export default function StudentExcelImportModal({ isOpen, onClose, onImportSuccess }) {
   const [file, setFile] = useState(null);
@@ -79,7 +80,7 @@ export default function StudentExcelImportModal({ isOpen, onClose, onImportSucce
   };
 
   const handleDownloadTemplate = () => {
-    window.open('/api/import/students-template', '_blank');
+    openAuthorizedUrl('/api/import/students-template');
   };
 
   return (

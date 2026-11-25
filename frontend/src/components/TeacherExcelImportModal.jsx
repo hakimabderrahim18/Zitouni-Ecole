@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   FileText,
 } from 'lucide-react';
+import { openAuthorizedUrl } from '../utils/fileDownload';
 
 export default function TeacherExcelImportModal({ isOpen, onClose, onImportSuccess }) {
   const [file, setFile] = useState(null);
@@ -65,7 +66,7 @@ export default function TeacherExcelImportModal({ isOpen, onClose, onImportSucce
   };
 
   const handleDownloadTemplate = () => {
-    window.open('/api/admin/teachers/template', '_blank');
+    openAuthorizedUrl('/api/admin/teachers/template');
   };
 
   return (

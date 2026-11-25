@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
+import { openAuthorizedUrl } from '../utils/fileDownload';
 
 const typeLabels = {
   school_certificate: 'شهادة مدرسية (Certificat de scolarité)',
@@ -80,7 +81,7 @@ export default function AdministrativeRequestsManager() {
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error('Download error:', err);
-      window.open(rawUrl, '_blank');
+      openAuthorizedUrl(rawUrl);
     } finally {
       setDownloadingId(null);
     }

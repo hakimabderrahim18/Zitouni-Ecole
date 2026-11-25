@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Sparkles,
 } from 'lucide-react';
+import { openAuthorizedUrl } from '../../utils/fileDownload';
 
 export default function StudentGradesView() {
   const [resultsData, setResultsData] = useState({ studentName: '', className: '', results: [] });
@@ -32,7 +33,7 @@ export default function StudentGradesView() {
   };
 
   const handleDownloadPDF = (assessmentId) => {
-    window.open(`/api/assessments/${assessmentId}/export/pdf?type=individual`, '_blank');
+    openAuthorizedUrl(`/api/assessments/${assessmentId}/export/pdf?type=individual`);
   };
 
   const { studentName, className, results = [] } = resultsData;

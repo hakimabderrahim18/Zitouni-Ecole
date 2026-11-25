@@ -23,6 +23,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import PublishingControlModal from './PublishingControlModal';
+import { openAuthorizedUrl } from '../../utils/fileDownload';
 
 export default function AdminAssessmentsManager() {
   const [assessments, setAssessments] = useState([]);
@@ -282,15 +283,14 @@ export default function AdminAssessmentsManager() {
               </div>
 
               <div className="flex items-center justify-between gap-2 pt-1 text-xs">
-                <a
-                  href={`/api/assessments/${a._id}/export/pdf?type=collective`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 py-1.5 px-2 rounded-lg bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#4A3A3D] border border-[#E8DFD0] flex items-center justify-center gap-1 text-[11px] font-medium"
+                <button
+                  type="button"
+                  onClick={() => openAuthorizedUrl(`/api/assessments/${a._id}/export/pdf?type=collective`)}
+                  className="flex-1 py-1.5 px-2 rounded-lg bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#4A3A3D] border border-[#E8DFD0] flex items-center justify-center gap-1 text-[11px] font-medium cursor-pointer"
                 >
                   <Printer className="w-3 h-3 text-[#7B1E3A]" />
                   كشف PDF
-                </a>
+                </button>
 
                 <button
                   onClick={() => setHistoryAssessment(a)}
@@ -429,15 +429,14 @@ export default function AdminAssessmentsManager() {
                         </button>
 
                         {/* Export PDF Button */}
-                        <a
-                          href={`/api/assessments/${a._id}/export/pdf?type=collective`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 rounded-lg bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#4A3A3D] border border-[#E8DFD0]"
+                        <button
+                          type="button"
+                          onClick={() => openAuthorizedUrl(`/api/assessments/${a._id}/export/pdf?type=collective`)}
+                          className="p-1.5 rounded-lg bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#4A3A3D] border border-[#E8DFD0] cursor-pointer"
                           title="استخراج كشف PDF"
                         >
                           <Printer className="w-3.5 h-3.5 text-[#7B1E3A]" />
-                        </a>
+                        </button>
 
                         {/* Audit Log Button */}
                         <button

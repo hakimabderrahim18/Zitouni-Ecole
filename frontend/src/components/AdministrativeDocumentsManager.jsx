@@ -23,6 +23,7 @@ import {
   Info,
 } from 'lucide-react';
 import axios from 'axios';
+import { openAuthorizedUrl } from '../utils/fileDownload';
 
 const categoryLabels = {
   all: { label: 'عام (الجميع)', badge: 'bg-[#F3E9DC] text-[#7B1E3A] border-[#C9A24D]/35' },
@@ -387,7 +388,7 @@ export default function AdministrativeDocumentsManager({ documents = [], onRefre
                     {/* View / Download PDF */}
                     <button
                       type="button"
-                      onClick={() => window.open(doc.fileUrl, '_blank')}
+                      onClick={() => openAuthorizedUrl(doc.fileUrl)}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 bg-white hover:bg-[#F3E9DC] border border-[#C9A24D]/35 text-[#7B1E3A] font-bold text-xs rounded-xl transition-all cursor-pointer shadow-2xs"
                       title="معاينة أو تحميل المستند"
                     >

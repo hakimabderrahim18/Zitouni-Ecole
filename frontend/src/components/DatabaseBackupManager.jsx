@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import axios from 'axios';
+import { openAuthorizedUrl } from '../utils/fileDownload';
 
 export default function DatabaseBackupManager() {
   const [backups, setBackups] = useState([]);
@@ -69,7 +70,7 @@ export default function DatabaseBackupManager() {
   };
 
   const handleDownload = (id) => {
-    window.open(`/api/backups/download/${id}`, '_blank');
+    openAuthorizedUrl(`/api/backups/download/${id}`);
   };
 
   const formatBytes = (bytes) => {

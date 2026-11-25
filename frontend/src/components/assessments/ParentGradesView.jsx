@@ -12,6 +12,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
+import { openAuthorizedUrl } from '../../utils/fileDownload';
 
 export default function ParentGradesView() {
   const [childrenResults, setChildrenResults] = useState([]);
@@ -35,7 +36,7 @@ export default function ParentGradesView() {
   };
 
   const handleDownloadReportCard = (assessmentId, studentId) => {
-    window.open(`/api/assessments/${assessmentId}/export/pdf?type=individual&studentId=${studentId}`, '_blank');
+    openAuthorizedUrl(`/api/assessments/${assessmentId}/export/pdf?type=individual&studentId=${studentId}`);
   };
 
   if (loading) {

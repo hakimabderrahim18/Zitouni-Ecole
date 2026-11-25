@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import SchoolLogo from '../SchoolLogo';
 import { useSchoolStore } from '../../store/useSchoolStore';
+import { openAuthorizedUrl } from '../../utils/fileDownload';
 
 export default function ReportCardExtractor() {
   const { settings } = useSchoolStore();
@@ -91,19 +92,19 @@ export default function ReportCardExtractor() {
   // Download Individual PDF
   const handleDownloadIndividualPDF = (studentId) => {
     if (!activeAssessment) return;
-    window.open(`/api/assessments/${activeAssessment._id}/export/pdf?type=individual&studentId=${studentId}`, '_blank');
+    openAuthorizedUrl(`/api/assessments/${activeAssessment._id}/export/pdf?type=individual&studentId=${studentId}`);
   };
 
   // Download Collective PDF
   const handleDownloadCollectivePDF = () => {
     if (!activeAssessment) return;
-    window.open(`/api/assessments/${activeAssessment._id}/export/pdf?type=collective`, '_blank');
+    openAuthorizedUrl(`/api/assessments/${activeAssessment._id}/export/pdf?type=collective`);
   };
 
   // Export Excel
   const handleExportExcel = () => {
     if (!activeAssessment) return;
-    window.open(`/api/assessments/${activeAssessment._id}/export/excel`, '_blank');
+    openAuthorizedUrl(`/api/assessments/${activeAssessment._id}/export/excel`);
   };
 
   // Filtered Assessments List
