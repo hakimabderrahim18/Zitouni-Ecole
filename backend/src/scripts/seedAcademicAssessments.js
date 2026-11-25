@@ -77,8 +77,10 @@ async function seedAcademicAssessments(shouldDisconnect = true, targetUri = null
   console.log(` Found ${teachers.length} teachers in database.`);
 
   if (!teachers.length) {
-    console.error(`❌ No teachers found! Please run basic seed first.`);
-    process.exit(1);
+    const errorMsg = '❌ No teachers found! Please run basic seed first.';
+    console.error(errorMsg);
+    if (standalone) process.exit(1);
+    throw new Error(errorMsg);
   }
 
   // 2. Fetch all classes across primary, middle, secondary

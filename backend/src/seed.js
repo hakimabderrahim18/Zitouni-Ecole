@@ -3468,13 +3468,13 @@ const seedDatabase = async (standalone = false) => {
       console.log('[Seed] timetableEntries.json not found, skipping timetable import.');
     }
 
-    // Seed academic assessments and pedagogical statistics
+    // Seed official RAN09 Timetable, Classes, Groups, 54 Teachers, and Academic Assessments
     try {
-      const { seedAcademicAssessments } = require('./scripts/seedAcademicAssessments');
-      console.log('[Seed] Seeding academic assessments and pedagogical statistics...');
-      await seedAcademicAssessments(false);
-    } catch (assErr) {
-      console.warn('[Seed] Notice on academic assessments seeding:', assErr.message);
+      const { runGenerator } = require('./scripts/generateFromTimetable');
+      console.log('[Seed] Generating official RAN09 timetable, classes, groups, teachers, and assessments...');
+      await runGenerator(false);
+    } catch (ttErr) {
+      console.warn('[Seed] Notice on timetable generator seed:', ttErr.message);
     }
 
     console.log('[Seed] ========================================================');

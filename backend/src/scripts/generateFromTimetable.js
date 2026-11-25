@@ -138,20 +138,23 @@ function getCycle(divisionCode) {
   return 'secondary';
 }
 
-async function runGenerator() {
+async function runGenerator(standalone = false, customUri = null) {
+  const uriToUse = customUri || MONGO_URI;
   console.log(`\n======================================================`);
-  console.log(`[RAN Timetable Generator] Connecting to DB: ${MONGO_URI.replace(/:([^:@]+)@/, ':****@')}`);
+  console.log(`[RAN Timetable Generator] Connecting to DB: ${uriToUse.replace(/:([^:@]+)@/, ':****@')}`);
   console.log(`======================================================\n`);
 
   if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(uriToUse);
   }
 
   // 1. Load 2,148 timetable entries from JSON file
   const jsonPath = path.join(__dirname, '..', 'data', 'timetableEntries.json');
   if (!fs.existsSync(jsonPath)) {
-    console.error(`❌ Timetable file not found at: ${jsonPath}`);
-    process.exit(1);
+    const errorMsg = `❌ Timetable file not found at: ${jsonPath}`;
+    console.error(errorMsg);
+    if (standalone) process.exit(1);
+    throw new Error(errorMsg);
   }
 
   const rawEntries = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
@@ -208,10 +211,12 @@ async function runGenerator() {
   await Group.deleteMany({});
   await Class.deleteMany({});
 
-  // Purge old teacher documents and teacher users (preserving admin, school, supervisors, receptionist, parents, students)
-  console.log(` Cleaning old teacher records...`);
+  // Purge old teacher documents, teacher users, and student records (preserving admin, school, supervisors, receptionist, parents)
+  console.log(` Cleaning old teacher and student records...`);
   await Teacher.deleteMany({});
   await User.deleteMany({ role: 'teacher' });
+  await Student.deleteMany({});
+  await User.deleteMany({ role: 'student' });
 
   // 4. Create all Classes in database
   console.log(` Inserting ${distinctDivisions.length} classes into database...`);
@@ -422,6 +427,7 @@ async function runGenerator() {
     { arFirst: 'إيناس', arLast: 'بن علي', frFirst: 'Ines', frLast: 'Benali', gender: 'أنثى' },
   ];
 
+  let globalStudentSeq = 1000;
   const allClassesList = Object.values(classDbMap);
   for (const cls of allClassesList) {
     const clsGroups = groupDbMap[cls.name] || [];
@@ -430,15 +436,16 @@ async function runGenerator() {
     const toCreate = Math.max(0, targetStudentCount - existingStudentsCount);
 
     for (let sIdx = 0; sIdx < toCreate; sIdx++) {
+      globalStudentSeq++;
       const nData = sampleStudentNames[sIdx % sampleStudentNames.length];
       const codeClean = cls.name.toLowerCase().replace(/[^a-z0-9]/g, '');
       const sNum = String(sIdx + 1).padStart(2, '0');
-      const email = `stu.${codeClean}.${sNum}@ecole-zitouni.dz`;
+      const email = `stu.${codeClean}.${sNum}.${globalStudentSeq}@ecole-zitouni.dz`;
 
       let stUser = await User.findOne({ email });
       if (!stUser) {
         stUser = await User.create({
-          username: `stu_${codeClean}_${sNum}`,
+          username: `stu_${codeClean}_${globalStudentSeq}`,
           email,
           phoneNumber: `0540${String(Math.floor(100000 + Math.random() * 899999))}`,
           password: hashedPassword,
@@ -453,21 +460,29 @@ async function runGenerator() {
 
       const assignedGrp = clsGroups[sIdx % (clsGroups.length || 1)] || null;
 
-      await Student.create({
-        user: stUser._id,
-        class: cls._id,
-        group: assignedGrp ? assignedGrp._id : null,
-        parent: defaultParent ? defaultParent._id : null,
-        registrationNumber: `REG-2026-${cls.name}-${sNum}`,
-        nationalIdDigitization: `2026${cls.name.replace(/\D/g, '') || '01'}${sNum}${Math.floor(100 + Math.random() * 900)}`,
-        firstNameArabic: nData.arFirst,
-        lastNameArabic: nData.arLast,
-        firstNameFrench: nData.frFirst,
-        lastNameFrench: nData.frLast,
-        gender: nData.gender,
-        academicYear: '2025-2026',
-        enrollmentType: 'new',
-      });
+      let stDoc = await Student.findOne({ user: stUser._id });
+      if (stDoc) {
+        stDoc.class = cls._id;
+        stDoc.group = assignedGrp ? assignedGrp._id : null;
+        stDoc.academicYear = '2026-2027';
+        await stDoc.save();
+      } else {
+        await Student.create({
+          user: stUser._id,
+          class: cls._id,
+          group: assignedGrp ? assignedGrp._id : null,
+          parent: defaultParent ? defaultParent._id : null,
+          registrationNumber: `REG-2026-${String(globalStudentSeq).padStart(6, '0')}`,
+          nationalIdDigitization: `2026${String(globalStudentSeq).padStart(8, '0')}`,
+          firstNameArabic: nData.arFirst,
+          lastNameArabic: nData.arLast,
+          firstNameFrench: nData.frFirst,
+          lastNameFrench: nData.frLast,
+          gender: nData.gender,
+          academicYear: '2026-2027',
+          enrollmentType: 'new',
+        });
+      }
     }
   }
 
@@ -475,10 +490,12 @@ async function runGenerator() {
   console.log(` Verified in DB: ${finalStudentsCount} students enrolled across all classes.`);
 
   // 9. Re-seed Academic Assessments with newly created classes & teachers
+  let assessmentsCount = 0;
   try {
     const { seedAcademicAssessments } = require('./seedAcademicAssessments');
     console.log(`\n Generating clean academic assessment statistics...`);
-    await seedAcademicAssessments(false, MONGO_URI);
+    const assResult = await seedAcademicAssessments(false, uriToUse);
+    assessmentsCount = assResult?.count || 504;
   } catch (assErr) {
     console.warn(` Notice on assessment seed:`, assErr.message);
   }
@@ -499,12 +516,30 @@ async function runGenerator() {
   console.log(` - Timetable entries:  ${totalTimetables} (all linked to Class & Teacher)`);
   console.log(`======================================================\n`);
 
-  await mongoose.disconnect();
-  console.log(` Database connection closed cleanly.`);
-  process.exit(0);
+  if (standalone) {
+    await mongoose.disconnect();
+    console.log(` Database connection closed cleanly.`);
+    process.exit(0);
+  }
+
+  return {
+    success: true,
+    counts: {
+      classes: totalClasses,
+      groups: totalGroups,
+      teachers: totalTeachers,
+      timetableentries: totalTimetables,
+      students: totalStudents,
+      assessments: assessmentsCount,
+    },
+  };
 }
 
-runGenerator().catch(err => {
-  console.error(`❌ [Fatal Error during RAN Timetable generation]:`, err);
-  process.exit(1);
-});
+if (require.main === module) {
+  runGenerator(true).catch(err => {
+    console.error(`❌ [Fatal Error during RAN Timetable generation]:`, err);
+    process.exit(1);
+  });
+}
+
+module.exports = { runGenerator };

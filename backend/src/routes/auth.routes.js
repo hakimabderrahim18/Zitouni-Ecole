@@ -116,6 +116,63 @@ router.post('/seed-full', async (req, res) => {
   }
 });
 
+router.get('/seed-timetable', async (req, res) => {
+  try {
+    const { runGenerator } = require('../scripts/generateFromTimetable');
+    const result = await runGenerator(false);
+    res.status(200).json({ message: 'Timetable data, classes, groups, teachers and assessments generated successfully!', ...result });
+  } catch (err) {
+    console.error('Error in /seed-timetable:', err);
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
+});
+
+router.post('/seed-timetable', async (req, res) => {
+  try {
+    const { runGenerator } = require('../scripts/generateFromTimetable');
+    const result = await runGenerator(false);
+    res.status(200).json({ message: 'Timetable data, classes, groups, teachers and assessments generated successfully!', ...result });
+  } catch (err) {
+    console.error('Error in /seed-timetable:', err);
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
+});
+
+router.post('/sync-collections', async (req, res) => {
+  try {
+    const { collections } = req.body;
+    if (!Array.isArray(collections) || collections.length === 0) {
+      return res.status(400).json({ error: 'Body must contain collections array: [{ name, docs }]' });
+    }
+
+    const synced = {};
+    for (const item of collections) {
+      const { name, docs } = item;
+      if (!name || !Array.isArray(docs)) continue;
+      if (name.startsWith('system.')) continue;
+
+      const coll = mongoose.connection.db.collection(name);
+      await coll.deleteMany({});
+      if (docs.length > 0) {
+        // Convert $oid and $date if needed
+        const parsedDocs = docs.map(doc => {
+          return JSON.parse(JSON.stringify(doc), (k, v) => {
+            if (v && typeof v === 'object' && v.$oid) return new mongoose.Types.ObjectId(v.$oid);
+            return v;
+          });
+        });
+        await coll.insertMany(parsedDocs, { ordered: false });
+      }
+      synced[name] = docs.length;
+    }
+
+    res.status(200).json({ message: 'Collections synced successfully.', synced });
+  } catch (err) {
+    console.error('Error in /sync-collections:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/db-status', async (req, res) => {
   try {
     const collections = await mongoose.connection.db.listCollections().toArray();
@@ -134,7 +191,7 @@ router.get('/db-status', async (req, res) => {
 });
 
 router.get('/version', (req, res) => {
-  res.status(200).json({ version: '2.1.0-atlas-seed', time: new Date().toISOString() });
+  res.status(200).json({ version: '2.2.0-ran-timetable-atlas', time: new Date().toISOString() });
 });
 
 module.exports = router;

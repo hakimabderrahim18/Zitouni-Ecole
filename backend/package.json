@@ -11,7 +11,8 @@
     "generate:timetable": "node src/scripts/generateFromTimetable.js",
     "seed:assessments": "node src/scripts/seedAcademicAssessments.js",
     "seed:atlas": "node src/scripts/seedAcademicAssessments.js",
-    "migrate:atlas": "node src/migrateToAtlas.js"
+    "migrate:atlas": "node src/migrateToAtlas.js",
+    "push:atlas": "node src/scripts/pushAllToAtlas.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
